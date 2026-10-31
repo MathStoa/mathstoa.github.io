@@ -1,4 +1,4 @@
-export const REPOSITORY = 'https://github.com/rosati-tom/mathstoa';
+export const REPOSITORY = 'https://github.com/MathStoa/mathstoa.github.io';
 export function element(tag, attrs = {}, ...children) {
   const node = document.createElement(tag);
   for (const [key, value] of Object.entries(attrs)) {

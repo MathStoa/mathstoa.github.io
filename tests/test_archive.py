@@ -1,6 +1,7 @@
 """Publication checks for imported metadata and the announcements feed."""
 from copy import deepcopy
 import unittest
+from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
 from scripts.feed import ATOM, render_feed
@@ -86,6 +87,23 @@ class ArchiveTests(unittest.TestCase):
         self.assertEqual(entries[0].find(f"{{{ATOM}}}title").text, project["title"])
         self.assertNotIn("<script>", xml)
         self.assertIn("project.html?id=test-project", xml)
+
+    def test_feed_retains_identity_when_its_host_changes(self):
+        self.data["projects"][0]["example"] = False
+        root = ET.fromstring(render_feed(self.data))
+        self.assertEqual(root.find(f"{{{ATOM}}}id").text, "https://rosati-tom.github.io/mathstoa/")
+        links = {link.attrib["rel"]: link.attrib["href"] for link in root.findall(f"{{{ATOM}}}link")}
+        self.assertEqual(links["self"], "https://mathstoa.github.io/feed.xml")
+        self.assertEqual(links["alternate"], "https://mathstoa.github.io/")
+        entry = root.find(f"{{{ATOM}}}entry")
+        self.assertEqual(entry.find(f"{{{ATOM}}}link").attrib["href"], "https://mathstoa.github.io/project.html?id=test-project")
+        with patch("scripts.feed.SITE_URL", "https://research.example.org/mathstoa/"):
+            moved = ET.fromstring(render_feed(self.data))
+        self.assertEqual(moved.find(f"{{{ATOM}}}id").text, root.find(f"{{{ATOM}}}id").text)
+        moved_links = {link.attrib["rel"]: link.attrib["href"] for link in moved.findall(f"{{{ATOM}}}link")}
+        self.assertEqual(moved_links["self"], "https://research.example.org/mathstoa/feed.xml")
+        moved_entry = moved.find(f"{{{ATOM}}}entry")
+        self.assertEqual(moved_entry.find(f"{{{ATOM}}}link").attrib["href"], "https://research.example.org/mathstoa/project.html?id=test-project")
 
     def test_empty_archive_has_valid_empty_feed(self):
         root = ET.fromstring(render_feed({"version": 1, "projects": []}))

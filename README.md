@@ -2,7 +2,7 @@
 
 A small, curated archive of living mathematical research: open questions, expository projects, formalizations, and research notes that live in public Git repositories.
 
-[Visit the pilot](https://rosati-tom.github.io/mathstoa/) · [Submit a project](https://github.com/rosati-tom/mathstoa/issues/new?template=submit-project.yml) · [Contribution policy](CONTRIBUTING.md)
+[Visit the pilot](https://mathstoa.github.io/) · [Submit a project](https://github.com/MathStoa/mathstoa.github.io/issues/new?template=submit-project.yml) · [Contribution policy](CONTRIBUTING.md)
 
 MathStoa helps readers understand what a project is doing, where to read it, and how to contribute. The mathematical work stays in its original repository. A finished paper is optional.
 
@@ -21,7 +21,7 @@ This is a static site with no Node dependencies. Python 3.10 or later is enough 
 The intended local checkout is `/Users/trosati/Git/Organisation and dev/MathStoa`:
 
 ```sh
-git clone https://github.com/rosati-tom/mathstoa.git "/Users/trosati/Git/Organisation and dev/MathStoa"
+git clone https://github.com/MathStoa/mathstoa.github.io.git "/Users/trosati/Git/Organisation and dev/MathStoa"
 cd "/Users/trosati/Git/Organisation and dev/MathStoa"
 python3 -m http.server 4173 --directory docs
 ```
@@ -47,9 +47,9 @@ Commit the updated feed with the archive when the generator changes it.
 - `tests/` checks the validation and feed behavior.
 - `.github/ISSUE_TEMPLATE/submit-project.yml` collects proposed listings.
 
-Publish with GitHub Pages from **branch `main`, folder `/docs`**. The pilot address is <https://rosati-tom.github.io/mathstoa/>. Project repositories and their contents remain external.
+Publish with GitHub Pages from **branch `main`, folder `/docs`**. The pilot address is <https://mathstoa.github.io/>. Project repositories and their contents remain external.
 
-To move the site, serve the contents of `docs/` from another static host, update the public site and submission links, update the recovery base URL in `docs/404.html`, change `SITE_URL` in `scripts/feed.py`, and regenerate the feed. The archive is ordinary JSON and can be exported or imported independently of this interface. A later submission service or database can use the same stable project IDs; the current site has no application server or database to migrate. Preserve the submission issues or export their decisions if the GitHub repository also moves.
+To move the site, serve the contents of `docs/` from another static host, update the public site and submission links, update the recovery base URL in `docs/404.html`, change `SITE_URL` in `scripts/feed.py`, and regenerate the feed. Keep `FEED_ID` unchanged: it is the permanent Atom feed identity, not a navigation link. The archive is ordinary JSON and can be exported or imported independently of this interface. A later submission service or database can use the same stable project IDs; the current site has no application server or database to migrate. Preserve the submission issues or export their decisions if the GitHub repository also moves.
 
 ## Credit and reuse
 

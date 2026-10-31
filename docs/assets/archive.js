@@ -52,5 +52,5 @@ try {
   readState();render(false);
 } catch {
   count.textContent='The archive could not be loaded.';
-  projects.replaceChildren(el('div',{className:'empty-state'},el('h3',{},'Please try again shortly.'),el('p',{},'You can also browse the archive in our public repository.'),el('a',{href:'https://github.com/rosati-tom/mathstoa/tree/main/docs/data'},'Open archive data')));
+  projects.replaceChildren(el('div',{className:'empty-state'},el('h3',{},'Please try again shortly.'),el('p',{},'You can also browse the archive in our public repository.'),el('a',{href:'https://github.com/MathStoa/mathstoa.github.io/tree/main/docs/data'},'Open archive data')));
 }

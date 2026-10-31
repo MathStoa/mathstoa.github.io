@@ -12,7 +12,9 @@ try:
 except ImportError:
     from validate import ARCHIVE, ROOT, load_archive, validate_archive
 
-SITE_URL = "https://rosati-tom.github.io/mathstoa/"
+SITE_URL = "https://mathstoa.github.io/"
+# Atom identity is permanent even when the feed moves to another host.
+FEED_ID = "https://rosati-tom.github.io/mathstoa/"
 FEED_PATH = ROOT / "docs" / "feed.xml"
 LAUNCH_DATE = "2026-10-31"
 ATOM = "http://www.w3.org/2005/Atom"
@@ -35,7 +37,7 @@ def render_feed(data: dict) -> str:
     feed = ET.Element(f"{{{ATOM}}}feed")
     element(feed, "title", "MathStoa announcements")
     element(feed, "subtitle", "Approved mathematical project listings. Editorial examples are excluded.")
-    element(feed, "id", SITE_URL)
+    element(feed, "id", FEED_ID)
     element(feed, "link", href=f"{SITE_URL}feed.xml", rel="self", type="application/atom+xml")
     element(feed, "link", href=SITE_URL, rel="alternate", type="text/html")
     latest = projects[0]["added"] if projects else LAUNCH_DATE

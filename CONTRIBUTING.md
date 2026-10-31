@@ -4,7 +4,7 @@ MathStoa lists living mathematical projects hosted in public Git repositories. E
 
 ## Submit a project
 
-Use the [project submission form](https://github.com/rosati-tom/mathstoa/issues/new?template=submit-project.yml). Submissions and review discussion are public. A submission is a proposal; it does not immediately change the site.
+Use the [project submission form](https://github.com/MathStoa/mathstoa.github.io/issues/new?template=submit-project.yml). Submissions and review discussion are public. A submission is a proposal; it does not immediately change the site.
 
 A registered project should have:
 

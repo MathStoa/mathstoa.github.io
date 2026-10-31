@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         A finished paper is optional. Your repository should contain meaningful mathematical work and a readable introduction.
-        Please read [CONTRIBUTING.md](https://github.com/rosati-tom/mathstoa/blob/main/CONTRIBUTING.md). This issue and its review are public; do not include private contact details or correspondence. Submission does not publish a listing automatically.
+        Please read [CONTRIBUTING.md](https://github.com/MathStoa/mathstoa.github.io/blob/main/CONTRIBUTING.md). This issue and its review are public; do not include private contact details or correspondence. Submission does not publish a listing automatically.
   - type: input
     id: project-title
     attributes:
