@@ -11,7 +11,7 @@ form.addEventListener('submit',event=>{
     field.setCustomValidity('');
     if(fields[name] && safeURL(fields[name])==='#') {field.setCustomValidity('Please enter a public HTTPS link without a username or password.');field.reportValidity();return;}
   }
-  const lines=[['Project title',fields.title],['Public repository',fields.repository],['Start-reading link',fields.reading||'Not provided'],['Abstract',fields.abstract],['Main subject',fields.category],['Project type',fields.kind],['Research stage',fields.stage],['Collaboration',fields.collaboration],['Where someone could help',fields.help],['Project steward and attribution',fields.steward],['Contribution policy',fields.policy],['Reuse terms',fields.license],['Version or archived snapshot',fields.snapshot||'Not provided']];
+  const lines=[['Project title',fields.title],['Public repository',fields.repository],['Project introduction URL',fields.reading||'Not provided'],['Abstract',fields.abstract],['Main subject',fields.category],['Project type',fields.kind],['Research stage',fields.stage],['Collaboration',fields.collaboration],['Where someone could help',fields.help],['Project steward and attribution',fields.steward],['Contribution policy',fields.policy],['Reuse terms',fields.license],['Version or archived snapshot',fields.snapshot||'Not provided']];
   const body=lines.map(([label,value])=>'### '+label+'\n\n'+String(value).trim()).join('\n\n')+'\n\n### Submission confirmation\n\n- [x] I maintain this project or have permission to submit it.\n- [x] I have read the submission guidelines and understand that listing is not peer review.\n- [x] I have permission to share this original abstract under CC BY 4.0, with the supplied attribution. The linked project keeps its own licence.\n';
   const url=new URL(REPOSITORY+'/issues/new');
   url.searchParams.set('title','[Project] '+fields.title.trim());
@@ -24,7 +24,7 @@ form.addEventListener('submit',event=>{
     const note = el('p',{},'This draft is too long to include in a link. Copy the text below and paste it into the issue body on GitHub.');
     const copy = el('button',{type:'button',className:'button button-light'},'Copy draft');
     copy.addEventListener('click',async()=>{
-      try { await navigator.clipboard.writeText(body); copy.textContent='Draft copied ✓'; }
+      try { await navigator.clipboard.writeText(body); copy.textContent='Draft copied'; }
       catch { draft.focus(); draft.select(); note.textContent='Select and copy the highlighted draft, then paste it into the issue body on GitHub.'; }
     });
     result.append(note,draft,copy);

@@ -6,7 +6,7 @@ try {
   const project = (await loadArchive()).find(p=>p.id===id);
   if (!project) {
     document.title='Project not found — MathStoa';
-    container.replaceChildren(el('h1',{},'Project not found'),el('p',{className:'lede'},'This project is not in the archive. Check the link or browse the current entries.'),el('a',{href:'index.html#archive',className:'button'},'Explore the archive ↗'));
+    container.replaceChildren(el('h1',{},'Project not found'),el('p',{className:'lede'},'This project is not in the archive. Check the link or browse the current entries.'),el('a',{href:'index.html#archive',className:'button'},'Explore the archive'));
   } else {
     document.title=project.title+' — MathStoa';
     const intro=el('header',{className:'project-intro'},el('h1',{},project.title),el('p',{className:'lede'},project.summary),tagList(project.categories));
@@ -16,5 +16,5 @@ try {
     container.replaceChildren(intro,el('div',{className:'project-layout'},article,sidebar));
   }
 } catch {
-  container.replaceChildren(el('h1',{},'The project could not be loaded.'),el('p',{className:'lede'},'Please try again, or browse the public archive data.'),el('a',{href:'data/projects.json'},'Open archive data ↗'));
+  container.replaceChildren(el('h1',{},'The project could not be loaded.'),el('p',{className:'lede'},'Please try again, or browse the public archive data.'),el('a',{href:'data/projects.json'},'Open archive data'));
 }
