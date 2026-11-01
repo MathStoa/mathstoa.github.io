@@ -4,7 +4,7 @@ A small, curated archive of living mathematical research: open questions, exposi
 
 [Visit the pilot](https://mathstoa.github.io/) · [Submit a project](https://github.com/MathStoa/mathstoa.github.io/issues/new?template=submit-project.yml) · [Contribution policy](CONTRIBUTING.md)
 
-An open maths project is a public Git repository containing mathematical work that can continue to develop, linked to a public website explaining its aims. MathStoa is intended for research carried out with AI, including articles written by AI that can be studied, corrected, extended, and used in further research.
+An open mathematical research project is a public Git repository containing mathematical work that can continue to develop, linked to a public website explaining its aims. MathStoa is intended for research carried out with AI, including articles written by AI that can be studied, corrected, extended, and used in further research.
 
 ## Pilot scope
 
