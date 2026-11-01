@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        A finished paper is optional. Your repository should contain meaningful mathematical work and a readable introduction.
+        Your repository should contain meaningful mathematical work and link to a public website explaining the project’s aims.
         Please read [CONTRIBUTING.md](https://github.com/MathStoa/mathstoa.github.io/blob/main/CONTRIBUTING.md). This issue and its review are public; do not include private contact details or correspondence. Submission does not publish a listing automatically.
   - type: input
     id: project-title
@@ -23,9 +23,11 @@ body:
   - type: input
     id: reading-url
     attributes:
-      label: Best reading entry point
-      description: A readable introduction, rendered notes, or documentation. Leave blank to use the repository introduction.
+      label: Project website
+      description: A publicly accessible website explaining the project’s aims and introducing the material in the repository.
       placeholder: https://example.org/project/
+    validations:
+      required: true
   - type: textarea
     id: abstract
     attributes:

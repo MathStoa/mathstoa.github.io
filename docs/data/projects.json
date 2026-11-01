@@ -92,7 +92,7 @@
       "stage": "Reference",
       "collaboration": "See repository",
       "repositoryUrl": "https://github.com/leanprover-community/lean-liquid",
-      "readingUrl": "https://github.com/leanprover-community/lean-liquid#readme",
+      "readingUrl": "https://leanprover-community.github.io/liquid/",
       "credits": [
         {
           "name": "Liquid Tensor Experiment contributors",

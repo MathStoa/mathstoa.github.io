@@ -8,9 +8,10 @@ Use the [project submission form](https://github.com/MathStoa/mathstoa.github.io
 
 A registered project should have:
 
-- A public repository with meaningful mathematical content, a readable introduction, and a clear purpose or question.
+- A public Git repository with meaningful mathematical content.
+- A publicly accessible project website explaining its aims and introducing the material in the repository.
 - A named steward who agrees to the listing and can keep its status current.
-- A short original abstract, relevant subject categories, and a link to the best reading entry point.
+- A short original abstract and relevant subject categories.
 - Clear reuse terms and a visible contribution and credit policy. Public visibility alone does not grant permission to reuse material.
 - An accurate statement of whether contributions are welcome and, where possible, specific useful tasks.
 
