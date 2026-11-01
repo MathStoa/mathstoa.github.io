@@ -43,42 +43,6 @@ body:
       placeholder: math.AG, math.NT — arithmetic geometry
     validations:
       required: true
-  - type: dropdown
-    id: kind
-    attributes:
-      label: Project kind
-      options:
-        - Research
-        - Exposition
-        - Formalization
-        - Mixed
-    validations:
-      required: true
-  - type: dropdown
-    id: stage
-    attributes:
-      label: Current stage
-      description: This describes the project; it is not a correctness certification.
-      options:
-        - Exploration
-        - Partial results
-        - Claimed solution
-        - Ongoing
-        - Reference
-        - Archived
-    validations:
-      required: true
-  - type: dropdown
-    id: collaboration
-    attributes:
-      label: Contribution preferences
-      options:
-        - Open to contributions
-        - Specific help wanted
-        - Currently closed
-        - See repository
-    validations:
-      required: true
   - type: textarea
     id: help-wanted
     attributes:
