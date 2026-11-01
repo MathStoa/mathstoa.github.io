@@ -44,56 +44,19 @@ body:
     validations:
       required: true
   - type: textarea
-    id: help-wanted
+    id: collaborators
     attributes:
-      label: Useful contributions and contribution policy
-      description: Link to the project's contribution and credit policy. If welcoming help, give concrete entry points and any expected background. Explain any limits on participation.
-    validations:
-      required: true
-  - type: input
-    id: steward
-    attributes:
-      label: Project steward
-      description: Name or public handle and a public profile URL. Do not supply a private email address.
-    validations:
-      required: true
-  - type: dropdown
-    id: relationship
-    attributes:
-      label: Your permission to register the project
-      description: For an unaffiliated suggestion, open a general issue instead and say that you do not represent the project.
-      options:
-        - I am a project steward or maintainer
-        - I have a project steward's permission
-    validations:
-      required: true
-  - type: textarea
-    id: attribution
-    attributes:
-      label: Attribution and citation
-      description: State the people or groups to credit, link to the project's citation or authorship information, and give the attribution to retain for your original summary. Mention section-level attribution if relevant.
-    validations:
-      required: true
-  - type: textarea
-    id: licenses
-    attributes:
-      label: Project reuse terms
-      description: Link to the applicable licenses or rights statement. Distinguish prose, code, and other material if their terms differ. Public visibility alone does not grant reuse permission.
-    validations:
-      required: true
-  - type: input
-    id: snapshot
-    attributes:
-      label: Optional version or archive URL
-      description: A release, commit, or archived version such as a DOI. A live branch is not an immutable snapshot.
+      label: Collaborators (optional)
+      description: List the project’s collaborators, one name per line.
+      placeholder: One name per line
   - type: checkboxes
     id: confirmation
     attributes:
       label: Submission confirmation
       options:
-        - label: The named steward agrees to this public registration, and the project details and contribution preferences are accurate to the best of my knowledge.
+        - label: I maintain this project or have permission to submit it, and have read the submission guidelines.
           required: true
-        - label: I have the right to contribute the original summary under CC BY 4.0, with the attribution supplied above. Linked project material retains its existing rights and licenses.
+        - label: I have the right to contribute the original summary under CC BY 4.0. Linked project material retains its existing rights and licenses.
           required: true
         - label: I understand that acceptance is an archive review, not mathematical peer review or an endorsement of correctness.
           required: true

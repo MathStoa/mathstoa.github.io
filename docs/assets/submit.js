@@ -6,13 +6,13 @@ form.addEventListener('submit',event=>{
   event.preventDefault();
   if(!form.reportValidity())return;
   const fields=Object.fromEntries(new FormData(form));
-  for(const name of ['repository','reading','policy','snapshot']) {
+  for(const name of ['repository','reading']) {
     const field=form.elements.namedItem(name);
     field.setCustomValidity('');
     if(fields[name] && safeURL(fields[name])==='#') {field.setCustomValidity('Please enter a public HTTPS link without a username or password.');field.reportValidity();return;}
   }
-  const lines=[['Project title',fields.title],['Public repository',fields.repository],['Project website',fields.reading],['Abstract',fields.abstract],['Main subject',fields.category],['Where someone could help',fields.help],['Project steward and attribution',fields.steward],['Contribution policy',fields.policy],['Reuse terms',fields.license],['Version or archived snapshot',fields.snapshot||'Not provided']];
-  const body=lines.map(([label,value])=>'### '+label+'\n\n'+String(value).trim()).join('\n\n')+'\n\n### Submission confirmation\n\n- [x] I maintain this project or have permission to submit it.\n- [x] I have read the submission guidelines and understand that listing is not peer review.\n- [x] I have permission to share this original abstract under CC BY 4.0, with the supplied attribution. The linked project keeps its own licence.\n';
+  const lines=[['Project title',fields.title],['Public repository',fields.repository],['Project website',fields.reading],['Abstract',fields.abstract],['Main subject',fields.category],['Collaborators',fields.collaborators.trim()||'Not provided']];
+  const body=lines.map(([label,value])=>'### '+label+'\n\n'+String(value).trim()).join('\n\n')+'\n\n### Submission confirmation\n\n- [x] I maintain this project or have permission to submit it.\n- [x] I have read the submission guidelines and understand that listing is not peer review.\n- [x] I have permission to share this original abstract under CC BY 4.0. The linked project keeps its own licence.\n';
   const url=new URL(REPOSITORY+'/issues/new');
   url.searchParams.set('title','[Project] '+fields.title.trim());
   url.searchParams.set('body',body);
@@ -32,4 +32,4 @@ form.addEventListener('submit',event=>{
   result.hidden=false;
   result.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'nearest'});
 });
-for (const name of ['repository','reading','policy','snapshot']) form.elements.namedItem(name).addEventListener('input',event=>event.target.setCustomValidity(''));
+for (const name of ['repository','reading']) form.elements.namedItem(name).addEventListener('input',event=>event.target.setCustomValidity(''));
