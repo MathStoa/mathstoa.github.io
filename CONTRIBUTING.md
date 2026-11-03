@@ -40,11 +40,11 @@ Review decisions are recorded in the issue or pull request. To correct a listing
 Keep these roles separate:
 
 - **Contributor:** credit the accepted contribution and describe what it did, including useful ideas or review supplied outside Git commits.
-- **Section author or contributor:** attribute substantive writing and mathematical work at the section level when useful.
+- **Section contributor:** attribute substantive writing and mathematical work at the section level when useful.
 - **Maintainer:** someone responsible for review and project decisions; this role does not automatically determine authorship.
-- **Release or paper author:** agree authorship for the particular output, using the project's published policy and the named authors' consent.
+- **Paper author:** agree authorship for the particular output, using the project's published policy and the named authors' consent.
 
-A typo correction deserves acknowledgment without automatically implying authorship of the whole project. A short decisive observation can merit substantial credit. Do not use commit counts or lines changed as an authorship threshold. Git history supports a contribution record but cannot decide intellectual credit on its own.
+A typo correction deserves acknowledgment without automatically implying authorship of a resulting paper. A short decisive observation can merit substantial credit. Do not use commit counts or lines changed as an authorship threshold. Git history supports a contribution record but cannot decide intellectual credit on its own.
 
 The project steward should state these rules before inviting contributions. MathStoa requires transparent policies and handles the accuracy of its own listings; project participants remain responsible for their research's authorship decisions. Contributions to this archive do not imply contributions to the listed research.
 
@@ -61,4 +61,4 @@ Ordinary repository commits do not create archive announcements. The initial fee
 
 ## License for contributions
 
-By contributing code, you agree to its inclusion under this repository's MIT License. By contributing an original archive summary, you agree to its inclusion under CC BY 4.0 as described in the README. Supply the attribution you want retained. Do not submit text or other material that you lack permission to contribute under those terms. Linked projects keep their own licenses and authorship.
+By contributing code, you agree to its inclusion under this repository's MIT License. By contributing an original archive summary, you agree to its inclusion under CC BY 4.0 as described in the README. Supply the attribution you want retained. Do not submit text or other material that you lack permission to contribute under those terms. Linked projects keep their own licenses and attribution.

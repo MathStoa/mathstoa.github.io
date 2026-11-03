@@ -35,9 +35,9 @@ function stateURL(nextView = view, nextAuthor = author, hash = location.hash) {
 }
 function updateLabels() {
   const authors = view === 'authors';
-  heading.textContent = authors ? 'Browse authors' : 'Browse projects';
-  searchLabel.textContent = authors ? 'Search authors' : 'Search projects';
-  search.placeholder = authors ? 'Search author names' : 'Search projects, topics, or subjects';
+  heading.textContent = authors ? 'Browse contributors' : 'Browse projects';
+  searchLabel.textContent = authors ? 'Search contributors' : 'Search projects';
+  search.placeholder = authors ? 'Search contributor names' : 'Search projects, topics, or subjects';
   sort.options[0].textContent = authors ? 'Name A–Z' : 'Title A–Z';
   for (const [link, target] of [[browseProjects, 'projects'], [browseAuthors, 'authors']]) {
     if (!link) continue;
@@ -103,12 +103,12 @@ function render(updateURL = true) {
     }).sort((a, b) => sort.value === 'newest' ? b.added.localeCompare(a.added) || a.title.localeCompare(b.title) : a.title.localeCompare(b.title));
     projects.replaceChildren(...filtered.map(card));
   }
-  const noun = view === 'authors' ? 'author' : 'project';
+  const noun = view === 'authors' ? 'contributor' : 'project';
   if (!filtered.length) projects.append(el('div', {className:'empty-state'},
     el('h3', {}, archive.length ? `No matching ${noun}s` : `No ${noun}s listed`),
-    el('p', {}, archive.length ? `No ${noun}s match those filters. Try another subject or clear your search.` : view === 'authors' ? 'Authors will appear here when projects are listed.' : 'Projects will appear here after review.')));
+    el('p', {}, archive.length ? `No ${noun}s match those filters. Try another subject or clear your search.` : view === 'authors' ? 'Contributors will appear here when projects are listed.' : 'Projects will appear here after review.')));
   count.textContent = `${filtered.length} ${filtered.length === 1 ? noun : noun + 's'}`;
-  if (view === 'projects' && author) count.textContent += ' by ' + (authorNames.get(nameKey(author)) || author);
+  if (view === 'projects' && author) count.textContent += ' with contributions from ' + (authorNames.get(nameKey(author)) || author);
   reset.hidden = !query && !subject.value && sort.value === 'title' && !author;
   updateLabels();
   if (updateURL) history.replaceState(null, '', stateURL());

@@ -51,8 +51,8 @@ To move the site, serve the contents of `docs/` from another static host, update
 
 ## Credit and reuse
 
-Project credit belongs to the people and groups responsible for the work. An archive listing does not make MathStoa a co-author. Each project sets its own contribution and authorship policy; see [our contribution policy](CONTRIBUTING.md) for the requirements for listings.
+Project credit belongs to the people and groups responsible for the work. An archive listing does not make MathStoa a contributor to the research. Each project sets its own contribution and credit policy; see [our contribution policy](CONTRIBUTING.md) for the requirements for listings.
 
-The site code is available under the [MIT License](LICENSE). Original archive summaries contributed to MathStoa are available under [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/): credit MathStoa, retain any supplied author attribution, and link to the source record and license. Mention changes when adapting a summary.
+The site code is available under the [MIT License](LICENSE). Original archive summaries contributed to MathStoa are available under [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/): credit MathStoa, retain any supplied contributor attribution, and link to the source record and license. Mention changes when adapting a summary.
 
 External repositories, linked documents, quoted material, and other third-party content retain their own rights and licenses. Listing them does not change those terms. MathStoa is an independent pilot and is not affiliated with arXiv.
