@@ -222,6 +222,10 @@ class ContributorConfirmationTests(TestCase):
             self.assertEqual(message.subject, f'{settings.ACCOUNT_EMAIL_SUBJECT_PREFIX}You are listed as a contributor to "Notice test project"')
             self.assertIn("- Anna Example\n- Ben Example", message.body)
             self.assertIn("/privacy/", message.body)
+            # Emails use the Latin name only.
+            self.assertTrue(message.subject.startswith("[math-stoa] "))
+            self.assertIn("to math-stoa (", message.body)
+            self.assertNotIn("Στοά", message.subject + message.body)
             # No contributor learns another's address, and nothing names the submitting account.
             other = "ben@institute.example" if message.to == ["anna@university.example"] else "anna@university.example"
             for private in (other, "notice-owner"):

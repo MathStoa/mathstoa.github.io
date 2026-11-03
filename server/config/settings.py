@@ -149,7 +149,7 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = flag("EMAIL_USE_TLS", True)
 EMAIL_USE_SSL = flag("EMAIL_USE_SSL")
 EMAIL_TIMEOUT = 15
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "mathΣτοά <noreply@localhost>" if DEBUG else "")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "math-stoa <noreply@localhost>" if DEBUG else "")
 if EMAIL_USE_TLS and EMAIL_USE_SSL:
     raise ImproperlyConfigured("Choose either EMAIL_USE_TLS or EMAIL_USE_SSL, not both.")
 if not DEBUG and EMAIL_LOGIN_ENABLED and (not EMAIL_HOST or not DEFAULT_FROM_EMAIL):
@@ -198,7 +198,8 @@ ACCOUNT_RATE_LIMITS = {
     "privacy_verify": "30/5m/user",
 }
 ACCOUNT_LOGOUT_ON_GET = False
-ACCOUNT_EMAIL_SUBJECT_PREFIX = "[mathΣτοά] "
+# Emails use the plain Latin name, which every mail client and spam filter handles.
+ACCOUNT_EMAIL_SUBJECT_PREFIX = "[math-stoa] "
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http" if DEBUG else "https"
 SOCIALACCOUNT_ADAPTER = "accounts.adapters.MinimalSocialAccountAdapter"
 SOCIALACCOUNT_FORMS = {"disconnect": "accounts.forms.PasswordlessDisconnectForm"}

@@ -6,4 +6,4 @@
 
 .archive-search{padding:14px 15px;background:var(--soft);border:1px solid var(--line)}.search-primary{display:grid;grid-template-columns:minmax(0,1fr) 190px auto;align-items:end;gap:12px}.archive-search .search-field{display:block;min-width:0;grid-column:auto}.archive-search label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}.search-primary>.button{height:36px;padding:6px 18px}.search-options{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px}.search-options .select-field{min-width:160px;flex:0 1 220px}.card-credits{font-size:13px;margin:0 0 8px;line-height:1.7}
 @media(max-width:620px){.archive-search{padding:12px}.search-primary{grid-template-columns:minmax(0,1fr) auto;gap:10px}.archive-search .search-field{grid-column:1/-1}.search-options .select-field{min-width:0;flex:1}.search-options{gap:10px}}
-.brand{font-family:var(--serif);letter-spacing:-.02em;white-space:nowrap}
+.brand{font-family:var(--serif);font-size:1.08em;line-height:1;letter-spacing:-.02em;white-space:nowrap}

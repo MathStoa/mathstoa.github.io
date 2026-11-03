@@ -76,7 +76,7 @@ def notify_contributors(revision):
     for person in people:
         body = (
             f"Dear {person['name']},\n\n"
-            f'On {when}, the project "{title}" was submitted for review to mathΣτοά ({base}), '
+            f'On {when}, the project "{title}" was submitted for review to math-stoa ({base}), '
             "an archive of open mathematical research projects. You are listed as a contributor, together with:\n\n"
             f"{names}\n\n"
             "If the project is accepted, its listing will show each contributor's name and ORCID iD. "
