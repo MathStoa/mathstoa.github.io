@@ -113,10 +113,23 @@ def validate_archive(data: object) -> dict:
             codes.add(code)
             text(category["label"], f"{path}.categories.label", 100)
         for credit in sequence(project["credits"], f"{path}.credits", 100):
-            if not isinstance(credit, dict) or set(credit) != {"name", "role"}:
-                fail(f"{path}.credits", "each credit needs exactly name and role")
+            if not isinstance(credit, dict) or not {"name", "role"}.issubset(credit) or set(credit) - {"name", "role", "orcid", "affiliation"}:
+                fail(f"{path}.credits", "each credit needs name and role, with optional orcid and affiliation")
             text(credit["name"], f"{path}.credits.name", 200)
             text(credit["role"], f"{path}.credits.role", 200)
+            if "affiliation" in credit:
+                text(credit["affiliation"], f"{path}.credits.affiliation", 200)
+            if "orcid" in credit:
+                identifier = text(credit["orcid"], f"{path}.credits.orcid", 37)
+                if not re.fullmatch(r"https://orcid\.org/\d{4}-\d{4}-\d{4}-\d{3}[\dX]", identifier):
+                    fail(f"{path}.credits.orcid", "must be a full ORCID HTTPS identifier")
+                digits = identifier.rsplit("/", 1)[1].replace("-", "")
+                total = 0
+                for digit in digits[:-1]:
+                    total = (total + int(digit)) * 2
+                check = (12 - total % 11) % 11
+                if digits[-1] != ("X" if check == 10 else str(check)):
+                    fail(f"{path}.credits.orcid", "has an invalid check digit")
         for highlight in sequence(project["highlights"], f"{path}.highlights", 10):
             text(highlight, f"{path}.highlights", 1000)
     return data

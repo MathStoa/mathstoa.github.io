@@ -17,7 +17,7 @@ class ArchiveTests(unittest.TestCase):
             "kind": "Research", "stage": "Exploration", "collaboration": "See repository",
             "repositoryUrl": "https://github.com/example/project",
             "readingUrl": "https://example.org/notes",
-            "credits": [{"name": "Example contributors", "role": "Authors"}],
+            "credits": [{"name": "Example contributors", "role": "Contributors"}],
             "added": "2026-10-31", "example": True, "highlights": ["An example question"],
             "contributionNote": "This is an example, not an invitation.",
             "licenseNote": "See the example repository.",
@@ -108,6 +108,18 @@ class ArchiveTests(unittest.TestCase):
     def test_empty_archive_has_valid_empty_feed(self):
         root = ET.fromstring(render_feed({"version": 1, "projects": []}))
         self.assertEqual(root.findall(f"{{{ATOM}}}entry"), [])
+
+    def test_optional_public_contributor_identifiers_and_affiliations(self):
+        credit = self.data["projects"][0]["credits"][0]
+        credit.update(orcid="https://orcid.org/0000-0002-1825-0097", affiliation="Example University")
+        validate_archive(self.data)
+        credit["email"] = "private@example.org"
+        with self.assertRaises(ArchiveError):
+            validate_archive(self.data)
+        del credit["email"]
+        credit["orcid"] = "https://orcid.org/0000-0002-1825-0098"
+        with self.assertRaisesRegex(ArchiveError, "check digit"):
+            validate_archive(self.data)
 
 
 if __name__ == "__main__":

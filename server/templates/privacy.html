@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block head_title %}Privacy{% endblock %}
+{% block content %}
+  <article class="prose privacy-page">
+    <h1>Privacy and your MathStoa account</h1>
+    <p class="lede">MathStoa keeps a small amount of account information so contributors can submit projects and return to edit them.</p>
+    <section>
+      <h2>Sign-in and private account information</h2>
+      <p>We keep the identifier supplied by your sign-in provider and a record of which submissions your account may edit. When you sign in with ORCID, GitHub, GitLab or an institution, your password stays with that provider.</p>
+      <p>If you choose email sign-in or add an email address to your account, we keep it for verification and account access. It is not included in the public archive. Sign-in sessions use cookies that allow the service to recognise your signed-in browser.</p>
+      <p>Your sign-in provider operates its own service and privacy policy. Connecting an ORCID confirms control of that ORCID account; it does not certify authorship, employment or mathematical correctness.</p>
+    </section>
+    <section>
+      <h2>Project details and attribution</h2>
+      <p>Drafts and pending submissions are accessible to their owner, authorised editors and MathStoa staff. Accepted project descriptions, contributor names, supplied affiliations, ORCID identifiers and repository links appear in the public archive.</p>
+      <p>Only include contributor details that you are authorised to publish. Institutional postal addresses and private contact details are not needed. An ORCID entered in a contributor list is supplied attribution; it does not automatically connect that person’s account or give them editing access.</p>
+      <p>Project repositories remain on their existing hosts. Their contents, access rules and privacy policies are managed there.</p>
+    </section>
+    <section>
+      <h2>Editing and keeping a publication record</h2>
+      <p>Submission revisions and review decisions record how a listing changes. An accepted version remains public while a revised submission is reviewed. Private invitation links grant editing access after the recipient signs in; share these links only with the intended collaborator.</p>
+      <p>Publicly available information about a person is still personal information. Account information and access records are kept separate from the public archive.</p>
+    </section>
+    <section>
+      <h2>Questions and corrections</h2>
+      {% if privacy_contact %}
+        <p>For questions about your information, corrections or account deletion requests, contact <a href="mailto:{{ privacy_contact }}">{{ privacy_contact }}</a>. Publication records and private account information may need different treatment when an account is closed.</p>
+      {% else %}
+        <p>A private contact address will be provided before the account service opens for public registration.</p>
+      {% endif %}
+    </section>
+  </article>
+{% endblock %}

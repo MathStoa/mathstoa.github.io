@@ -2,7 +2,7 @@
 
 A small, curated archive of living mathematical research: open questions, expository projects, formalizations, and research notes that live in public Git repositories.
 
-[Visit the pilot](https://math-stoa.org/) · [Submit a project](https://github.com/MathStoa/mathstoa.github.io/issues/new?template=submit-project.yml) · [Contribution policy](CONTRIBUTING.md)
+[Visit the pilot](https://math-stoa.org/) · [Contribution policy](CONTRIBUTING.md) · [Account service setup](SETUP.md)
 
 An open mathematical research project is a public Git repository containing mathematical work that can continue to develop, linked to a public website explaining its aims. MathStoa is intended for research carried out with AI, including articles written by AI that can be studied, corrected, extended, and used in further research.
 
@@ -10,21 +10,23 @@ An open mathematical research project is a public Git repository containing math
 
 New registrations require a project steward's permission and a human review. Research stage, contribution preferences, and correctness are separate questions: a listing or an announcement does not certify a mathematical claim.
 
-The pilot provides search and subject filters, readable project pages, repository links, and an Atom announcement feed. Submission opens a public GitHub issue; a maintainer reviews it and updates the archive. GitHub supplies the submission account and discussion tools.
+The public archive provides search and subject filters, readable project pages, repository links, and an Atom announcement feed. This repository also includes a Django account and submission service: email-code sign-in, optional ORCID/GitHub/GitLab/institutional sign-in, private drafts, project editor invitations, and staff review of versioned submissions. It registers public repository links rather than copying repository contents. Submission and approval require verification of repository control; the initial implementation supports public GitHub repositories. GitLab sign-in is available independently, but verified publication from other repository hosts is not yet supported.
+
+The account service requires a production host, PostgreSQL, configured sign-in providers or SMTP, and a domain cutover. It is not activated by publishing this code to GitHub Pages. Until that deployment is complete, the existing public pilot and [GitHub submission form](https://github.com/MathStoa/mathstoa.github.io/issues/new?template=submit-project.yml) remain the operational route. See [SETUP.md](SETUP.md) for the exact setup and limitations.
 
 ## Run locally
 
-This is a static site with no Node dependencies. Python 3.10 or later is enough to preview it and run the checks.
+For the complete service, use Python 3.12 and follow the [local account-service instructions](SETUP.md#local-preview). Its entry points are `/accounts/login/`, `/submissions/`, and `/admin/`. The service serves the archive and accounts from one origin.
 
-The intended local checkout is `/Users/trosati/Git/Organisation and dev/MathStoa`:
+To preview only the original public archive, without accounts or submissions, Python 3.10 or later is enough:
 
 ```sh
-git clone https://github.com/MathStoa/mathstoa.github.io.git "/Users/trosati/Git/Organisation and dev/MathStoa"
-cd "/Users/trosati/Git/Organisation and dev/MathStoa"
+git clone https://github.com/MathStoa/mathstoa.github.io.git
+cd mathstoa.github.io
 python3 -m http.server 4173 --directory docs
 ```
 
-Open <http://localhost:4173>. Use the local server so the browser can load the archive JSON.
+Open <http://localhost:4173>. Use the local server so the browser can load the archive JSON. This static preview cannot run the sign-in routes or show database-backed submissions.
 
 Before publishing an archive change:
 
@@ -39,15 +41,23 @@ Commit the updated feed with the archive when the generator changes it.
 ## Content and deployment
 
 - `docs/` is the complete public site.
-- `docs/data/projects.json` is the manually reviewed archive and its portable source of truth.
+- `docs/data/projects.json` holds the existing manually reviewed archive.
+- `server/` contains the Django account and submission service. Approved submission revisions are stored in its database and merged into the public archive and feed when served by Django.
 - `scripts/validate.py` checks the archive contract.
-- `scripts/feed.py` generates announcements from accepted, non-example entries.
+- `scripts/feed.py` generates the static feed from accepted, non-example entries in the JSON archive.
 - `tests/` checks the validation and feed behavior.
-- `.github/ISSUE_TEMPLATE/submit-project.yml` collects proposed listings.
+- `.github/ISSUE_TEMPLATE/submit-project.yml` provides the legacy public submission route.
+- `Dockerfile`, `compose.yaml`, and `.env.example` provide the application and PostgreSQL deployment configuration. [SETUP.md](SETUP.md) covers provider callbacks, email, HTTPS, backups, and operations.
 
-Publish with GitHub Pages from **branch `main`, folder `/docs`**. The pilot address is <https://math-stoa.org/>. Project repositories and their contents remain external.
+The static pilot uses GitHub Pages from **branch `main`, folder `/docs`** at <https://math-stoa.org/>. Project repositories and their contents remain external. Deploy the account service to a server that runs Python and PostgreSQL, serving both the public site and account routes at that address. GitHub can continue to host the source repository.
 
-To move the site, serve the contents of `docs/` from another static host, update the public site and submission links, update the recovery base URL in `docs/404.html`, change `SITE_URL` in `scripts/feed.py`, and regenerate the feed. Keep `FEED_ID` unchanged: it is the permanent Atom feed identity, not a navigation link. The archive is ordinary JSON and can be exported or imported independently of this interface. A later submission service or database can use the same stable project IDs; the current site has no application server or database to migrate. Preserve the submission issues or export their decisions if the GitHub repository also moves.
+For a host move, preserve the canonical domain where possible. If the public URL changes, update `PUBLIC_BASE_URL`, the allowed hosts and trusted origins, provider callbacks, public links, the recovery base URL in `docs/404.html`, and `SITE_URL` in `scripts/feed.py`, then regenerate the static feed. Keep `FEED_ID` unchanged: it is the permanent Atom feed identity, not a navigation link. Back up and migrate the submission database as well as the static archive. Preserve submission issues and review decisions if the GitHub repository also moves. Do not delete the database volume during a routine application update.
+
+## Accounts and attribution
+
+Users can use the sign-in methods enabled by the operator; an institutional account or ORCID is not required when email sign-in is enabled. Institutions can be connected through a configured OpenID Connect provider or broker; this does not automatically provide access for every university.
+
+Account contact details, sign-in identifiers, and session records are private. Public collaborator attribution is supplied separately and does not grant editing access. Provider profile payloads and OAuth tokens are not retained. An authenticated ORCID links an account to that iD; it does not establish authorship, institutional endorsement, or mathematical correctness. Review the service's `/privacy/` notice and the [data-handling instructions](SETUP.md#data-handling-and-routine-operation) before operating it publicly.
 
 ## Credit and reuse
 

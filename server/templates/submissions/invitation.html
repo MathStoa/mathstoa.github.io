@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block head_title %}Invitation to edit{% endblock %}
+{% block content %}
+  <div class="account-panel">
+    <h1>You are invited to edit a project</h1>
+    <h2>{{ submission.title|default:"Untitled draft" }}</h2>
+    <p>Accepting gives your current MathStoa account permission to edit this submission and send revisions for review. It does not add your name to the public contributor list.</p>
+    <p class="private-note">This invitation expires {{ invitation.expires_at|date:"j F Y, H:i" }} and can be accepted once.</p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="button">Accept editing invitation</button>
+    </form>
+    <p class="privacy-note"><a href="{% url 'submissions:list' %}">Return to my submissions</a></p>
+  </div>
+{% endblock %}

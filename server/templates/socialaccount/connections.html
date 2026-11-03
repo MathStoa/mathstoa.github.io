@@ -1,0 +1,46 @@
+{% extends "socialaccount/base_manage.html" %}
+{% load socialaccount %}
+{% block head_title %}Your account{% endblock %}
+{% block content %}
+  <h1>Your account</h1>
+  <p>Connected sign-in methods all open this same MathStoa account and its submissions.</p>
+  <section class="account-section">
+    <h2>Connected accounts</h2>
+    {% if form.accounts %}
+      <form method="post" action="{% url 'socialaccount_connections' %}">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {{ form.account.errors }}
+        {% for choice in form.fields.account.choices %}
+          {% with connected=choice.0.instance %}
+            <label class="connection-row" for="account-{{ connected.pk }}">
+              <input id="account-{{ connected.pk }}" type="radio" name="account" value="{{ connected.pk }}" required>
+              <span><strong>{% if connected.provider == 'orcid' %}ORCID{% else %}{{ connected.get_provider.name }}{% endif %}</strong><br><span class="muted">{{ connected.get_provider_account }}</span></span>
+            </label>
+          {% endwith %}
+        {% endfor %}
+        <button type="submit" class="button">Disconnect selected account</button>
+      </form>
+      <p class="form-note">Keep at least one usable sign-in method so you can return to your submissions.</p>
+    {% else %}
+      <p>No external accounts are connected.</p>
+    {% endif %}
+  </section>
+  {% get_providers as providers %}
+  {% if providers %}
+    <section class="account-section">
+      <h2>Connect another sign-in method</h2>
+      <p>Connect an account you control. Matching names or email addresses do not automatically combine accounts.</p>
+      <div class="provider-options">
+        {% for provider in providers %}
+          <form method="post" action="{% provider_login_url provider process='connect' %}">
+            {% csrf_token %}
+            <button type="submit" class="button provider-button">Connect {% if provider.id == 'orcid' %}ORCID{% else %}{{ provider.name }}{% endif %}</button>
+          </form>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+  {% if email_login_enabled %}<p><a href="{% url 'account_email' %}">Manage your private email address</a></p>{% endif %}
+  <p><a href="{% url 'submissions:list' %}">View my submissions</a></p>
+{% endblock %}

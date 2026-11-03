@@ -1,0 +1,43 @@
+name: Check archive and account service
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - python: '3.12'
+            database: postgresql://mathstoa:ci-only@localhost:5432/mathstoa
+          - python: '3.13'
+            database: ''
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: mathstoa
+          POSTGRES_PASSWORD: ci-only
+          POSTGRES_DB: mathstoa
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mathstoa -d mathstoa"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: server/requirements.txt
+      - run: python -m pip install -r server/requirements.txt
+      - run: python scripts/validate.py
+      - run: python -m unittest discover -s tests -v
+      - run: python server/manage.py collectstatic --noinput --settings=config.test_settings
+      - run: python server/manage.py makemigrations --check --dry-run --settings=config.test_settings
+      - run: python server/manage.py test accounts submissions repository_verification --settings=config.test_settings -v 2
+        env:
+          MATHSTOA_TEST_DATABASE_URL: ${{ matrix.database }}

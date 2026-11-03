@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block head_title %}My submissions{% endblock %}
+{% block content %}
+  <div class="submission-heading">
+    <div>
+      <h1>My submissions</h1>
+      <p class="lede">Projects you own or have been invited to edit.</p>
+    </div>
+    <a href="{% url 'submissions:create' %}" class="button">New submission</a>
+  </div>
+  {% if submissions %}
+    <div class="submission-list">
+      {% for submission in submissions %}
+        <article>
+          <h2><a href="{% url 'submissions:detail' pk=submission.pk %}">{{ submission.title|default:"Untitled draft" }}</a></h2>
+          <div class="submission-meta">
+            <span class="status">{{ submission.get_status_display|default:submission.status }}</span>
+            <span>{% if submission.owner_id == user.pk %}Owner{% else %}Editor{% endif %}</span>
+            <span>Updated {{ submission.updated_at|date:"j M Y" }}</span>
+            {% if submission.published_revision %}<a href="/project.html?id={{ submission.public_id|urlencode }}">View published listing</a>{% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-submissions">
+      <h2>Your first project starts here</h2>
+      <p>Create a draft with your repository link and a short description. You can save it, return to edit it, and submit it for editorial review when it is ready.</p>
+      <a href="{% url 'submissions:create' %}" class="button">Create a submission</a>
+    </div>
+  {% endif %}
+  <p class="private-note">Drafts stay private to your project’s editors and MathStoa staff. Only accepted versions appear in the archive.</p>
+{% endblock %}

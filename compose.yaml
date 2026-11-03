@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mathstoa
+      POSTGRES_USER: mathstoa
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mathstoa -d mathstoa"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Compose always uses its own database. DATABASE_URL in .env is for
+      # deployments outside Compose. Use a hex password to avoid URL escaping.
+      DATABASE_URL: postgresql://mathstoa:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/mathstoa
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      # Terminate HTTPS at a trusted reverse proxy on this host.
+      - "127.0.0.1:8000:8000"
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  postgres_data:

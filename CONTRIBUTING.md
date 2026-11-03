@@ -4,7 +4,9 @@ MathStoa lists living mathematical projects hosted in public Git repositories. E
 
 ## Submit a project
 
-Use the [project submission form](https://github.com/MathStoa/mathstoa.github.io/issues/new?template=submit-project.yml). Submissions and review discussion are public. A submission is a proposal; it does not immediately change the site.
+Once the account service is deployed, sign in at `/accounts/login/` and use `/submissions/new/`. The available sign-in methods depend on the operator's configuration. Create a private draft, add the project details and public collaborator attribution, verify repository control, review the declaration, and submit it for staff review. A submission is a proposal; it does not immediately change the public archive.
+
+Until the account service is deployed, use the [GitHub project submission form](https://github.com/MathStoa/mathstoa.github.io/issues/new?template=submit-project.yml). GitHub issue submissions and their review discussion are public. Do not put private contact details in that form or its discussion.
 
 A registered project should have:
 
@@ -16,6 +18,12 @@ A registered project should have:
 - An accurate statement of whether contributions are welcome and, where possible, specific useful tasks.
 
 Only submit a registration if you maintain the project or have a steward's permission. You may suggest a public project for consideration without that permission, but clearly mark the suggestion as unaffiliated in a general issue; it cannot become a registered project on that basis. The pilot's public examples are expressly labelled and excluded from announcements.
+
+The account service initially verifies public GitHub repositories through a verification file committed to the repository or a separate GitHub authorisation check. Follow the verification instructions shown for your draft. Logging in with GitHub or listing a repository URL alone does not verify repository control. Other hosts cannot be published through this service until their verification methods are supported, even when they are offered as sign-in providers. Verification is required again by the review process; it does not replace the submitter's permission declaration or establish agreement from every collaborator.
+
+List collaborators by their public names, contribution roles, and optional ORCID iDs and affiliations. An institutional postal address is not required. Independent researchers may state that status. Confirm that you are authorised to publish the attribution you supply, and keep personal email addresses and private correspondence out of these public fields. Entering someone else's ORCID iD does not authenticate that person or confirm their agreement.
+
+The account service lets the project owner invite editors with an invitation link. Share it privately with the intended editor: the signed-in account accepting a valid link gains editing access. Invitations expire after seven days and can be used once. Being credited as a collaborator does not grant access to the submission, and accepting editing access does not automatically confer scholarly authorship.
 
 Use the closest subject codes where available, such as `math.AG` or `math.CO`, and describe an unmatched subject in the submission. These are discovery categories, not an assertion of arXiv endorsement or registration.
 
@@ -33,7 +41,9 @@ Stages and invitations describe the steward's stated position. “Claimed soluti
 
 MathStoa maintainers check scope, readable content, public links, permission to register, attribution, and clarity of the requested collaboration. They may ask for revisions or decline an empty, misleading, duplicate, or out-of-scope submission. This is an archive review, not mathematical peer review.
 
-Review decisions are recorded in the issue or pull request. To correct a listing, report a credit problem, or appeal a decision, open an issue with the project ID and relevant public evidence. Avoid posting private contact details or confidential correspondence. A maintainer should record the resolution and explain material changes. A steward can request removal or a change in collaboration status through the same route.
+In the account service, submitting a draft creates a fixed revision for staff review. Staff can approve it or request changes. A previously approved revision remains public while an update is being reviewed; editing a draft does not silently replace the published listing. Review decisions are retained with the submitted revision. Legacy submissions retain their decisions in the GitHub issue or pull request.
+
+To correct a listing, report a credit problem, or appeal a decision, open an issue with the project ID and relevant public evidence, or use the private contact route in the service's privacy notice when the request includes private information. Avoid posting private contact details or confidential correspondence. A maintainer should record the resolution and explain material changes. A steward can request removal or a change in collaboration status through the same route.
 
 ## Contribution credit
 
@@ -49,6 +59,15 @@ A typo correction deserves acknowledgment without automatically implying authors
 The project steward should state these rules before inviting contributions. MathStoa requires transparent policies and handles the accuracy of its own listings; project participants remain responsible for their research's authorship decisions. Contributions to this archive do not imply contributions to the listed research.
 
 ## Maintainer workflow
+
+### Account-service submissions
+
+1. Review the submitted revision in the Django administration interface at `/admin/`. Confirm repository-control verification and the steward's permission, public repository and website links, original summary, licence and credit information, subject categories, and collaboration preferences.
+2. Record the review note and use the revision's approval or request-changes action. Review the fixed submitted snapshot, not a later working draft. Approval publishes that revision to the database-backed archive and feed; requesting changes leaves any previously approved version public.
+3. Inspect the resulting public listing and announcement. Illustrative examples remain excluded from announcements. Handle corrections through a new reviewed revision, and retain a clear record of removal or attribution decisions.
+4. Keep backups and run the retention commands described in [SETUP.md](SETUP.md). Drafts and review revisions are not automatically deleted when a session or invitation expires. Handle account and attribution requests according to the published privacy policy.
+
+### Legacy JSON archive
 
 1. Review the issue and confirm the steward's permission. Keep source links and the review decision in the issue.
 2. Add or update the entry in `docs/data/projects.json`, following the existing structure. Use a stable, unique project ID. Record the actual acceptance date in `added`; keep `example: true` for illustrative entries and use `false` only for accepted registrations.
