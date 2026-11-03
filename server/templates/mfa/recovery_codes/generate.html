@@ -1,0 +1,20 @@
+{% extends "mfa/recovery_codes/base.html" %}
+{% block head_title %}New recovery codes{% endblock %}
+{% block content %}
+  <h1>New recovery codes</h1>
+  {% if unused_code_count %}
+    <p>You still have {{ unused_code_count }} unused recovery code{{ unused_code_count|pluralize }}. A new set replaces the current codes, and the unused ones stop working at once.</p>
+  {% else %}
+    <p>You have no unused recovery codes left. A new set lets you sign in again if you lose your authenticator.</p>
+  {% endif %}
+  <p>The new codes are shown once, on the next page. Have somewhere safe to keep them, such as a password manager, before you continue.</p>
+  <form method="post" action="{% url 'mfa_generate_recovery_codes' %}" class="account-form">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="actions">
+      <button type="submit" class="button">Generate new codes</button>
+      <a href="{% url 'mfa_index' %}">{% if unused_code_count %}Keep the current codes{% else %}Not now{% endif %}</a>
+    </div>
+  </form>
+  <p><a href="{% url 'socialaccount_connections' %}">Return to your account</a></p>
+{% endblock %}

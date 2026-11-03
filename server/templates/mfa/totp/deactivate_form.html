@@ -1,0 +1,19 @@
+{% extends "mfa/totp/base.html" %}
+{% block head_title %}Remove your authenticator{% endblock %}
+{% block content %}
+  <h1>Remove your authenticator</h1>
+  {% if form.errors %}
+    <p>Staff accounts keep their authenticator, so it cannot be removed here. The administration needs it.</p>
+    <p>If you have lost the device, sign in with one of your recovery codes, and ask another operator to reset the authenticator on your account if no codes remain.</p>
+  {% else %}
+    <p>After this, your ORCID, GitHub or GitLab sign-in alone opens the account, and your recovery codes stop working. You can set up a new authenticator at any time.</p>
+    <form method="post" action="{% url 'mfa_deactivate_totp' %}" class="account-form">
+      {% csrf_token %}
+      <div class="actions">
+        <button type="submit" class="button">Remove the authenticator</button>
+        <a href="{% url 'mfa_index' %}">Keep it</a>
+      </div>
+    </form>
+  {% endif %}
+  <p><a href="{% url 'socialaccount_connections' %}">Return to your account</a> · <a href="{% url 'mfa_index' %}">Authenticator settings</a></p>
+{% endblock %}

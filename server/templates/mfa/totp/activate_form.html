@@ -1,0 +1,37 @@
+{% extends "mfa/totp/base.html" %}
+{% block head_title %}Set up your authenticator{% endblock %}
+{% block content %}
+  <h1>Set up your authenticator</h1>
+  {% if user.is_staff %}
+    <p>Staff accounts need an authenticator app for the administration. After you sign in with ORCID, GitHub or GitLab, it asks for the six-digit code the app shows, and asks again for a fresh one from time to time.</p>
+  {% else %}
+    <p>Once it is set up, signing in to <span class="brand">math<span lang="el">Στοά</span></span> with ORCID, GitHub or GitLab also asks for the six-digit code the app shows, and so do changes to your account.</p>
+  {% endif %}
+  <ol class="setup-steps">
+    <li>Install an authenticator app on your phone if you do not have one. Any app that shows six-digit codes for websites will do.</li>
+    <li>In the app, add an account by scanning this code, or by typing the secret beside it.</li>
+    <li>Enter the code the app now shows, then finish the setup.</li>
+  </ol>
+  <div class="totp-setup">
+    <img class="totp-qr" src="{{ totp_svg_data_uri }}" alt="QR code carrying the same secret as the field beside it" width="200" height="200">
+    <p>
+      <label for="authenticator_secret">Secret, if you cannot scan</label>
+      <input id="authenticator_secret" class="totp-secret" type="text" value="{{ form.secret }}" readonly spellcheck="false" autocomplete="off">
+      <span class="helptext">Type it into the app as a time-based code. Keep it private, like a password.</span>
+    </p>
+  </div>
+  <form method="post" action="{% url 'mfa_activate_totp' %}" class="account-form">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {{ form.code.errors }}
+    <p>
+      <label for="{{ form.code.id_for_label }}">Code from the app</label>
+      <input type="text" name="{{ form.code.html_name }}" id="{{ form.code.id_for_label }}" inputmode="numeric" autocomplete="one-time-code" spellcheck="false" required>
+    </p>
+    <div class="actions">
+      <button type="submit" class="button">Finish setup</button>
+      <a href="{% url 'socialaccount_connections' %}">Cancel and return to your account</a>
+    </div>
+  </form>
+  <p class="form-note">Recovery codes come next. They are shown once; each signs you in if you lose the device.</p>
+{% endblock %}

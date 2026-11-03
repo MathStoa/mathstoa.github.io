@@ -1,7 +1,9 @@
 """Optional author MFA must not let a stolen session enroll or replace a factor."""
 import time
+from unittest.mock import patch
 
 from allauth.account.internal.flows.login import record_authentication
+from allauth.account.models import EmailAddress
 from allauth.mfa.models import Authenticator
 from allauth.mfa.totp.internal.auth import TOTP, format_hotp_value, generate_totp_secret, hotp_value
 from allauth.socialaccount.models import SocialAccount
@@ -106,3 +108,74 @@ class AuthorMFASecurityTests(TestCase):
         self.assertNotContains(response, codes[0])
         self.assertContains(response, 'href="' + reverse("mfa_generate_recovery_codes") + '"')
         self.assertContains(response, 'href="' + reverse("mfa_index") + '"')
+
+    def site_page(self, name):
+        """The page renders in the site's layout, in its words, and leads back to the account page."""
+        response = self.client.get(reverse(name))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="' + reverse("socialaccount_connections") + '"')
+        self.assertNotIn("wo-factor", response.content.decode().lower())
+        return response
+
+    def test_authenticator_pages_use_the_site_layout_and_lead_back_to_the_account(self):
+        self.record("socialaccount", provider="github", uid="existing-author")
+        response = self.site_page("mfa_index")
+        self.assertContains(response, "<h1>Your authenticator</h1>")
+        self.assertContains(response, 'href="' + reverse("mfa_activate_totp") + '"')
+        self.assertNotContains(response, 'href="' + reverse("mfa_deactivate_totp") + '"')
+        response = self.site_page("mfa_activate_totp")
+        secret = self.client.session["mfa.totp.secret"]
+        self.assertContains(response, 'src="data:image/svg+xml;base64,')
+        self.assertContains(response, 'value="' + secret + '"')
+        self.assertContains(response, 'name="code"')
+        self.assertContains(response, 'action="' + reverse("mfa_activate_totp") + '"')
+        self.assertContains(response, ">Finish setup</button>")
+        self.client.post(reverse("mfa_activate_totp"), {"code": self.code(secret)})
+        self.confirm(secret)
+        response = self.site_page("mfa_index")
+        self.assertContains(response, "Your authenticator app is set up. Added on")
+        self.assertContains(response, 'href="' + reverse("mfa_deactivate_totp") + '"')
+        self.assertContains(response, "You have 10 of 10 recovery codes left.")
+        self.assertContains(response, 'href="' + reverse("mfa_generate_recovery_codes") + '"')
+        for name, button in (("mfa_deactivate_totp", "Remove the authenticator"), ("mfa_generate_recovery_codes", "Generate new codes")):
+            with self.subTest(name=name):
+                response = self.site_page(name)
+                self.assertContains(response, 'action="' + reverse(name) + '"')
+                self.assertContains(response, ">" + button + "</button>")
+                self.assertContains(response, 'href="' + reverse("mfa_index") + '"')
+        self.assertContains(response, "You still have 10 unused recovery codes.")
+
+    def test_authenticator_challenge_page_keeps_the_destination_and_leads_back(self):
+        _, secret = self.factor()
+        response = self.client.get(reverse("mfa_index"))
+        self.assertEqual(response.status_code, 302)
+        response = self.client.get(response.url)
+        self.assertContains(response, "<h1>Confirm with your authenticator</h1>")
+        self.assertContains(response, 'name="next" value="' + reverse("mfa_index") + '"')
+        self.assertContains(response, 'name="code"')
+        self.assertContains(response, 'href="' + reverse("socialaccount_connections") + '"')
+        self.assertNotIn("wo-factor", response.content.decode().lower())
+        response = self.client.post(reverse("mfa_reauthenticate"), {"code": "not-a-code", "next": reverse("mfa_index")})
+        self.assertContains(response, "Incorrect code.")
+        response = self.client.post(reverse("mfa_reauthenticate"), {"code": self.code(secret), "next": reverse("mfa_index")})
+        self.assertRedirects(response, reverse("mfa_index"))
+
+    def test_signing_in_with_an_authenticator_asks_for_its_code_on_a_site_page(self):
+        _, secret = self.factor()
+        self.user.email = "author@example.org"
+        self.user.save()
+        EmailAddress.objects.create(user=self.user, email=self.user.email, verified=True, primary=True)
+        self.client.logout()
+        with patch("allauth.account.adapter.DefaultAccountAdapter.generate_login_code", return_value="123456"):
+            self.client.post(reverse("account_request_login_code"), {"email": self.user.email})
+        response = self.client.post(reverse("account_confirm_login_code"), {"code": "123456"})
+        self.assertRedirects(response, reverse("mfa_authenticate"), fetch_redirect_response=False)
+        self.assertNotIn("_auth_user_id", self.client.session)
+        response = self.client.get(reverse("mfa_authenticate"))
+        self.assertContains(response, "<h1>Enter your authenticator code</h1>")
+        self.assertContains(response, 'action="' + reverse("mfa_authenticate") + '"')
+        self.assertContains(response, 'action="' + reverse("account_logout") + '"')
+        self.assertNotIn("wo-factor", response.content.decode().lower())
+        response = self.client.post(reverse("mfa_authenticate"), {"code": self.code(secret)})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(int(self.client.session["_auth_user_id"]), self.user.pk)

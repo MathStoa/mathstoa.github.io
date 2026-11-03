@@ -1,0 +1,26 @@
+{% extends "account/base_entrance.html" %}
+{% block head_title %}Confirm with your authenticator{% endblock %}
+{% block content %}
+  <h1>Confirm with your authenticator</h1>
+  <p>Enter the code your authenticator app shows for <span class="brand">math<span lang="el">Στοά</span></span>.{% if user.is_staff %} The administration asks for a fresh code from time to time; so do changes to your account.{% else %} Changes to your account and to your authenticator need a fresh code.{% endif %}</p>
+  <form method="post" action="{% url 'mfa_reauthenticate' %}" class="account-form">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {{ form.code.errors }}
+    <p>
+      <label for="{{ form.code.id_for_label }}">Code</label>
+      <input type="text" name="{{ form.code.html_name }}" id="{{ form.code.id_for_label }}" autocomplete="one-time-code" autocapitalize="off" spellcheck="false" required autofocus>
+    </p>
+    {{ redirect_field }}
+    <div class="actions">
+      <button type="submit" class="button">Confirm</button>
+      <a href="{% url 'socialaccount_connections' %}">Return to your account</a>
+    </div>
+  </form>
+  {% if reauthentication_alternatives %}
+    <div class="actions">
+      {% for alt in reauthentication_alternatives %}<a class="button" href="{{ alt.url }}">{{ alt.description }}</a>{% endfor %}
+    </div>
+  {% endif %}
+  <p class="form-note">Lost the device? One of your recovery codes works here instead; each works once.</p>
+{% endblock %}

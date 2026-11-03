@@ -1,0 +1,55 @@
+{% extends "mfa/base_manage.html" %}
+{% block head_title %}Your authenticator{% endblock %}
+{% block content %}
+  <h1>Your authenticator</h1>
+  {% if user.is_staff %}
+    <p>Staff accounts use an authenticator app: after you sign in with ORCID, GitHub or GitLab, the administration asks for the code the app shows, and asks again for a fresh one from time to time. Changes to your sign-in methods need a fresh code too.</p>
+  {% else %}
+    <p>An authenticator app on your phone adds a second check to your sign-in: after ORCID, GitHub or GitLab, <span class="brand">math<span lang="el">Στοά</span></span> asks for the code the app shows. It is optional for authors.</p>
+  {% endif %}
+  {% if "totp" in MFA_SUPPORTED_TYPES %}
+    <section class="account-section">
+      <h2>Authenticator app</h2>
+      {% if authenticators.totp %}
+        {% with factor=authenticators.totp.instance %}
+          <p>Your authenticator app is set up. Added on {{ factor.created_at|date:"j F Y" }}{% if factor.last_used_at %}, last used on {{ factor.last_used_at|date:"j F Y" }}{% endif %}.</p>
+        {% endwith %}
+        {% if user.is_staff %}
+          <p class="form-note">Staff accounts keep their authenticator, so it cannot be removed here. If you lose the device, sign in with a recovery code, and ask another operator to reset the authenticator if no codes remain.</p>
+        {% else %}
+          <div class="actions">
+            <a class="button" href="{% url 'mfa_deactivate_totp' %}">Remove the authenticator</a>
+          </div>
+        {% endif %}
+      {% else %}
+        <p>No authenticator app is set up.{% if user.is_staff %} The administration needs one.{% endif %}</p>
+        <div class="actions">
+          <a class="button" href="{% url 'mfa_activate_totp' %}">Set up an authenticator</a>
+        </div>
+      {% endif %}
+    </section>
+  {% endif %}
+  {% if "recovery_codes" in MFA_SUPPORTED_TYPES %}
+    <section class="account-section">
+      <h2>Recovery codes</h2>
+      {% if authenticators.recovery_codes %}
+        {% with unused=authenticators.recovery_codes.get_unused_codes|length total=authenticators.recovery_codes.generate_codes|length %}
+          <p>You have {{ unused }} of {{ total }} recovery codes left. Each signs you in once if you lose your authenticator. They were shown once, when they were generated, and cannot be shown again.</p>
+        {% endwith %}
+        {% if is_mfa_enabled %}
+          <div class="actions">
+            <a class="button" href="{% url 'mfa_generate_recovery_codes' %}">Generate new codes</a>
+          </div>
+        {% endif %}
+      {% else %}
+        <p>Recovery codes are created when you set up an authenticator. Each signs you in once if you lose the device.</p>
+        {% if is_mfa_enabled %}
+          <div class="actions">
+            <a class="button" href="{% url 'mfa_generate_recovery_codes' %}">Generate recovery codes</a>
+          </div>
+        {% endif %}
+      {% endif %}
+    </section>
+  {% endif %}
+  <p><a href="{% url 'socialaccount_connections' %}">Return to your account</a>{% if user.is_staff %} · <a href="{% url 'admin:index' %}">Administration</a>{% endif %}</p>
+{% endblock %}

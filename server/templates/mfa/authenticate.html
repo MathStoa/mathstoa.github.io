@@ -1,0 +1,24 @@
+{% extends "mfa/base_entrance.html" %}
+{% block head_title %}Sign in{% endblock %}
+{% block content %}
+  <h1>Enter your authenticator code</h1>
+  <p>Your <span class="brand">math<span lang="el">Στοά</span></span> account has an authenticator. To finish signing in, enter the code the app shows, or one of your recovery codes.</p>
+  <form method="post" action="{% url 'mfa_authenticate' %}" class="account-form">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {{ form.code.errors }}
+    <p>
+      <label for="{{ form.code.id_for_label }}">Code</label>
+      <input type="text" name="{{ form.code.html_name }}" id="{{ form.code.id_for_label }}" autocomplete="one-time-code" autocapitalize="off" spellcheck="false" required autofocus>
+    </p>
+    <div class="actions">
+      <button type="submit" class="button">Sign in</button>
+      <button type="submit" class="text-button" form="logout-from-stage">Cancel sign-in</button>
+    </div>
+  </form>
+  <form id="logout-from-stage" method="post" action="{% url 'account_logout' %}" class="inline-form">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{% url 'account_login' %}">
+  </form>
+  <p class="form-note">Each recovery code works once. Without the device or a code, the account cannot be opened; ask <span class="brand">math<span lang="el">Στοά</span></span> for help through the address in the privacy notice.</p>
+{% endblock %}

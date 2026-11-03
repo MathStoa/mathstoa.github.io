@@ -228,6 +228,32 @@ class StaffMFATests(TestCase):
         self.assertContains(response, "Continue to administration")
         self.assertContains(response, 'href="' + reverse("mfa_index") + '"')
 
+    def test_staff_enrolment_and_challenge_pages_use_the_site_layout(self):
+        self.record("socialaccount", provider="github", uid="staff-id")
+        account = 'href="' + reverse("socialaccount_connections") + '"'
+        self.assertRedirects(self.client.get(reverse("admin:index")), reverse("mfa_activate_totp"), fetch_redirect_response=False)
+        response = self.client.get(reverse("mfa_activate_totp"))
+        self.assertContains(response, "Staff accounts need an authenticator app for the administration.")
+        self.assertContains(response, account)
+        secret = self.client.session["mfa.totp.secret"]
+        self.client.post(reverse("mfa_activate_totp"), {"code": format_hotp_value(hotp_value(secret, int(time.time()) // 30))})
+        response = self.client.get(self.client.get(reverse("admin:index")).url)
+        self.assertContains(response, "<h1>Confirm with your authenticator</h1>")
+        self.assertContains(response, 'name="next" value="' + reverse("admin:index") + '"')
+        self.assertContains(response, "The administration asks for a fresh code from time to time")
+        self.assertContains(response, account)
+        self.assertEqual(self.confirm(secret).status_code, 302)
+        response = self.client.get(reverse("mfa_index"))
+        self.assertContains(response, "Staff accounts keep their authenticator")
+        self.assertNotContains(response, 'href="' + reverse("mfa_deactivate_totp") + '"')
+        self.assertContains(response, 'href="' + reverse("admin:index") + '"')
+        self.assertContains(response, account)
+        response = self.client.get(reverse("mfa_deactivate_totp"))
+        self.assertContains(response, "cannot be removed here")
+        self.assertNotContains(response, "Remove the authenticator</button>")
+        self.assertNotIn("wo-factor", response.content.decode().lower())
+        self.assertContains(response, account)
+
 
 class AccountMethodSecurityTests(TestCase):
     def setUp(self):
