@@ -19,7 +19,7 @@ from accounts.middleware import limit_action
 
 from .forms import SubmissionForm, review_form
 from .models import EditorInvitation, Submission, SubmissionRevision
-from .notifications import notify_moderators
+from .notifications import notify_contributors, notify_moderators
 
 
 def accessible(user):
@@ -114,6 +114,7 @@ def submit(request, pk):
         revision, created = SubmissionRevision.objects.get_or_create(submission=submission, number=submission.revision, defaults={"snapshot": submission.snapshot(), "submitted_by": request.user})
         if created:
             transaction.on_commit(lambda: notify_moderators(revision))
+            transaction.on_commit(lambda: notify_contributors(revision))
             confirmation = ("Submitted for editorial review. The decision and any note from the reviewers will appear "
                             "on this page, usually within a week. You can continue editing a new draft.")
             if settings.PUBLIC_CONTACT_EMAIL:

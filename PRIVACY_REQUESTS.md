@@ -94,10 +94,14 @@ route without granting access to another person's private submissions.
 
 ## People named by someone else, and removing submissions
 
-Contributors listed in a project need no account. Verify that the requester is
-the named person through a separately reviewed route (for example a message
-from the email address shown on their ORCID record, or from a repository or
-institutional page that clearly belongs to them) before acting.
+Contributors listed in a project need no account. Each receives a
+confirmation at the institutional email the submitter gave, from which they
+can reply. Verify that the requester is the named person before acting: a
+reply from that same address is enough, otherwise use a separately reviewed
+route (for example a message from the email address shown on their ORCID
+record, or from a repository or institutional page that clearly belongs to
+them). The submitter may have given a wrong address, so a confirmation that
+reached someone else is itself a correction request.
 
 `erase_submission` handles both submission-level erasure and contributor
 removal. It prints an inventory and changes nothing unless `--execute` is
@@ -105,7 +109,7 @@ given. Run it in Render → web service → **Shell**:
 
     python server/manage.py erase_submission <submission id or project-<hex>>
     python server/manage.py erase_submission <id> --execute
-    python server/manage.py erase_submission <id> --remove-contributor "<name or ORCID>" --execute
+    python server/manage.py erase_submission <id> --remove-contributor "<name, email or ORCID>" --execute
 
 Whole erasure deletes the submission, every revision, invitations,
 verification attempts and evidence, and blanks the description of matching

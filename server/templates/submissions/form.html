@@ -20,16 +20,16 @@
             {% with rows=field.value %}
               <div class="contributor-rows" data-contributor-rows>
                 {% for person in rows %}
-                  {% include "submissions/contributor_row.html" with name=person.name orcid=person.orcid number=forloop.counter %}
+                  {% include "submissions/contributor_row.html" with name=person.name orcid=person.orcid email=person.email number=forloop.counter %}
                 {% empty %}
-                  {% include "submissions/contributor_row.html" with name="" orcid="" number=1 %}
+                  {% include "submissions/contributor_row.html" with name="" orcid="" email="" number=1 %}
                 {% endfor %}
               </div>
-              {% if rows %}<noscript>{% include "submissions/contributor_row.html" with name="" orcid="" number=rows|length|add:1 %}</noscript>{% endif %}
+              {% if rows %}<noscript>{% include "submissions/contributor_row.html" with name="" orcid="" email="" number=rows|length|add:1 %}</noscript>{% endif %}
             {% endwith %}
             {{ field.errors }}
             <button type="button" class="button button-light" data-add-contributor hidden>Add contributor</button>
-            <template data-contributor-template>{% include "submissions/contributor_row.html" with name="" orcid="" number=0 %}</template>
+            <template data-contributor-template>{% include "submissions/contributor_row.html" with name="" orcid="" email="" number=0 %}</template>
           </fieldset>
         {% elif field.field.widget.input_type == 'checkbox' %}
           <div>
@@ -46,7 +46,7 @@
           </div>
         {% endif %}
       {% endfor %}
-      <p class="private-note">Contributor names and ORCID iDs will be public if this submission is accepted. An ORCID iD entered here is supplied attribution, not an authenticated identity. Adding a contributor does not give them editing access.</p>
+      <p class="private-note">Contributor names and ORCID iDs will be public if this submission is accepted. Email addresses stay private: the project's owner, editors and <span class="brand">math<span lang="el">Στοά</span></span> staff can see them, and they are used to confirm the submission to each contributor. An ORCID iD entered here is supplied attribution, not an authenticated identity. Adding a contributor does not give them editing access.</p>
       {% if submission.owner_id == user.pk %}<p class="private-note">Before sending the project for review, <a href="{% url 'verification:overview' submission.pk %}">verify repository access</a>.</p>{% endif %}
       <div class="actions">
         <button class="button" type="submit">Save draft</button>

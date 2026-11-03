@@ -36,10 +36,11 @@ required (no large-scale monitoring or special category data).
 |---|---|---|---|---|---|
 | Accounts and sign-in | Account holders | Provider identifier, random username, creation and sign-in dates, encrypted MFA secret and recovery-code data, session data | Art. 6(1)(b) contract | Render (processor) | 365 days without sign-in if no responsibilities; otherwise until closure (`server/accounts/retention.py`) |
 | Security and abuse prevention | Visitors, account holders | IP-derived keyed digests in rate-limit cache; request log without URLs or IPs; Render and Cloudflare platform logs | Art. 6(1)(f) security | Render, Cloudflare (processors) | Counters ≤ 1 hour; platform logs per provider (OPERATIONS.md retention table) |
-| Drafts, editing access, invitations | Account holders, named contributors | Draft fields, contributor names and ORCID iDs, editor memberships, hashed invitation tokens | Art. 6(1)(b) for the account holder; 6(1)(f) for contributors | Render | Unused drafts 90 days; invitations 30 days after end |
+| Drafts, editing access, invitations | Account holders, named contributors | Draft fields, contributor names, ORCID iDs and institutional emails (required for review, never public), editor memberships, hashed invitation tokens | Art. 6(1)(b) for the account holder; 6(1)(f) for contributors | Render | Unused drafts 90 days; invitations 30 days after end |
 | Repository verification | Submitters | GitHub user id, login, permission level, commit SHA, connected ORCID, dates | Art. 6(1)(f) authorised submissions | Render; GitHub (independent controller, API queries) | With the submission's records |
 | Review and publication | Submitters, reviewers, named contributors | Immutable revision snapshots, review notes, reviewer identity; public listing of names and ORCID iDs | Art. 6(1)(f) scholarly attribution and accountable review | Public (listing only); Render | While listed or under review; never-accepted projects until removal is requested |
 | Moderation notices | Submitters (by project) | Project title and link in an email to moderators | Art. 6(1)(f) | SMTP provider when configured (processor) | Moderators' mailboxes |
+| Contributor confirmations | Named contributors | Name, institutional email, project title and the other contributors' names, sent to each contributor separately when a revision is submitted; also gives the Art. 14 information by linking the notice | Art. 6(1)(f) | SMTP provider (processor) | Recipients' mailboxes; the provider's sending logs |
 | Legacy GitHub issue submissions | Submitters, named contributors | Whatever the issue contains | Art. 6(1)(f) | Public on GitHub (independent controller) | GitHub's |
 | Privacy requests and breach records | Requesters | Request file, reply address, correspondence, outcome | Art. 6(1)(c) legal obligation | Email forwarding (Porkbun), controllers' mailboxes | Request files and exports deleted at closure; date, action and outcome kept two years |
 
@@ -68,15 +69,15 @@ scholarly archive; publish only projects that their submitters are authorised
 to list; keep an accountable record of review decisions; keep the service and
 its accounts secure.
 
-**Necessity.** Names and ORCID iDs are the minimum for attribution. Repository
+**Necessity.** Names and ORCID iDs are the minimum for attribution. A private institutional email per contributor lets each one be told they were listed and object, and lets the controllers reach them about the listing. Repository
 evidence (GitHub id, login, role or commit) is the minimum to show
 authorisation. No emails, addresses, profile payloads or OAuth tokens are
 kept; rate-limit keys are keyed digests; the request log omits URLs and IPs.
 
 **Balancing.** The data is professional, not sensitive, and of the kind
 researchers expect to see attached to their work. Contributors named by
-someone else did not supply it themselves and are not told directly; this is
-mitigated by the submitter's confirmation that they may list them, the
+someone else did not supply it themselves; each is emailed when a project
+listing them is submitted, and this is further mitigated by the submitter's confirmation that they may list them, the
 notice's dedicated section, the right to object without an account, and the
 `erase_submission --remove-contributor` command. Private records are visible
 only to the owner, editors and the controllers. Outcome: the interests are

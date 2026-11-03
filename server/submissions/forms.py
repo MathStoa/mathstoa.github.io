@@ -5,6 +5,7 @@ from urllib.parse import unquote, urlsplit
 
 from django import forms
 from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.utils.html import format_html
 
 from .models import Submission
@@ -64,7 +65,7 @@ def normalize_doi(value):
 
 
 class ContributorInputs(forms.Widget):
-    """One name and one ORCID input per contributor; submissions/form.html renders the rows."""
+    """Name, ORCID and email inputs per contributor; submissions/form.html renders the rows."""
 
     def value_from_datadict(self, data, files, name):
         getter = getattr(data, "getlist", data.get)
@@ -73,7 +74,7 @@ class ContributorInputs(forms.Widget):
             value = getter(f"{name}-{part}")
             return [value] if isinstance(value, str) else list(value or ())
 
-        return [{"name": person, "orcid": orcid} for person, orcid in zip_longest(values("name"), values("orcid"), fillvalue="")]
+        return [{"name": person, "orcid": orcid, "email": email} for person, orcid, email in zip_longest(values("name"), values("orcid"), values("email"), fillvalue="")]
 
     def value_omitted_from_data(self, data, files, name):
         # Removing every row posts no inputs, which must clear the list rather than keep the old one.
@@ -88,8 +89,8 @@ class ContributorsField(forms.Field):
         contributors = []
         seen_orcids = set()
         for number, row in enumerate(rows, 1):
-            name, orcid = str(row["name"]).strip(), str(row["orcid"]).strip()
-            if not name and not orcid:
+            name, orcid, email = (str(row.get(part) or "").strip() for part in ("name", "orcid", "email"))
+            if not name and not orcid and not email:
                 continue
             if not name:
                 raise ValidationError(f"Contributor {number}: add a name and surname.")
@@ -108,7 +109,16 @@ class ContributorsField(forms.Field):
                 raise ValidationError(f"Contributor {number}: this ORCID is already listed.")
             if orcid:
                 seen_orcids.add(orcid)
-            contributors.append({"name": name, "orcid": orcid})
+            if email:
+                try:
+                    validate_email(email)
+                except ValidationError:
+                    raise ValidationError(f"Contributor {number}: enter a valid email address.") from None
+                if len(email) > 254:
+                    raise ValidationError(f"Contributor {number}: the email address must be at most 254 characters.")
+            if self.required and not email:
+                raise ValidationError(f"Contributor {number}: add their institutional email.")
+            contributors.append({"name": name, "orcid": orcid, "email": email})
         if len(contributors) > 100:
             raise ValidationError("Please list at most 100 contributors.")
         return contributors
@@ -117,7 +127,7 @@ class ContributorsField(forms.Field):
 class SubmissionForm(forms.ModelForm):
     collaborators = ContributorsField(
         label="Contributors", required=False,
-        help_text=format_html('Add everyone who contributed to the project, including yourself, with their ORCID iD. Anyone can <a href="{}" target="_blank" rel="noopener noreferrer">register for an ORCID iD</a> free of charge.', ORCID_REGISTER_URL),
+        help_text=format_html('Add everyone who contributed to the project, including yourself, with their ORCID iD and institutional email. Anyone can <a href="{}" target="_blank" rel="noopener noreferrer">register for an ORCID iD</a> free of charge. Email addresses are never published; each contributor receives a confirmation when the project is submitted for review.', ORCID_REGISTER_URL),
     )
     revision = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
     permission_confirmed = forms.BooleanField(required=False, label="I maintain this project or have permission to submit it and its contributor details.")
@@ -174,5 +184,6 @@ def review_form(submission):
         "revision": submission.revision,
         "collaborators-name": [person.get("name", "") for person in submission.collaborators],
         "collaborators-orcid": [person.get("orcid") or "" for person in submission.collaborators],
+        "collaborators-email": [person.get("email") or "" for person in submission.collaborators],
     })
     return SubmissionForm(data=data, instance=submission, for_submission=True)

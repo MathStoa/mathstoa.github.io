@@ -37,7 +37,7 @@ class SubmissionTests(TestCase):
             "title": "Probability research notes", "repository_url": "https://github.com/example/research",
             "doi": "10.5281/zenodo.1234567",
             "reading_url": "https://example.org/research", "abstract": "These research notes explore a mathematical question, explain the current partial results, and describe useful future work.",
-            "category": "math.PR", "collaborators-name": "Anna", "collaborators-orcid": "0000-0002-1825-0097",
+            "category": "math.PR", "collaborators-name": "Anna", "collaborators-orcid": "0000-0002-1825-0097", "collaborators-email": "anna@university.example",
             "permission_confirmed": "on", "license_confirmed": "on", "revision": "1",
         }
 
@@ -50,6 +50,20 @@ class SubmissionTests(TestCase):
         response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": submission.revision})
         self.assertEqual(response.status_code, 302)
         return submission.revisions.get(number=submission.revision)
+
+    def test_review_needs_a_valid_email_for_each_contributor_and_keeps_it_private(self):
+        rows = {"collaborators-name": ["Anna", "Ben"], "collaborators-orcid": ["0000-0002-1825-0097", "0000-0001-5109-3700"]}
+        self.assertTrue(SubmissionForm({**self.payload, **rows, "collaborators-email": ["anna@university.example", ""]}).is_valid())
+        form = SubmissionForm({**self.payload, **rows, "collaborators-email": ["anna@university.example", ""]}, for_submission=True)
+        self.assertEqual(form.errors["collaborators"], ["Contributor 2: add their institutional email."])
+        form = SubmissionForm({**self.payload, **rows, "collaborators-email": ["anna@university.example", "not-an-address"]})
+        self.assertEqual(form.errors["collaborators"], ["Contributor 2: enter a valid email address."])
+        submission = self.create_submission()
+        self.assertContains(self.client.get(reverse("submissions:detail", args=[submission.pk])), "Email (private): anna@university.example")
+        self.assertContains(self.client.get(reverse("submissions:edit", args=[submission.pk])), 'value="anna@university.example"')
+        self.submit(submission).review(self.staff, approve=True)
+        self.assertNotContains(self.client.get("/data/projects.json"), "anna@university.example")
+        self.assertNotContains(self.client.get("/feed.xml"), "anna@university.example")
 
     def test_anonymous_users_must_sign_in(self):
         self.client.logout()
@@ -116,7 +130,7 @@ class SubmissionTests(TestCase):
                 self.assertIn(field, form.errors)
 
     def test_each_contributor_needs_an_orcid_for_review_but_not_for_a_draft(self):
-        rows = {"collaborators-name": ["Anna", "Ben"], "collaborators-orcid": ["0000-0002-1825-0097", ""]}
+        rows = {"collaborators-name": ["Anna", "Ben"], "collaborators-orcid": ["0000-0002-1825-0097", ""], "collaborators-email": ["anna@university.example", "ben@university.example"]}
         self.assertTrue(SubmissionForm({**self.payload, **rows}).is_valid())
         form = SubmissionForm({**self.payload, **rows}, for_submission=True)
         self.assertFalse(form.is_valid())
@@ -149,7 +163,7 @@ class SubmissionTests(TestCase):
     def test_contributor_rows_keep_order_skip_blanks_and_can_all_be_removed(self):
         rows = {"collaborators-name": ["Anna", "", "Ben"], "collaborators-orcid": ["https://orcid.org/0000-0002-1825-0097", "", ""]}
         submission = self.create_submission({**self.payload, **rows})
-        self.assertEqual(submission.collaborators, [{"name": "Anna", "orcid": "https://orcid.org/0000-0002-1825-0097"}, {"name": "Ben", "orcid": ""}])
+        self.assertEqual(submission.collaborators, [{"name": "Anna", "orcid": "https://orcid.org/0000-0002-1825-0097", "email": "anna@university.example"}, {"name": "Ben", "orcid": "", "email": ""}])
         edit = self.client.get(reverse("submissions:edit", args=[submission.pk]))
         self.assertContains(edit, 'value="Anna"')
         self.assertContains(edit, 'value="0000-0002-1825-0097"')
@@ -435,7 +449,7 @@ class VerificationBoundaryTests(TestCase):
             owner=self.owner, title="Verified repository", repository_url="https://github.com/example/research",
             doi="https://doi.org/10.5281/zenodo.1234567",
             reading_url="https://example.org/research", abstract="A mathematical project with enough explanatory detail to make its research question and current results clear to readers.",
-            category="math.PR", collaborators=[{"name": "Contributor", "orcid": "https://orcid.org/0000-0002-1825-0097"}],
+            category="math.PR", collaborators=[{"name": "Contributor", "orcid": "https://orcid.org/0000-0002-1825-0097", "email": "contributor@university.example"}],
             permission_confirmed=True, license_confirmed=True,
         )
 

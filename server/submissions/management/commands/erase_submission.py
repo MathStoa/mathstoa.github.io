@@ -21,7 +21,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("submission_id", help="The submission's UUID (the hex in project-<hex> also works).")
-        parser.add_argument("--remove-contributor", metavar="NAME_OR_ORCID", help="Remove only this contributor, matched by exact name (ignoring case) or ORCID.")
+        parser.add_argument("--remove-contributor", metavar="NAME_OR_ORCID", help="Remove only this contributor, matched by exact name or email (ignoring case) or ORCID.")
         parser.add_argument("--execute", action="store_true", help="Make the change. Without it the command is a dry run.")
 
     def handle(self, *args, **options):
@@ -77,6 +77,8 @@ class Command(BaseCommand):
         def matches(person):
             if orcid:
                 return person.get("orcid") == orcid
+            if "@" in target:
+                return str(person.get("email", "")).strip().casefold() == target.casefold()
             return str(person.get("name", "")).strip().casefold() == target.casefold()
 
         revisions = list(submission.revisions.order_by("number"))

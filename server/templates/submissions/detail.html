@@ -28,6 +28,7 @@
           {% for person in submission.collaborators %}
             <li><strong>{{ person.name }}</strong>
               {% if person.orcid %}<small>ORCID: {{ person.orcid }} · supplied attribution</small>{% else %}<small>ORCID iD not supplied yet</small>{% endif %}
+              {% if person.email %}<small>Email (private): {{ person.email }}</small>{% else %}<small>Institutional email not supplied yet</small>{% endif %}
             </li>
           {% empty %}<li>No contributors supplied yet.</li>{% endfor %}
         </ul>

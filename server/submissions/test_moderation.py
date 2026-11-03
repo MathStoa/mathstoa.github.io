@@ -18,7 +18,7 @@ from django.utils import timezone
 from repository_verification.models import RepositoryVerification, VerificationAttempt
 from .admin import SubmissionRevisionAdmin
 from .models import Submission, SubmissionRevision
-from .notifications import notify_moderators
+from .notifications import notify_contributors, notify_moderators
 
 
 NOTIFY = {"MODERATION_NOTIFY_EMAIL": "reviewers@example.invalid", "DEFAULT_FROM_EMAIL": "mathStoa <noreply@example.invalid>"}
@@ -197,3 +197,50 @@ class SubmitNoticeTests(TestCase):
         revision = revision_for(self.submission, self.owner)
         self.assertFalse(notify_moderators(revision))
         self.assertEqual(mail.outbox, [])
+
+
+class ContributorConfirmationTests(TestCase):
+    submit = SubmitNoticeTests.submit
+
+    def setUp(self):
+        SubmitNoticeTests.setUp(self)
+        self.submission.collaborators = [
+            {"name": "Anna Example", "orcid": "https://orcid.org/0000-0002-1825-0097", "email": "anna@university.example"},
+            {"name": "Ben Example", "orcid": "", "email": "ben@institute.example"},
+        ]
+        self.submission.save()
+
+    @override_settings(**NOTIFY, PUBLIC_CONTACT_EMAIL="contact@example.invalid")
+    def test_each_contributor_gets_their_own_confirmation(self):
+        self.submit()
+        confirmations = [message for message in mail.outbox if message.to != ["reviewers@example.invalid"]]
+        self.assertEqual(sorted(message.to[0] for message in confirmations), ["anna@university.example", "ben@institute.example"])
+        for message in confirmations:
+            self.assertEqual(len(message.to), 1)
+            self.assertEqual(message.cc + message.bcc, [])
+            self.assertEqual(message.reply_to, ["contact@example.invalid"])
+            self.assertEqual(message.subject, f'{settings.ACCOUNT_EMAIL_SUBJECT_PREFIX}You are listed as a contributor to "Notice test project"')
+            self.assertIn("- Anna Example\n- Ben Example", message.body)
+            self.assertIn("/privacy/", message.body)
+            # No contributor learns another's address, and nothing names the submitting account.
+            other = "ben@institute.example" if message.to == ["anna@university.example"] else "anna@university.example"
+            for private in (other, "notice-owner"):
+                self.assertNotIn(private, message.body)
+
+    @override_settings(**NOTIFY)
+    def test_confirmations_are_not_repeated(self):
+        self.submit()
+        self.submit()
+        self.assertEqual(len(mail.outbox), 3)
+
+    @override_settings(**NOTIFY, EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend", EMAIL_HOST="")
+    def test_production_without_smtp_sends_no_confirmation(self):
+        self.assertEqual(notify_contributors(revision_for(self.submission, self.owner)), 0)
+        self.assertEqual(mail.outbox, [])
+
+    @override_settings(**NOTIFY)
+    def test_a_failed_confirmation_never_blocks_the_submission(self):
+        with patch("submissions.notifications.EmailMessage.send", side_effect=OSError("smtp down")):
+            with self.assertLogs("submissions.notifications", level="WARNING"):
+                self.submit()
+        self.assertTrue(self.submission.revisions.filter(status="pending").exists())

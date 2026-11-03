@@ -9,6 +9,10 @@
       <label for="contributor-{{ number }}-orcid">ORCID iD</label>
       <input type="text" id="contributor-{{ number }}-orcid" name="{{ field.html_name }}-orcid" value="{{ orcid|cut:'https://orcid.org/' }}" maxlength="37" placeholder="0000-0002-1825-0097" autocomplete="off" spellcheck="false" data-part="orcid">
     </div>
+    <div class="field">
+      <label for="contributor-{{ number }}-email">Institutional email</label>
+      <input type="email" id="contributor-{{ number }}-email" name="{{ field.html_name }}-email" value="{{ email }}" maxlength="254" placeholder="name@university.edu" autocomplete="off" spellcheck="false" data-part="email">
+    </div>
   </div>
   <button type="button" class="text-button" aria-label="Remove contributor {{ number }}" data-remove-contributor hidden>Remove</button>
 </fieldset>

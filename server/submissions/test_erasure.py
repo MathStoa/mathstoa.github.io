@@ -16,7 +16,7 @@ from .models import EditorInvitation, Submission, SubmissionRevision
 
 
 ADA = {"name": "Ada Example", "orcid": "https://orcid.org/0000-0002-1825-0097"}
-BEN = {"name": "Ben Example", "orcid": ""}
+BEN = {"name": "Ben Example", "orcid": "", "email": "ben@university.example"}
 
 
 def run(*args):
@@ -99,6 +99,11 @@ class EraseSubmissionTests(TestCase):
         self.assertIn("Dry run", output)
         self.submission.refresh_from_db()
         self.assertIn(BEN, self.submission.collaborators)
+
+    def test_contributor_matched_by_email(self):
+        run(str(self.submission.pk), "--remove-contributor", "Ben@University.example", "--execute")
+        self.submission.refresh_from_db()
+        self.assertEqual(self.submission.collaborators, [ADA])
 
     def test_removing_the_last_contributor_is_refused(self):
         run(str(self.submission.pk), "--remove-contributor", "Ben Example", "--execute")
