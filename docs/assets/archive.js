@@ -78,24 +78,34 @@ function contributorLink(name) {
   });
   return link;
 }
+const ORCID_ID = /^https:\/\/orcid\.org\/\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
+function orcidLink(credit) {
+  const id = credit.orcid.slice('https://orcid.org/'.length);
+  return el('a', {className:'orcid-link', href:credit.orcid, title:'ORCID iD ' + id,
+    'aria-label':'ORCID record of ' + cleanName(credit.name) + ' (' + id + ')'},
+    el('img', {src:'assets/orcid.svg', alt:'', width:'16', height:'16'}));
+}
 function card(project) {
-  const uniqueNames = new Map();
+  const contributors = new Map();
   for (const credit of project.credits) {
     const key = nameKey(credit.name);
-    if (key && !uniqueNames.has(key)) uniqueNames.set(key, credit.name);
+    if (!key) continue;
+    const orcid = ORCID_ID.test(credit.orcid || '') ? credit.orcid : '';
+    const seen = contributors.get(key);
+    if (!seen) contributors.set(key, {name:credit.name, orcid});
+    else if (!seen.orcid) seen.orcid = orcid;
   }
   const credits = el('p', {className:'card-credits'}, 'Contributors: ');
-  [...uniqueNames.values()].forEach((name, index) => {
+  [...contributors.values()].forEach((credit, index) => {
     if (index) credits.append('; ');
-    credits.append(contributorLink(name));
+    credits.append(contributorLink(credit.name));
+    if (credit.orcid) credits.append(orcidLink(credit));
   });
   return el('article', {className:'project-card'},
     el('h3', {}, el('a', {href:projectLink(project)}, project.title)),
-    credits,
     el('p', {className:'card-summary'}, project.summary),
-    tagList(project.categories),
-    el('div', {className:'card-bottom'},
-      el('a', {href:projectLink(project),'aria-label':'View ' + project.title}, 'View project')));
+    credits,
+    tagList(project.categories));
 }
 function matchesQuery(project, words) {
   if (state.field === 'author') return project.credits.some(credit => words.every(word => folded(credit.name).includes(word)));
