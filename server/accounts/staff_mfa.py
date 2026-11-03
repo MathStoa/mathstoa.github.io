@@ -83,6 +83,12 @@ def require_fresh_account_change(request):
 
 
 class StaffSecurityMiddleware(MiddlewareMixin):
+    def process_request(self, request):
+        if request.path.startswith("/accounts/privacy/") or request.path == "/admin/privacy-requests/verify/":
+            # Apply before process_view authentication checks, so an error in
+            # those checks cannot expose a private request in exception reports.
+            request.sensitive_post_parameters = "__ALL__"
+
     def process_view(self, request, view_func, view_args, view_kwargs):
         match = request.resolver_match
         name = match.url_name or ""

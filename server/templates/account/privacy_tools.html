@@ -1,0 +1,30 @@
+{% extends "allauth/layouts/base.html" %}
+{% block head_title %}Your data and privacy requests{% endblock %}
+{% block content %}
+  <h1>Your data and privacy requests</h1>
+  <p>Sign in using an existing method within the last five minutes before either download. If you use an authenticator, confirm with it too.</p>
+  <section class="account-section">
+    <h2>Download your account data</h2>
+    <p>This includes your account information and project drafts you can currently access. Historical snapshots and information involving other people may need a separate review.</p>
+    <form method="post" action="{% url 'account_privacy_export' %}">
+      {% csrf_token %}<button class="button" type="submit">Download my account data</button>
+    </form>
+    <p class="form-note">The download is private and generated for you without saving an export file on the server. Keep your downloaded copy private.</p>
+  </section>
+  <section class="account-section">
+    <h2>Request access, a correction or account closure</h2>
+    {% if privacy_contact %}
+      <p>Download a verified request file below, then attach it to an email you send to <a href="mailto:{{ privacy_contact }}">{{ privacy_contact }}</a>. MathStoa does not send the email or store the request in your account.</p>
+      <p>The file confirms your exact request for seven days. Send it unchanged. If it expires or you change a sign-in method or authenticator, create a new file.</p>
+      <form method="post" action="{% url 'account_privacy_request' %}">
+        {% csrf_token %}{{ form.as_p }}
+        <button class="button" type="submit">Download verified request</button>
+      </form>
+      <p class="form-note">This asks an operator to review your request; it does not automatically change or close anything. Without a reply address in the verified file, the operator must not email private information to another address. Download anything you need before closing access.</p>
+    {% else %}
+      <p>Privacy requests will be available when the operator has configured a contact address.</p>
+    {% endif %}
+  </section>
+  {% if can_verify %}<p><a href="{% url 'privacy_request_verify' %}">Operator: verify a received request</a></p>{% endif %}
+  <p><a href="{% url 'socialaccount_connections' %}">Return to your account</a> · <a href="{% url 'privacy' %}">Privacy notice</a></p>
+{% endblock %}

@@ -39,6 +39,8 @@
     </section>
     <section>
       <h2>Questions and corrections</h2>
+      <p>If you have an account, open <a href="{% url 'account_privacy' %}">Your data and privacy requests</a> to download your account data or create a verified access, correction or closure request. These actions require a recent sign-in and your authenticator when enabled. Downloads are generated without saving a server-side export file.</p>
+      <p>A verified request file contains your request, a confirmation linked to your account, and an optional reply address that is not added to your account. You send the file yourself to the privacy contact; MathStoa does not send an email or save the request as an account record. The confirmation lasts seven days and stops being valid after relevant account-security changes. Requests received in the contact mailbox are handled as private correspondence; account closure and deletion remain reviewed actions.</p>
       {% if privacy_contact %}
         <p>For questions about your information, corrections or account deletion requests, contact <a href="mailto:{{ privacy_contact }}">{{ privacy_contact }}</a>. Publication records and private account information may need different treatment when an account is closed.</p>
       {% else %}

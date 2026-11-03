@@ -1,0 +1,27 @@
+{% extends "allauth/layouts/base.html" %}
+{% block head_title %}Verify a privacy request{% endblock %}
+{% block content %}
+  <h1>Verify a privacy request</h1>
+  <p>This checks a request file from the privacy mailbox. It does not change accounts, publish corrections, or delete data.</p>
+  <form method="post">
+    {% csrf_token %}{{ form.as_p }}
+    <button class="button" type="submit">Verify request</button>
+  </form>
+  {% if verified %}
+    <section class="account-section">
+      <h2>Verified request — no action performed</h2>
+      <p>Account {{ verified.account_id }}: {{ verified.username }}</p>
+      <ul>{% for identity in verified.identities %}<li>{{ identity.provider }}: {{ identity.uid }}</li>{% endfor %}</ul>
+      <p>Issued {{ verified.issued_at }}. Valid until {{ verified.expires_at }}.</p>
+      <p><strong>{{ verified.action_label }}</strong></p>
+      <pre>{{ verified.request.details }}</pre>
+      {% if verified.request.reply_to %}
+        <p>Authorized reply address: <strong>{{ verified.request.reply_to }}</strong></p>
+      {% else %}
+        <p>No reply address was authorized. Do not send private information to an email From or Reply-To address merely because it accompanied this file.</p>
+      {% endif %}
+      <p>Check current rights and the exact scope before acting. Check for duplicate or withdrawn requests in the existing correspondence. For closure, explain the proposed treatment of retained records and obtain a new verified file confirming that plan before making changes.</p>
+    </section>
+  {% endif %}
+  <p><a href="{% url 'account_privacy' %}">Account privacy tools</a> · <a href="{% url 'admin:index' %}">Administration</a></p>
+{% endblock %}

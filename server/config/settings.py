@@ -184,6 +184,9 @@ ACCOUNT_RATE_LIMITS = {
     "submission_access_grant": "20/h/user,10/h/key",
     "submission_access_revoke": "60/5m/user,30/5m/key",
     "submission_accept_invitation": "10/h/user",
+    "privacy_export": "5/h/user",
+    "privacy_confirmation": "10/h/user",
+    "privacy_verify": "30/5m/user",
 }
 ACCOUNT_LOGOUT_ON_GET = False
 ACCOUNT_EMAIL_SUBJECT_PREFIX = "[MathStoa] "

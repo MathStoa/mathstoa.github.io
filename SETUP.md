@@ -192,8 +192,12 @@ gunicorn --chdir server config.wsgi:application --bind 127.0.0.1:8000 --workers 
 ## Data handling and routine operation
 
 Use the [privacy-request procedure](PRIVACY_REQUESTS.md) for access, export,
-correction and account closure. Confirm its manual identity-check and delivery
-steps before opening public registration.
+correction and account closure. Account holders can download their own data and
+create verified request files at `/accounts/privacy/`; operators verify received
+files at `/admin/privacy-requests/verify/`. The site needs no SMTP for this flow and
+does not store requests. Users send attachments themselves to the existing privacy
+contact. Test that mailbox handoff and operator verification before opening
+public registration.
 
 MathStoa retains stable sign-in identifiers, account details, session data,
 private contact email where supplied, and submission/review records. Public

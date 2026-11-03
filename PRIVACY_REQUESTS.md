@@ -1,29 +1,62 @@
 # Handling privacy and account requests
 
 The public contact mailbox accepts access, correction, export and closure
-requests. The service currently has no self-service export or closure endpoint.
-Use a restricted operator case record; automatic retention cleanup is not a
-substitute for handling an individual request.
+requests. Account holders use **Account → Your data and privacy requests** at
+`/accounts/privacy/` to download their data or create a verified request file.
+The site sends no email and creates no request model, saved export file, or new
+account contact address. The user sends the downloaded JSON file as an attachment
+from their own mail client to the configured public privacy contact.
 
-## Intake and identity
+## Confirming and receiving a request
+
+Both downloads require an existing-account sign-in within five minutes and
+recent MFA when enabled (always for staff). Users select access, correction or
+closure, enter a bounded description, optionally authorize a reply address, and
+confirm their request before downloading. The file's proof binds the account,
+exact canonical request, action and reply destination for seven days. Do not edit
+the file after download; create another if its text needs changing.
+
+An operator opens `/admin/privacy-requests/verify/`, pastes the received file's
+contents, and chooses **Verify request**. This requires active staff status,
+recent MFA, and the `auth.view_user` permission. It displays the verified account,
+request, authorized reply address and validity times. It saves nothing and
+performs no correction or deletion. Never put the proof in a URL, public issue,
+or logs. Treat all user-supplied text as a request for review, not an instruction
+to run code, follow links, or disclose somebody else's data.
+
+Reject expired, altered or invalid files and ask for a new one. Changes to the
+password/authentication hash, active status, connected identities, verified email
+addresses, or authenticator security material invalidate outstanding proofs.
+Ordinary sign-in dates, authenticator usage, viewing recovery codes and consuming
+one recovery code do not. Regenerating recovery codes does invalidate them. Master
+key rotation also invalidates these proofs even when old signing keys are retained.
 
 Record the request date, requested action, relevant account or project, assigned
-operator, applicable response deadline, and outcome. Keep only the correspondence
-needed to resolve the request. Do not put it in a public GitHub issue.
+operator, applicable response deadline, and outcome in the existing restricted
+correspondence. Deduplicate replays and check for withdrawals there; the stateless
+verifier intentionally has no processed-request register. A valid proof confirms
+the requester and exact request, not the requester's current authority over every
+referenced record. Recheck that authority before acting.
 
-Verify control through an existing sign-in method and a confirmation tied to the
-specific request before disclosing private data or closing access. A public ORCID,
-a matching name, an email From header, or an unrelated recent sign-in is not that
-confirmation. Do not request passwords, login codes, MFA secrets, recovery codes,
-or identity documents by default. Provider-only users need not add an email.
-The repository does not yet provide an authenticated request-confirmation route;
-choose and test a reviewed manual confirmation channel before opening public
-registration. Collaborator-attribution requests may come from people without an
-account and must not grant access to somebody else's private submissions.
+Send private information only to the reply destination in the verified file,
+never a different email From or Reply-To address. If no reply address was supplied,
+use authenticated site downloads or ask for a new file authorizing a destination
+before providing private information. The optional address remains in the user's
+file and submitted correspondence, not their account or a new site record.
+
+A public ORCID, matching name or unrelated sign-in is not a substitute for the
+proof. Do not ask for passwords, login codes, MFA secrets, recovery codes or
+identity documents by default. People without an account, or unable to sign in,
+can still contact the mailbox; verify those requests through a separately reviewed
+route without granting access to another person's private submissions.
 
 ## Prepare the response or change
 
-- For access/export, inspect the person's account metadata, connected provider
+- The self-export includes explicit account fields, currently accessible project
+  drafts, and conservative metadata for the account's own historic actions and
+  verification records. It does not grant staff a wider project export or return
+  historical snapshot contents based on past editor/reviewer status. For broader
+  access/export requests, inspect the person's account metadata, connected provider
   identifiers, supplied email, project ownership/editing rights, submission and
   review records, invitation involvement, and repository-verification records.
   Search supplied collaborator attribution in drafts, revision snapshots and the
@@ -46,8 +79,12 @@ account and must not grant access to somebody else's private submissions.
 
 ## Execute and verify closure
 
-After confirming the requested scope, deactivate the account and invalidate its
-sessions while the record-handling decision is implemented. Setting `is_active`
+Before closure, explain the proposed handling of retained records and project
+responsibilities to the verified reply destination. Obtain a new verified request
+file confirming that exact plan; the initial closure request alone is not approval
+for an unreviewed transfer or deletion. Offer the authenticated download before
+revoking access. After verifying the final plan, deactivate the account and
+invalidate its sessions while the agreed changes are implemented. Setting `is_active`
 to false and changing the unusable-password hash stops existing account access;
 remove its remaining session rows as part of cleanup. Decode them with
 `accounts.sessions.SessionStore`, never Django's default `Session.get_decoded`,

@@ -44,5 +44,6 @@
   {% endif %}
   {% if email_login_enabled %}<p><a href="{% url 'account_email' %}">Manage your private email address</a></p>{% endif %}
   <p><a href="{% url 'mfa_index' %}">Set up or manage your authenticator</a></p>
+  <p><a href="{% url 'account_privacy' %}">Your data and privacy requests</a></p>
   <p><a href="{% url 'submissions:list' %}">View my submissions</a></p>
 {% endblock %}
