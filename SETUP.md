@@ -158,8 +158,13 @@ Install Docker and the Docker Compose plugin on the application host, then run:
 docker compose config --quiet
 docker compose up --build -d
 docker compose exec app python server/manage.py check --deploy
-docker compose exec app python server/manage.py check_login_setup --require-all
+docker compose exec app python server/manage.py check_login_setup
 ```
+
+`check_login_setup` lists each provider and email sign-in as configured or not,
+with its callback URL. Confirm that the methods you intend to offer are
+configured. Add `--require-all` only if you offer all four providers and email
+sign-in; otherwise it fails on the methods you left out.
 
 After testing one provider, follow [staff enrollment](STAFF_SECURITY.md) to grant
 the operator's existing account its role and complete mandatory MFA.

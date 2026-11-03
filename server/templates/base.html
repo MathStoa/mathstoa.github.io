@@ -7,8 +7,8 @@
   <meta name="theme-color" content="#ffffff">
   <title>{% block head_title %}mathΣτοά{% endblock %} — mathΣτοά</title>
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
-  <link rel="stylesheet" href="/assets/site.css">
-  <link rel="stylesheet" href="{% static 'accounts.css' %}">
+  <link rel="stylesheet" href="/assets/site.css?v={{ site_css_version }}">
+  <link rel="stylesheet" href="{% static 'accounts.css' %}?v={{ accounts_css_version }}">
   {% block extra_head %}{% endblock %}
 </head>
 <body>

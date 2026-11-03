@@ -78,9 +78,11 @@ verification responses use no-store; OAuth tokens are excluded from persistence
 and production exception reports. Never log tokens, generated file contents,
 or callback request parameters.
 
-Run `python manage.py purge_repository_verification_attempts --days 30` from
-`server/` for periodic cleanup. This removes expired unused attempts and preserves
-audit evidence. Use Django's `clearsessions` for expired server sessions.
+Cleanup is part of `purge_transient_data` (see `accounts/maintenance.py`), which
+the standard deployment runs at startup and hourly. It removes unused attempts
+that expired over 30 days ago, along with expired sessions and other transient
+data, and preserves proof evidence. Preview the counts with
+`python manage.py purge_transient_data --dry-run` from `server/`.
 
 Run tests from `server/` with
 `python manage.py test repository_verification --settings=config.test_settings`.

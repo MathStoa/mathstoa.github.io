@@ -2,10 +2,14 @@ name: Check archive and account service
 on:
   push:
   pull_request:
+  schedule:
+    # Weekly audit of pinned dependencies for newly published advisories.
+    - cron: '17 6 * * 1'
 permissions:
   contents: read
 jobs:
   tests:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     strategy:
       matrix:

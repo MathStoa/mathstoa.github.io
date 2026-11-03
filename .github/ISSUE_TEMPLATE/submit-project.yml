@@ -37,16 +37,27 @@ body:
   - type: textarea
     id: abstract
     attributes:
-      label: Original abstract
-      description: In roughly 80–200 words, explain the question or purpose, existing content, and current state. Write for a mathematician outside your immediate specialty.
+      label: Short abstract
+      description: 80–1,500 characters. Describe the research question or purpose, existing material, current status, and potential contributions. Plain text is welcome.
     validations:
       required: true
-  - type: input
+  - type: dropdown
     id: subjects
     attributes:
-      label: Subject categories
-      description: Give the closest arXiv subject codes and any useful keywords, or describe a subject that does not fit.
-      placeholder: math.AG, math.NT — arithmetic geometry
+      label: Main subject
+      description: Choose the closest subject. If none fits, choose General mathematics and describe the subject in the abstract.
+      options:
+        - math.AG — Algebraic geometry
+        - math.AP — Analysis of PDEs
+        - math.AT — Algebraic topology
+        - math.CO — Combinatorics
+        - math.DG — Differential geometry
+        - math.DS — Dynamical systems
+        - math.FA — Functional analysis
+        - math.LO — Logic and foundations
+        - math.NT — Number theory
+        - math.PR — Probability
+        - math.GM — General mathematics
     validations:
       required: true
   - type: textarea
