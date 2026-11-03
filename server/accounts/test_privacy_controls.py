@@ -120,15 +120,15 @@ class PrivacyNoticeTests(TestCase):
             "is run by Tommaso Rosati and Simon Gabriel in a personal capacity",
             "We are joint controllers",
             'id="named"',
-            "to provide the service you sign up for (contract)",
+            "in performance of our contract with you",
             "in our legitimate interest",
             "to meet our legal obligations",
-            "Render is a US company",
+            "Render is a United States company",
             "Data Privacy Framework and its UK Extension",
             "restrict its use",
-            "in a reusable format",
+            "machine-readable format",
             'id="object"',
-            "You can object at any time",
+            "object at any time",
             "https://ico.org.uk/make-a-complaint/",
             "Anyone, with or without an account",
         ):
@@ -142,11 +142,11 @@ class PrivacyNoticeTests(TestCase):
             response = self.client.get("/privacy/")
             self.assertContains(response, not_offered)
             self.assertNotContains(response, offered)
-            self.assertNotContains(response, "Unverified email signups")
+            self.assertNotContains(response, "Unverified email registrations")
         with override_settings(EMAIL_LOGIN_ENABLED=True):
             response = self.client.get("/privacy/")
             self.assertContains(response, offered)
-            self.assertContains(response, "Unverified email signups are deleted after 7 days")
+            self.assertContains(response, "Unverified email registrations are deleted after seven days")
             self.assertNotContains(response, not_offered)
 
 
