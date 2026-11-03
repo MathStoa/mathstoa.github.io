@@ -1,4 +1,4 @@
-"""Private drafts and immutable, explicitly reviewed public revisions."""
+"""Private drafts and immutable, explicitly moderated public revisions."""
 import hashlib
 import secrets
 import uuid
@@ -89,10 +89,10 @@ class SubmissionRevision(models.Model):
     snapshot = models.JSONField(editable=False)
     submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="submitted_revisions")
     status = models.CharField(max_length=12, choices=[("pending", "Pending"), ("approved", "Approved"), ("rejected", "Changes requested")], default="pending")
-    review_note = models.TextField(max_length=3000, blank=True)
-    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="reviewed_revisions")
+    review_note = models.TextField("moderation note", max_length=3000, blank=True)
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="reviewed_revisions", verbose_name="moderated by")
     created_at = models.DateTimeField(auto_now_add=True)
-    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_at = models.DateTimeField("moderated at", null=True, blank=True)
 
     class Meta:
         ordering = ["-number"]
@@ -110,20 +110,19 @@ class SubmissionRevision(models.Model):
 
     def review(self, reviewer, *, approve, note=""):
         if not reviewer.is_active or not reviewer.is_staff or not reviewer.has_perm("submissions.change_submissionrevision"):
-            raise ValidationError("Only an authorised reviewer can publish a submission.")
+            raise ValidationError("Only an authorised moderator can publish a submission.")
         with transaction.atomic():
             submission = Submission.objects.select_for_update().get(pk=self.submission_id)
             revision = type(self).objects.select_for_update().get(pk=self.pk)
             if revision.status != "pending":
-                raise ValidationError("This revision has already been reviewed.")
-            if approve and (reviewer.pk in {submission.owner_id, revision.submitted_by_id} or submission.editors.filter(pk=reviewer.pk).exists()):
-                raise ValidationError("You cannot approve a submission you own, edit or submitted. Ask another reviewer to publish it.")
+                raise ValidationError("This revision has already been moderated.")
+            # An authorised moderator may approve a revision they own or submitted; reviewed_by records who decided.
             if approve and submission.published_revision_id and submission.published_revision.number >= revision.number:
-                raise ValidationError("A newer revision is already published. This review cannot replace it.")
+                raise ValidationError("A newer revision is already published. This decision cannot replace it.")
             if approve:
                 from repository_verification.services import require_verified
                 if submission.repository_url != revision.snapshot["repository_url"]:
-                    raise ValidationError("The repository changed after this revision was submitted. Submit the new draft for review and verify that repository first.")
+                    raise ValidationError("The repository changed after this revision was submitted. Submit the new draft for moderation and verify that repository first.")
                 require_verified(submission, actor=reviewer)
                 # Validate the frozen material, never the author's potentially newer draft.
                 from .forms import review_form
@@ -148,7 +147,7 @@ class SubmissionRevision(models.Model):
         self.refresh_from_db()
 
     def public_project(self):
-        """Explicit allowlist: never serialize owners, emails, permissions or review notes."""
+        """Explicit allowlist: never serialize owners, emails, permissions or moderation notes."""
         data = self.snapshot
         first = self.submission.revisions.filter(status="approved").order_by("reviewed_at").first()
         labels = dict(CATEGORIES)

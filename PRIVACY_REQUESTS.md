@@ -55,10 +55,10 @@ route without granting access to another person's private submissions.
 - The self-export includes explicit account fields, currently accessible project
   drafts, and conservative metadata for the account's own historic actions and
   verification records. It does not grant staff a wider project export or return
-  historical snapshot contents based on past editor/reviewer status. For broader
+  historical snapshot contents based on past editor or moderator status. For broader
   access/export requests, inspect the person's account metadata, connected provider
   identifiers, supplied email, project ownership/editing rights, submission and
-  review records, invitation involvement, and repository-verification records.
+  moderation records, invitation involvement, and repository-verification records.
   Search supplied collaborator attribution in drafts, revision snapshots and the
   static archive too; it is separate from account identity. Produce a scoped,
   human-readable export, reviewing other people's private data before delivery.
@@ -73,7 +73,7 @@ route without granting access to another person's private submissions.
   Do not assume that being public, or being a scholarly record, settles the request.
 - For closure, first inventory protected references. `Submission.owner` and
   `RepositoryVerification.user` prevent blind user deletion; invitations, editor
-  memberships, submitted/reviewed revisions and staff logs also need review.
+  memberships, submitted and moderated revisions and staff logs also need checking.
   Do not silently transfer a project or remove collaborators' work. Agree any
   replacement steward and their repository authority separately.
 
@@ -85,7 +85,7 @@ route without granting access to another person's private submissions.
   them from the project (below). There is no direct-marketing processing.
 - For restriction (Article 18), for example while the accuracy of a listing or
   an objection is being settled: keep the data but stop using it beyond
-  storage. For a pending revision, do not review it; for a published listing,
+  storage. For a pending revision, do not moderate it; for a published listing,
   remove the person's details with `erase_submission --remove-contributor` or
   erase the submission, as agreed. Tell the requester before lifting a
   restriction.
@@ -116,7 +116,7 @@ verification attempts and evidence, and blanks the description of matching
 admin log entries; accounts are left alone (close them separately, below).
 Contributor removal edits the draft and every revision snapshot in place
 (the only sanctioned exception to revision immutability) and updates a
-published listing immediately without a new review; it refuses to leave a
+published listing immediately without a new moderation decision; it refuses to leave a
 revision with no contributors. If the command warns that the project is also
 in `docs/data/projects.json`, edit and commit that file too. Copy the
 command's final line, which holds no title or names, into the erasure record.

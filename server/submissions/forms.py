@@ -107,7 +107,7 @@ class ContributorsField(forms.Field):
                 orcid = normalize_orcid(orcid)
             except ValidationError as error:
                 raise ValidationError(f"Contributor {number}: {error.messages[0]}") from None
-            # The field is only required when submitting for review, so drafts can hold contributors without one.
+            # The field is only required when submitting for moderation, so drafts can hold contributors without one.
             if self.required and not orcid:
                 raise ValidationError(f"Contributor {number}: add their ORCID iD.")
             if orcid and orcid in seen_orcids:
@@ -141,7 +141,7 @@ class SubmissionForm(forms.ModelForm):
     )
     revision = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
     permission_confirmed = forms.BooleanField(required=False, label="I maintain this project or have permission to submit it and its contributor details, and have the right to publish its abstract under CC BY 4.0.")
-    # Everything else is required before a draft can be submitted for review.
+    # Everything else is required before a draft can be submitted for moderation.
     optional_fields = ("doi", "reading_url", "secondary_categories")
 
     class Meta:

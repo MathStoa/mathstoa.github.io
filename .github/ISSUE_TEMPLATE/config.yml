@@ -2,4 +2,4 @@ blank_issues_enabled: true
 contact_links:
   - name: Read the contribution and credit policy
     url: https://github.com/MathStoa/mathstoa.github.io/blob/main/CONTRIBUTING.md
-    about: Submission requirements, review, corrections, attribution, and project credit.
+    about: Submission requirements, moderation, corrections, attribution, and project credit.

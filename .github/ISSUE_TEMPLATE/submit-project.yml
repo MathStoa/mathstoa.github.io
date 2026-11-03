@@ -1,12 +1,12 @@
 name: Submit a mathematical project
-description: Propose a public project for a reviewed mathStoa listing.
+description: Propose a public project for a moderated mathStoa listing.
 title: "[Project] "
 body:
   - type: markdown
     attributes:
       value: |
         Your repository should contain meaningful mathematical work and ideally a DOI for an archived release ([how to get a DOI for a GitHub repository](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content#issuing-a-persistent-identifier-for-your-repository-with-zenodo)). A public website explaining the project’s aims is optional.
-        Please read [CONTRIBUTING.md](https://github.com/MathStoa/mathstoa.github.io/blob/main/CONTRIBUTING.md). This issue and its review are public; do not include private contact details or correspondence. Submission does not publish a listing automatically.
+        Please read [CONTRIBUTING.md](https://github.com/MathStoa/mathstoa.github.io/blob/main/CONTRIBUTING.md). This issue and its moderation are public; do not include private contact details or correspondence. Submission does not publish a listing automatically.
   - type: input
     id: project-title
     attributes:
@@ -95,5 +95,5 @@ body:
       options:
         - label: I maintain this project or have permission to submit it, have read the submission guidelines, and have the right to publish its abstract under CC BY 4.0.
           required: true
-        - label: I understand that acceptance is an archive review, not mathematical peer review or an endorsement of correctness.
+        - label: I understand that acceptance is archive moderation, not mathematical peer review or an endorsement of correctness.
           required: true

@@ -37,7 +37,7 @@ class SubmissionRevisionAdmin(admin.ModelAdmin):
 
     @admin.display(description="Repository verification")
     def verification_display(self, obj):
-        """Latest proof for the submission, for the reviewer's eyes; approval re-runs the real check."""
+        """Latest proof for the submission, for the moderator's eyes; approval re-runs the real check."""
         from repository_verification.services import has_current_verification
 
         def stamp(value):

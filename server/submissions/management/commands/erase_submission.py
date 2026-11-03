@@ -91,7 +91,7 @@ class Command(BaseCommand):
             if all(matches(person) for person in revision.snapshot["collaborators"]):
                 raise CommandError(f"Revision {revision.number} would have no contributors left. Erase the whole submission instead.")
         if submission.published_revision_id and submission.published_revision in changed_revisions:
-            self.stdout.write("The published listing changes immediately; no new review is created.")
+            self.stdout.write("The published listing changes immediately; no new moderation decision is created.")
         self.warn_static_archive(submission)
         if not execute:
             self.stdout.write("Dry run: nothing changed. Add --execute to remove the contributor.")

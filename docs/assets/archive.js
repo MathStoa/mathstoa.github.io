@@ -126,7 +126,7 @@ function render() {
   projects.replaceChildren(...filtered.map(card));
   if (!filtered.length) projects.append(el('div', {className:'empty-state'},
     el('h3', {}, archive.length ? 'No matching projects' : 'No projects listed'),
-    el('p', {}, archive.length ? 'No projects match this search. Try other terms or clear the filters.' : 'Projects will appear here after review.')));
+    el('p', {}, archive.length ? 'No projects match this search. Try other terms or clear the filters.' : 'Projects will appear here after moderation.')));
   count.textContent = `${filtered.length} ${filtered.length === 1 ? 'project' : 'projects'}`;
   if (state.author) count.textContent += ' with contributions from ' + (contributorNames.get(selectedName) || state.author);
 }

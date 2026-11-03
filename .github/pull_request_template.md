@@ -2,7 +2,7 @@
 
 Describe what readers will see and link to the submission or correction issue, if applicable.
 
-## Archive review, if applicable
+## Archive moderation, if applicable
 
 - [ ] The steward's permission and source links are recorded in the linked issue.
 - [ ] The summary, credits, reuse terms, and contribution preferences match the source.

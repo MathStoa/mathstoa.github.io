@@ -23,10 +23,10 @@ from .staff_mfa import fresh_bound_first_factor, has_primary_factor, has_recent_
 
 
 class PrivacyRequestForm(forms.Form):
-    action = forms.ChoiceField(choices=REQUEST_ACTIONS, label="What would you like us to review?")
+    action = forms.ChoiceField(choices=REQUEST_ACTIONS, label="What would you like us to do?")
     details = forms.CharField(max_length=REQUEST_TEXT_MAX_LENGTH, widget=forms.Textarea(attrs={"rows": 6}), label="Your request", help_text="Describe the information or change. Do not include passwords, sign-in codes or recovery codes.")
     reply_to = forms.EmailField(required=False, max_length=254, label="Reply address (optional)", help_text="Use an address where you want the operator to reply. It stays in this request file and is not added to your account.")
-    confirm = forms.BooleanField(label="I confirm this is the request I want the operator to review, and authorize replies to the address above if supplied.")
+    confirm = forms.BooleanField(label="I confirm this is the request I want the operator to handle, and authorize replies to the address above if supplied.")
 
 
 class VerifyPrivacyRequestForm(forms.Form):

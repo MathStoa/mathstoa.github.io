@@ -8,9 +8,9 @@ An open mathematical research project is a public Git repository containing math
 
 ## Pilot scope
 
-New registrations require a project steward's permission and a human review. A listing or an announcement does not certify a mathematical claim.
+New registrations require a project steward's permission and human moderation. A listing or an announcement does not certify a mathematical claim.
 
-The public archive provides search and subject filters, readable project pages, repository links, and an Atom announcement feed. This repository also includes a Django account and submission service: email-code sign-in, optional ORCID/GitHub/GitLab/institutional sign-in, private drafts, and staff review of versioned submissions. It registers public repository links rather than copying repository contents. Submission and approval require verification of repository control; the initial implementation supports public GitHub repositories. GitLab sign-in is available independently, but verified publication from other repository hosts is not yet supported.
+The public archive provides search and subject filters, readable project pages, repository links, and an Atom announcement feed. This repository also includes a Django account and submission service: email-code sign-in, optional ORCID/GitHub/GitLab/institutional sign-in, private drafts, and staff moderation of versioned submissions. It registers public repository links rather than copying repository contents. Submission and approval require verification of repository control; the initial implementation supports public GitHub repositories. GitLab sign-in is available independently, but verified publication from other repository hosts is not yet supported.
 
 The account service runs on a production host with PostgreSQL and configured sign-in providers or SMTP; publishing this code to GitHub Pages does not activate it. Since 3 November 2026 the service has served <https://math-stoa.org/>, and signed-in submission at `/submissions/new/` is the operational route. The [GitHub submission form](https://github.com/MathStoa/mathstoa.github.io/issues/new?template=submit-project.yml) remains available as the legacy public route. See [SETUP.md](SETUP.md) for the exact setup and limitations.
 
@@ -41,7 +41,7 @@ Commit the updated feed with the archive when the generator changes it.
 ## Content and deployment
 
 - `docs/` holds the public pages and assets. The Django service serves them together with the account routes; the GitHub Pages copy only redirects to the canonical domain.
-- `docs/data/projects.json` holds the existing manually reviewed archive.
+- `docs/data/projects.json` holds the existing manually moderated archive.
 - `server/` contains the Django account and submission service. Approved submission revisions are stored in its database and merged into the public archive and feed when served by Django.
 - `scripts/validate.py` checks the archive contract.
 - `scripts/feed.py` generates the static feed from accepted, non-example entries in the JSON archive.
@@ -51,13 +51,13 @@ Commit the updated feed with the archive when the generator changes it.
 
 The Django service serves both the public site and the account routes at <https://math-stoa.org/>, currently from Render with a PostgreSQL database; see [OPERATIONS.md](OPERATIONS.md). GitHub Pages, built from **branch `main`, folder `/docs`**, now only redirects to that domain through `docs/CNAME`. Project repositories and their contents remain external, and GitHub continues to host the source repository.
 
-For a host move, preserve the canonical domain where possible. If the public URL changes, update `PUBLIC_BASE_URL`, the allowed hosts and trusted origins, provider callbacks, public links, the recovery base URL in `docs/404.html`, and `SITE_URL` in `scripts/feed.py`, then regenerate the static feed. Keep `FEED_ID` unchanged: it is the permanent Atom feed identity, not a navigation link. Back up and migrate the submission database as well as the static archive. Preserve submission issues and review decisions if the GitHub repository also moves. Do not delete the database volume during a routine application update.
+For a host move, preserve the canonical domain where possible. If the public URL changes, update `PUBLIC_BASE_URL`, the allowed hosts and trusted origins, provider callbacks, public links, the recovery base URL in `docs/404.html`, and `SITE_URL` in `scripts/feed.py`, then regenerate the static feed. Keep `FEED_ID` unchanged: it is the permanent Atom feed identity, not a navigation link. Back up and migrate the submission database as well as the static archive. Preserve submission issues and moderation decisions if the GitHub repository also moves. Do not delete the database volume during a routine application update.
 
 ## Accounts and attribution
 
 Users can use the sign-in methods enabled by the operator; an institutional account or ORCID is not required when email sign-in is enabled. Institutions can be connected through a configured OpenID Connect provider or broker; this does not automatically provide access for every university.
 
-Account contact details, sign-in identifiers, and session records are private. Public collaborator attribution is supplied separately and does not grant editing access. Provider profile payloads and OAuth tokens are not retained. An authenticated ORCID links an account to that iD; it does not establish authorship, institutional endorsement, or mathematical correctness. Review the service's `/privacy/` notice and the [data-handling instructions](SETUP.md#data-handling-and-routine-operation) before operating it publicly.
+Account contact details, sign-in identifiers, and session records are private. Public collaborator attribution is supplied separately and does not grant editing access. Provider profile payloads and OAuth tokens are not retained. An authenticated ORCID links an account to that iD; it does not establish authorship, institutional endorsement, or mathematical correctness. Read the service's `/privacy/` notice and the [data-handling instructions](SETUP.md#data-handling-and-routine-operation) before operating it publicly.
 
 ## Credit and reuse
 

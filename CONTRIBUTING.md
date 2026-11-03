@@ -4,9 +4,9 @@ mathStoa lists living mathematical projects hosted in public Git repositories. E
 
 ## Submit a project
 
-Sign in at <https://math-stoa.org/accounts/login/> and use `/submissions/new/`. The available sign-in methods depend on the operator's configuration. Create a private draft, add the project details and public collaborator attribution, verify repository control, review the declaration, and submit it for staff review. A submission is a proposal; it does not immediately change the public archive.
+Sign in at <https://math-stoa.org/accounts/login/> and use `/submissions/new/`. The available sign-in methods depend on the operator's configuration. Create a private draft, add the project details and public collaborator attribution, verify repository control, check the declaration, and submit it for moderation. A submission is a proposal; it does not immediately change the public archive.
 
-If you cannot use the account service, the [GitHub project submission form](https://github.com/MathStoa/mathstoa.github.io/issues/new?template=submit-project.yml) remains available as a legacy route. GitHub issue submissions and their review discussion are public. Do not put private contact details in that form or its discussion.
+If you cannot use the account service, the [GitHub project submission form](https://github.com/MathStoa/mathstoa.github.io/issues/new?template=submit-project.yml) remains available as a legacy route. GitHub issue submissions and their moderation discussion are public. Do not put private contact details in that form or its discussion.
 
 A registered project should have:
 
@@ -20,7 +20,7 @@ A registered project should have:
 
 Only submit a registration if you maintain the project or have a steward's permission. You may suggest a public project for consideration without that permission, but clearly mark the suggestion as unaffiliated in a general issue; it cannot become a registered project on that basis. The pilot's public examples are expressly labelled and excluded from announcements.
 
-The account service initially verifies public GitHub repositories through a verification file committed to the repository or a separate GitHub authorisation check. Follow the verification instructions shown for your draft. Logging in with GitHub or listing a repository URL alone does not verify repository control. Other hosts cannot be published through this service until their verification methods are supported, even when they are offered as sign-in providers. Verification is required again by the review process; it does not replace the submitter's permission declaration or establish agreement from every collaborator.
+The account service initially verifies public GitHub repositories through a verification file committed to the repository or a separate GitHub authorisation check. Follow the verification instructions shown for your draft. Logging in with GitHub or listing a repository URL alone does not verify repository control. Other hosts cannot be published through this service until their verification methods are supported, even when they are offered as sign-in providers. Verification is required again during moderation; it does not replace the submitter's permission declaration or establish agreement from every collaborator.
 
 List every contributor, including yourself, by name and surname and ORCID iD. Anyone can [register for an ORCID iD](https://orcid.org/register) free of charge. Confirm that you are authorised to publish the attribution you supply, and keep personal email addresses and private correspondence out of these public fields. Entering someone else's ORCID iD does not authenticate that person or confirm their agreement.
 
@@ -30,11 +30,11 @@ Choose one main subject and, if the project spans several areas, up to three fur
 
 The DOI identifies the archived release that a listing announces; a mutable repository URL is not an archival snapshot.
 
-## Review and corrections
+## Moderation and corrections
 
-mathStoa maintainers check scope, readable content, public links and any DOI, permission to register, attribution, and clarity of the requested collaboration. They may ask for revisions or decline an empty, misleading, duplicate, or out-of-scope submission. This is an archive review, not mathematical peer review.
+mathStoa maintainers check scope, readable content, public links and any DOI, permission to register, attribution, and clarity of the requested collaboration. They may ask for revisions or decline an empty, misleading, duplicate, or out-of-scope submission. This is archive moderation, not mathematical peer review.
 
-In the account service, submitting a draft creates a fixed revision for staff review. Staff can approve it or request changes. A previously approved revision remains public while an update is being reviewed; editing a draft does not silently replace the published listing. Review decisions are retained with the submitted revision. Legacy submissions retain their decisions in the GitHub issue or pull request.
+In the account service, submitting a draft creates a fixed revision for moderation. Staff can approve it or request changes. A previously approved revision remains public while an update is being moderated; editing a draft does not silently replace the published listing. Moderation decisions are retained with the submitted revision. Legacy submissions retain their decisions in the GitHub issue or pull request.
 
 To correct a listing, report a credit problem, or appeal a decision, open an issue with the project ID and relevant public evidence, or use the private contact route in the service's privacy notice when the request includes private information. Avoid posting private contact details or confidential correspondence. A maintainer should record the resolution and explain material changes. A steward can request removal or other changes through the same route.
 
@@ -55,27 +55,27 @@ The project steward should state these rules before inviting contributions. math
 
 ### Account-service submissions
 
-1. Review the submitted revision in the Django administration interface at `/admin/`. Confirm repository-control verification and the steward's permission, the public repository link, that any DOI resolves to an archived release of that repository, the website link if one is given, the original summary, contributor attribution, subject categories, and the reuse terms and contribution policy stated in the repository.
-2. Record the review note and use the revision's approval or request-changes action. Review the fixed submitted snapshot, not a later working draft. Approval publishes that revision to the database-backed archive and feed; requesting changes leaves any previously approved version public.
-3. Inspect the resulting public listing and announcement. Illustrative examples remain excluded from announcements. Handle corrections through a new reviewed revision, and retain a clear record of removal or attribution decisions.
-4. Keep backups and run the retention commands described in [SETUP.md](SETUP.md). Drafts and review revisions are not automatically deleted when a session or invitation expires. Handle account and attribution requests according to the published privacy policy.
+1. Open the submitted revision in the Django administration interface at `/admin/`. Confirm repository-control verification and the steward's permission, the public repository link, that any DOI resolves to an archived release of that repository, the website link if one is given, the original summary, contributor attribution, subject categories, and the reuse terms and contribution policy stated in the repository.
+2. Record the moderation note and use the revision's approval or request-changes action. Judge the fixed submitted snapshot, not a later working draft. Approval publishes that revision to the database-backed archive and feed; requesting changes leaves any previously approved version public.
+3. Inspect the resulting public listing and announcement. Illustrative examples remain excluded from announcements. Handle corrections through a new moderated revision, and retain a clear record of removal or attribution decisions.
+4. Keep backups and run the retention commands described in [SETUP.md](SETUP.md). Drafts and submitted revisions are not automatically deleted when a session or invitation expires. Handle account and attribution requests according to the published privacy policy.
 
 Moderation rules:
 
-- Decide within a week of submission. The site header shows reviewers a **Review queue** count, and a moderation mailbox can receive a notice for every submitted revision (see [SETUP.md](SETUP.md)).
-- One reviewer is enough to publish, but nobody approves a project they own, edit or submitted; the service refuses such an approval. Ask the other reviewer.
-- Every decision carries a review note. The note is the only message the submitter receives: accounts created through ORCID, GitHub or GitLab hold no email address, so submitters read the outcome on their draft page.
+- Decide within a week of submission. The site header shows moderators a **Moderation queue** count, and a moderation mailbox can receive a notice for every submitted revision (see [SETUP.md](SETUP.md)).
+- One moderator is enough to publish, and a moderator may approve a project they own or submitted themselves; every decision records who made it.
+- Every decision carries a moderation note. The note is the only message the submitter receives: accounts created through ORCID, GitHub or GitLab hold no email address, so submitters read the outcome on their draft page.
 - "Request changes" is also how to decline. State the reason, including out-of-scope or duplicate listings, so the submitter can respond or stop.
 - Never approve a test or demonstration draft; use "Request changes" to clear it from the queue.
 
 ### Legacy JSON archive
 
-1. Review the issue and confirm the steward's permission. Keep source links and the review decision in the issue.
+1. Read the issue and confirm the steward's permission. Keep source links and the moderation decision in the issue.
 2. Add or update the entry in `docs/data/projects.json`, following the existing structure. Use a stable, unique project ID. Record the actual acceptance date in `added`; keep `example: true` for illustrative entries and use `false` only for accepted registrations.
 3. Confirm that the title, summary, DOI, category labels, and project credits accurately reflect the source and submission. Record any DOI as an `https://doi.org/` link in `doi`; `doi` and `readingUrl` are optional. Do not copy research content into the archive.
 4. Run `python3 scripts/validate.py`, `python3 scripts/feed.py`, and `python3 -m unittest discover -s tests -v`.
 5. Preview with `python3 -m http.server 4173 --directory docs`, inspect the listing and links, and include any changed generated feed in the pull request.
-6. Merge the reviewed change into `main` and link the published listing from the submission issue.
+6. Merge the change into `main` and link the published listing from the submission issue.
 
 Ordinary repository commits do not create archive announcements. The initial feed announces accepted registrations, excluding examples; a richer release-announcement policy can be added when the pilot needs it.
 

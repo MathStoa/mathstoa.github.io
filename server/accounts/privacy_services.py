@@ -176,7 +176,7 @@ def account_export(user):
         if revision.submitted_by_id == user.pk:
             actions.append({"action": "submitted", "project_id": str(revision.submission_id), "revision": revision.number, "at": _date(revision.created_at)})
         if revision.reviewed_by_id == user.pk:
-            actions.append({"action": "reviewed", "project_id": str(revision.submission_id), "revision": revision.number, "at": _date(revision.reviewed_at)})
+            actions.append({"action": "moderated", "project_id": str(revision.submission_id), "revision": revision.number, "at": _date(revision.reviewed_at)})
     proofs = [{
         "project_id": str(row.submission_id), "method": row.method,
         "repository_url": row.repository_url, "repository_id": row.repository_id,
@@ -192,7 +192,7 @@ def account_export(user):
     } for row in VerificationAttempt.objects.filter(user=user).order_by("pk")]
     return {
         "format": "mathstoa-account-data", "version": 1, "generated_at": _date(timezone.now()),
-        "scope": "Account data and project drafts you can currently access. Historical snapshots, other people's information, and broader access requests require operator review.",
+        "scope": "Account data and project drafts you can currently access. Historical snapshots, other people's information, and broader access requests are handled by the operator on request.",
         "account": {"id": str(user.pk), "username": user.username, "email": user.email, "created_at": _date(user.date_joined), "last_sign_in": _date(user.last_login)},
         "sign_in_methods": [{"provider": row.provider, "account_id": row.uid, "connected_at": _date(row.date_joined), "last_sign_in": _date(row.last_login)} for row in SocialAccount.objects.filter(user=user).order_by("pk")],
         "email_addresses": list(EmailAddress.objects.filter(user=user).order_by("pk").values("email", "verified", "primary")),

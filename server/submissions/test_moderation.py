@@ -1,4 +1,4 @@
-"""Moderation aids: review-queue count, self-approval guard, admin evidence and notices."""
+"""Moderation aids: moderation-queue count, self-approval, admin evidence and notices."""
 import sys
 from datetime import timedelta
 from types import ModuleType
@@ -43,45 +43,68 @@ class ReviewQueueTests(TestCase):
     def test_reviewers_see_the_pending_count_in_the_header(self):
         self.client.force_login(self.reviewer)
         response = self.client.get(reverse("submissions:list"))
-        self.assertContains(response, "Review queue (1)")
+        self.assertContains(response, "Moderation queue (1)")
         self.assertContains(response, self.queue_link)
         SubmissionRevision.objects.update(status="rejected")
         response = self.client.get(reverse("submissions:list"))
-        self.assertContains(response, "Review queue</a>")
-        self.assertNotContains(response, "Review queue (")
+        self.assertContains(response, "Moderation queue</a>")
+        self.assertNotContains(response, "Moderation queue (")
 
     def test_other_users_do_not_see_the_queue(self):
         self.client.force_login(self.owner)
-        self.assertNotContains(self.client.get(reverse("submissions:list")), "Review queue")
+        self.assertNotContains(self.client.get(reverse("submissions:list")), "Moderation queue")
         staff_without_permission = get_user_model().objects.create_user(username="queue-staff", is_staff=True)
         self.client.force_login(staff_without_permission)
-        self.assertNotContains(self.client.get(reverse("submissions:list")), "Review queue")
+        self.assertNotContains(self.client.get(reverse("submissions:list")), "Moderation queue")
         self.client.logout()
-        self.assertNotContains(self.client.get(reverse("account_login")), "Review queue")
+        self.assertNotContains(self.client.get(reverse("account_login")), "Moderation queue")
 
 
-class SelfReviewTests(TestCase):
+class SelfModerationTests(TestCase):
+    """An authorised moderator may approve a revision they own or submitted; the decision records who made it."""
+
     def setUp(self):
-        self.owner = reviewer("owner-reviewer")
-        self.editor = reviewer("editor-reviewer")
-        self.former_editor = reviewer("former-editor")
-        self.submission = Submission.objects.create(owner=self.owner, title="Own project", repository_url="https://github.com/example/own")
-        self.submission.editors.add(self.editor)
-        self.revision = revision_for(self.submission, submitted_by=self.former_editor)
+        self.owner = reviewer("owner-moderator")
+        self.submitter = reviewer("submitting-moderator")
+        self.submission = Submission.objects.create(
+            owner=self.owner, title="Own project", repository_url="https://github.com/example/own",
+            abstract="These research notes explore a mathematical question, explain the current partial results, and describe useful future work.",
+            category="math.PR", collaborators=[{"name": "Anna, Example", "orcid": "https://orcid.org/0000-0002-1825-0097", "email": "anna@university.example"}],
+            permission_confirmed=True, license_confirmed=True,
+        )
+        self.revision = revision_for(self.submission, submitted_by=self.submitter)
+        # Ownership proof has its own tests; isolate the moderation path.
+        verification = ModuleType("repository_verification.services")
+        verification.require_verified = Mock(return_value=None)
+        verification.has_current_verification = Mock(return_value=True)
+        patcher = patch.dict(sys.modules, {"repository_verification.services": verification})
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
-    def test_owner_editor_and_submitter_cannot_approve(self):
-        for user in (self.owner, self.editor, self.former_editor):
-            with self.subTest(user=user.username), self.assertRaisesRegex(ValidationError, "own, edit or submitted"):
-                self.revision.review(user, approve=True)
+    def assert_published_by(self, moderator):
         self.revision.refresh_from_db()
         self.submission.refresh_from_db()
-        self.assertEqual(self.revision.status, "pending")
-        self.assertIsNone(self.submission.published_revision)
+        self.assertEqual(self.revision.status, "approved")
+        self.assertEqual(self.revision.reviewed_by, moderator)
+        self.assertEqual(self.submission.published_revision, self.revision)
 
-    def test_involved_reviewer_can_still_request_changes(self):
+    def test_owner_can_approve_their_own_revision(self):
+        self.revision.review(self.owner, approve=True, note="Checked my own listing.")
+        self.assert_published_by(self.owner)
+
+    def test_submitter_can_approve_the_revision_they_submitted(self):
+        self.revision.review(self.submitter, approve=True)
+        self.assert_published_by(self.submitter)
+
+    def test_owner_can_request_changes_on_their_own_revision(self):
         self.revision.review(self.owner, approve=False, note="Withdrawn by the owner.")
         self.assertEqual(self.revision.status, "rejected")
         self.assertEqual(self.revision.reviewed_by, self.owner)
+
+    def test_a_moderated_revision_cannot_be_decided_twice(self):
+        self.revision.review(self.owner, approve=True)
+        with self.assertRaisesRegex(ValidationError, "already been moderated"):
+            self.revision.review(self.submitter, approve=False, note="Too late.")
 
 
 class AdminEvidenceTests(TestCase):

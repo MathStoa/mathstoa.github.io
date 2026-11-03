@@ -86,14 +86,14 @@ registration does not disable existing accounts' configured sign-in methods.
 Local `DJANGO_DEBUG=1` development defaults to open registration without requiring
 a contact address.
 
-Set `MODERATION_NOTIFY_EMAIL` to the reviewers' mailbox to receive one email per
-submitted revision, carrying the project title and a link to the review page and
+Set `MODERATION_NOTIFY_EMAIL` to the moderators' mailbox to receive one email per
+submitted revision, carrying the project title and a link to its administration page and
 nothing about the submitter's account. Sending needs the SMTP settings above and
 `DEFAULT_FROM_EMAIL`, even while email sign-in stays disabled; without them the
-notice is skipped, and the **Review queue** count in the site header and the
+notice is skipped, and the **Moderation queue** count in the site header and the
 pending filter in the admin remain the way to find submissions. A failed send is
 logged and never blocks a submission. A role address on the site's domain,
-forwarded to every reviewer, suits both this setting and `PUBLIC_CONTACT_EMAIL`.
+forwarded to every moderator, suits both this setting and `PUBLIC_CONTACT_EMAIL`.
 
 ## Register sign-in providers
 
@@ -148,7 +148,7 @@ GitLab sign-in remains an account option, but it does not enable verified
 publication of GitLab repositories. Repositories on other hosts cannot be
 published until a corresponding verification method is implemented. Verification
 also does not establish agreement from all collaborators or mathematical
-correctness; the submitter's declaration and staff review still apply.
+correctness; the submitter's declaration and moderation still apply.
 
 ## Start the production service
 
@@ -215,7 +215,7 @@ contact. Test that mailbox handoff and operator verification before opening
 public registration.
 
 mathStoa retains stable sign-in identifiers, account details, session data,
-private contact email where supplied, and submission/review records. Public
+private contact email where supplied, and submission and moderation records. Public
 collaborator names, affiliations, roles, and ORCID iDs remain personal data.
 Provider profile payloads are stripped rather than retained in
 `SocialAccount.extra_data`; OAuth access and refresh tokens are not stored.
@@ -295,11 +295,11 @@ to 1–30 days (default 30). Repository and owner identities are rechecked befor
 submission and approval; continuing individual collaborator permissions require
 a new authorization check after the evidence expires.
 
-Staff review fixed submitted revisions in `/admin/`, using the approval or
+Staff moderate fixed submitted revisions in `/admin/`, using the approval or
 request-changes action. Approved revisions are merged with the existing static
 archive for the public project data and announcement feed. Editing a draft or
 requesting changes to an update leaves the previously approved revision public.
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the review workflow.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the moderation workflow.
 
 Back up PostgreSQL to access-controlled storage, test restoration, and define a
 retention period for backups and operational logs. The supplied Gunicorn access

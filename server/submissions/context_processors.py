@@ -1,4 +1,4 @@
-"""Size of the review queue for reviewers' navigation; nothing for anyone else."""
+"""Size of the moderation queue for moderators' navigation; nothing for anyone else."""
 from .models import SubmissionRevision
 
 

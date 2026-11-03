@@ -62,7 +62,7 @@ CSRF_TRUSTED_ORIGINS = [u.strip() for u in os.environ.get("DJANGO_CSRF_TRUSTED_O
 if render_origin and render_origin not in CSRF_TRUSTED_ORIGINS:
     CSRF_TRUSTED_ORIGINS.append(render_origin)
 PUBLIC_CONTACT_EMAIL = os.environ.get("PUBLIC_CONTACT_EMAIL", "").strip()
-# Reviewers' mailbox for one notice per submitted revision; blank disables the notice.
+# Moderators' mailbox for one notice per submitted revision; blank disables the notice.
 MODERATION_NOTIFY_EMAIL = os.environ.get("MODERATION_NOTIFY_EMAIL", "").strip()
 if MODERATION_NOTIFY_EMAIL:
     try:
