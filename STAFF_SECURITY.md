@@ -50,6 +50,10 @@ and sign back in. Viewing the account page and ordinary submission work remain
 available. GitHub repository verification does not link a sign-in method and
 continues through its separate nonce-checked flow.
 
+For access, export, correction and closure requests, follow the separate
+[privacy-request procedure](PRIVACY_REQUESTS.md). An MFA recovery request does not
+authorize disclosure or deletion of account data.
+
 ## Encryption and retained data
 
 The service encrypts TOTP secrets, recovery-code seeds, and entire server-side

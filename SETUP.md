@@ -190,6 +190,10 @@ gunicorn --chdir server config.wsgi:application --bind 127.0.0.1:8000 --workers 
 
 ## Data handling and routine operation
 
+Use the [privacy-request procedure](PRIVACY_REQUESTS.md) for access, export,
+correction and account closure. Confirm its manual identity-check and delivery
+steps before opening public registration.
+
 MathStoa retains stable sign-in identifiers, account details, session data,
 private contact email where supplied, and submission/review records. Public
 collaborator names, affiliations, roles, and ORCID iDs remain personal data.
