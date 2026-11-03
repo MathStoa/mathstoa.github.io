@@ -5,7 +5,7 @@
   <div class="submission-form-panel">
     <a class="back-link" href="{% if submission %}{% url 'submissions:detail' pk=submission.pk %}{% else %}{% url 'submissions:list' %}{% endif %}">← {% if submission %}Back to submission{% else %}My submissions{% endif %}</a>
     <h1>{% if submission %}Edit your submission{% else %}Submit a project{% endif %}</h1>
-    <p class="lede">Introduce the mathematical work and link to its public repository. Save a draft now and submit it for review when it is ready.</p>
+    <p class="lede">Introduce the mathematical work and link to its public repository.</p>
     {% if submission.published_revision %}<p class="notice">Your accepted listing stays public while you edit this draft. Changes appear in the archive after a new review.</p>{% endif %}
     <form method="post" action="{% if submission %}{% url 'submissions:edit' pk=submission.pk %}{% else %}{% url 'submissions:create' %}{% endif %}" class="submission-form" novalidate>
       {% csrf_token %}

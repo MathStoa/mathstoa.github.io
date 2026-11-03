@@ -14,7 +14,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .forms import DOI_GUIDE_URL, ORCID_REGISTER_URL, SubmissionForm, normalize_doi, normalize_orcid
-from .models import EditorInvitation, Submission, SubmissionRevision
+from .models import EditorInvitation, Submission, SubmissionRevision, display_name
 
 
 class SubmissionTests(TestCase):
@@ -37,7 +37,7 @@ class SubmissionTests(TestCase):
             "title": "Probability research notes", "repository_url": "https://github.com/example/research",
             "doi": "10.5281/zenodo.1234567",
             "reading_url": "https://example.org/research", "abstract": "These research notes explore a mathematical question, explain the current partial results, and describe useful future work.",
-            "category": "math.PR", "collaborators-name": "Anna", "collaborators-orcid": "0000-0002-1825-0097", "collaborators-email": "anna@university.example",
+            "category": "math.PR", "collaborators-name": "Anna, Example", "collaborators-orcid": "0000-0002-1825-0097", "collaborators-email": "anna@university.example",
             "permission_confirmed": "on", "revision": "1",
         }
 
@@ -51,8 +51,20 @@ class SubmissionTests(TestCase):
         self.assertEqual(response.status_code, 302)
         return submission.revisions.get(number=submission.revision)
 
+    def test_review_needs_first_names_and_surname_separated_by_a_comma(self):
+        for name in ("Anna Example", "Anna, ", ", Example", "Anna, Maria, Example"):
+            with self.subTest(name=name):
+                form = SubmissionForm({**self.payload, "collaborators-name": name}, for_submission=True)
+                self.assertEqual(form.errors["collaborators"], ["Contributor 1: write the name as first names, a comma, then the surname."])
+        self.assertTrue(SubmissionForm({**self.payload, "collaborators-name": "Anna Example"}).is_valid())
+        form = SubmissionForm({**self.payload, "collaborators-name": "Anna  Maria ,Example"}, for_submission=True)
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data["collaborators"][0]["name"], "Anna  Maria, Example")
+        self.assertEqual(display_name("Anna Maria, Example"), "Anna Maria Example")
+        self.assertEqual(display_name("Anna"), "Anna")
+
     def test_review_needs_a_valid_email_for_each_contributor_and_keeps_it_private(self):
-        rows = {"collaborators-name": ["Anna", "Ben"], "collaborators-orcid": ["0000-0002-1825-0097", "0000-0001-5109-3700"]}
+        rows = {"collaborators-name": ["Anna, Example", "Ben, Example"], "collaborators-orcid": ["0000-0002-1825-0097", "0000-0001-5109-3700"]}
         self.assertTrue(SubmissionForm({**self.payload, **rows, "collaborators-email": ["anna@university.example", ""]}).is_valid())
         form = SubmissionForm({**self.payload, **rows, "collaborators-email": ["anna@university.example", ""]}, for_submission=True)
         self.assertEqual(form.errors["collaborators"], ["Contributor 2: add their institutional email."])
@@ -119,7 +131,7 @@ class SubmissionTests(TestCase):
         self.assertContains(response, "DOI <span>(optional)</span>")
         self.assertContains(response, "Project website <span>(optional)</span>")
         self.assertContains(response, "(optional)", count=2)
-        self.assertContains(response, 'placeholder="e.g. Formalising the Sensitivity Conjecture in Lean"')
+        self.assertContains(response, 'placeholder="Formalising the Sensitivity Conjecture in Lean"')
         self.assertNotContains(response, "Required to save a draft")
         self.assertNotContains(response, "optional in a draft")
         self.assertContains(response, DOI_GUIDE_URL)
@@ -133,7 +145,7 @@ class SubmissionTests(TestCase):
                 self.assertIn(field, form.errors)
 
     def test_each_contributor_needs_an_orcid_for_review_but_not_for_a_draft(self):
-        rows = {"collaborators-name": ["Anna", "Ben"], "collaborators-orcid": ["0000-0002-1825-0097", ""], "collaborators-email": ["anna@university.example", "ben@university.example"]}
+        rows = {"collaborators-name": ["Anna, Example", "Ben, Example"], "collaborators-orcid": ["0000-0002-1825-0097", ""], "collaborators-email": ["anna@university.example", "ben@university.example"]}
         self.assertTrue(SubmissionForm({**self.payload, **rows}).is_valid())
         form = SubmissionForm({**self.payload, **rows}, for_submission=True)
         self.assertFalse(form.is_valid())
@@ -324,7 +336,7 @@ class SubmissionTests(TestCase):
         for secret in (self.owner.email, self.staff.email, "Private editorial note", "token_hash", "submitted_by", "owner_id"):
             self.assertNotContains(response, secret)
         project = next(p for p in response.json()["projects"] if p["id"] == submission.public_id)
-        self.assertEqual(project["credits"], [{"name": "Anna", "orcid": "https://orcid.org/0000-0002-1825-0097"}])
+        self.assertEqual(project["credits"], [{"name": "Anna Example", "orcid": "https://orcid.org/0000-0002-1825-0097"}])
         self.assertEqual(project["doi"], "https://doi.org/10.5281/zenodo.1234567")
         self.assertEqual(project["readingUrl"], "https://example.org/research")
         self.assertFalse(project["example"])
@@ -467,7 +479,7 @@ class VerificationBoundaryTests(TestCase):
             owner=self.owner, title="Verified repository", repository_url="https://github.com/example/research",
             doi="https://doi.org/10.5281/zenodo.1234567",
             reading_url="https://example.org/research", abstract="A mathematical project with enough explanatory detail to make its research question and current results clear to readers.",
-            category="math.PR", collaborators=[{"name": "Contributor", "orcid": "https://orcid.org/0000-0002-1825-0097", "email": "contributor@university.example"}],
+            category="math.PR", collaborators=[{"name": "Ada, Contributor", "orcid": "https://orcid.org/0000-0002-1825-0097", "email": "contributor@university.example"}],
             permission_confirmed=True, license_confirmed=True,
         )
 

@@ -93,7 +93,12 @@ class ContributorsField(forms.Field):
             if not name and not orcid and not email:
                 continue
             if not name:
-                raise ValidationError(f"Contributor {number}: add a name and surname.")
+                raise ValidationError(f"Contributor {number}: add their first names and surname.")
+            first, comma, surname = name.partition(",")
+            if comma and "," not in surname:
+                name = f"{first.strip()}, {surname.strip()}"
+            if self.required and not (comma and first.strip() and surname.strip() and "," not in surname):
+                raise ValidationError(f"Contributor {number}: write the name as first names, a comma, then the surname.")
             if len(name) > 200:
                 raise ValidationError(f"Contributor {number}: the name must be at most 200 characters.")
             if any(ord(char) < 32 for char in name):
@@ -127,7 +132,7 @@ class ContributorsField(forms.Field):
 class SubmissionForm(forms.ModelForm):
     collaborators = ContributorsField(
         label="Contributors", required=False,
-        help_text=format_html('Add everyone who contributed to the project, including yourself, with their ORCID iD and institutional email. Anyone can <a href="{}" target="_blank" rel="noopener noreferrer">register for an ORCID iD</a> free of charge. Email addresses are never published; each contributor receives a confirmation when the project is submitted for review.', ORCID_REGISTER_URL),
+        help_text=format_html('Add everyone who contributed to the project, including yourself, with their ORCID iD and institutional email. Write each name as first names, a comma, then the surname. Anyone can <a href="{}" target="_blank" rel="noopener noreferrer">register for an ORCID iD</a> free of charge. Email addresses are never published; each contributor receives a confirmation when the project is submitted for review.', ORCID_REGISTER_URL),
     )
     revision = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
     permission_confirmed = forms.BooleanField(required=False, label="I maintain this project or have permission to submit it and its contributor details, and have the right to publish its abstract under CC BY 4.0.")
@@ -144,7 +149,10 @@ class SubmissionForm(forms.ModelForm):
             "abstract": "80–1,500 characters when submitting for review.",
         }
         widgets = {
-            "title": forms.TextInput(attrs={"placeholder": "e.g. Formalising the Sensitivity Conjecture in Lean"}),
+            "title": forms.TextInput(attrs={"placeholder": "Formalising the Sensitivity Conjecture in Lean"}),
+            "repository_url": forms.URLInput(attrs={"placeholder": "https://github.com/owner/sensitivity-lean"}),
+            "doi": forms.TextInput(attrs={"placeholder": "10.5281/zenodo.1234567"}),
+            "reading_url": forms.URLInput(attrs={"placeholder": "https://owner.github.io/sensitivity-lean/"}),
             "abstract": forms.Textarea(attrs={"rows": 5}),
         }
 

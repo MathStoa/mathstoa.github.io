@@ -13,6 +13,8 @@ from django.core.mail import EmailMessage, send_mail
 from django.urls import reverse
 from django.utils import timezone
 
+from .models import display_name
+
 logger = logging.getLogger(__name__)
 
 
@@ -65,7 +67,7 @@ def notify_contributors(revision):
     if not people:
         return 0
     title = _title(revision)
-    names = "\n".join(f"- {person['name']}" for person in revision.snapshot["collaborators"])
+    names = "\n".join(f"- {display_name(person['name'])}" for person in revision.snapshot["collaborators"])
     when = timezone.localtime(revision.created_at or timezone.now()).strftime("%d %B %Y")
     base = settings.PUBLIC_BASE_URL.rstrip("/")
     contact = settings.PUBLIC_CONTACT_EMAIL

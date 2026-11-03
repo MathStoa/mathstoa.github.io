@@ -205,8 +205,8 @@ class ContributorConfirmationTests(TestCase):
     def setUp(self):
         SubmitNoticeTests.setUp(self)
         self.submission.collaborators = [
-            {"name": "Anna Example", "orcid": "https://orcid.org/0000-0002-1825-0097", "email": "anna@university.example"},
-            {"name": "Ben Example", "orcid": "", "email": "ben@institute.example"},
+            {"name": "Anna, Example", "orcid": "https://orcid.org/0000-0002-1825-0097", "email": "anna@university.example"},
+            {"name": "Ben, Example", "orcid": "", "email": "ben@institute.example"},
         ]
         self.submission.save()
 

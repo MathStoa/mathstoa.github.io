@@ -18,6 +18,14 @@ CATEGORIES = [
     ("math.NT", "Number theory"), ("math.PR", "Probability"),
     ("cs.LO", "Lean formalisation"), ("math.GM", "General mathematics"),
 ]
+
+
+def display_name(name):
+    """Contributors enter "First names, surname"; the public sees "First names surname"."""
+    first, comma, surname = name.partition(",")
+    return f"{first.strip()} {surname.strip()}" if comma else name
+
+
 # Submitted revisions freeze these fields. Older snapshots may hold fields that have since been removed.
 SNAPSHOT_FIELDS = ("title", "repository_url", "doi", "reading_url", "abstract", "category", "collaborators")
 
@@ -142,7 +150,7 @@ class SubmissionRevision(models.Model):
             # The DOI and website are optional.
             **{key: data[name] for key, name in (("doi", "doi"), ("readingUrl", "reading_url")) if data.get(name)},
             "credits": [
-                {"name": author["name"], **({"orcid": author["orcid"]} if author.get("orcid") else {})}
+                {"name": display_name(author["name"]), **({"orcid": author["orcid"]} if author.get("orcid") else {})}
                 for author in data["collaborators"]
             ],
             "added": (first.reviewed_at if first else self.reviewed_at or timezone.now()).date().isoformat(),
