@@ -2,7 +2,7 @@
 
 A small, curated archive of living mathematical research: open questions, expository projects, formalizations, and research notes that live in public Git repositories.
 
-[Visit the pilot](https://mathstoa.github.io/) · [Submit a project](https://github.com/MathStoa/mathstoa.github.io/issues/new?template=submit-project.yml) · [Contribution policy](CONTRIBUTING.md)
+[Visit the pilot](https://math-stoa.org/) · [Submit a project](https://github.com/MathStoa/mathstoa.github.io/issues/new?template=submit-project.yml) · [Contribution policy](CONTRIBUTING.md)
 
 An open mathematical research project is a public Git repository containing mathematical work that can continue to develop, linked to a public website explaining its aims. MathStoa is intended for research carried out with AI, including articles written by AI that can be studied, corrected, extended, and used in further research.
 
@@ -47,7 +47,7 @@ Commit the updated feed with the archive when the generator changes it.
 - `tests/` checks the validation and feed behavior.
 - `.github/ISSUE_TEMPLATE/submit-project.yml` collects proposed listings.
 
-Publish with GitHub Pages from **branch `main`, folder `/docs`**. The pilot address is <https://mathstoa.github.io/>. Project repositories and their contents remain external.
+Publish with GitHub Pages from **branch `main`, folder `/docs`**. The pilot address is <https://math-stoa.org/>. Project repositories and their contents remain external.
 
 To move the site, serve the contents of `docs/` from another static host, update the public site and submission links, update the recovery base URL in `docs/404.html`, change `SITE_URL` in `scripts/feed.py`, and regenerate the feed. Keep `FEED_ID` unchanged: it is the permanent Atom feed identity, not a navigation link. The archive is ordinary JSON and can be exported or imported independently of this interface. A later submission service or database can use the same stable project IDs; the current site has no application server or database to migrate. Preserve the submission issues or export their decisions if the GitHub repository also moves.
 

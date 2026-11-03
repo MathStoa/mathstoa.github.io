@@ -12,7 +12,7 @@ try:
 except ImportError:
     from validate import ARCHIVE, ROOT, load_archive, validate_archive
 
-SITE_URL = "https://mathstoa.github.io/"
+SITE_URL = "https://math-stoa.org/"
 # Atom identity is permanent even when the feed moves to another host.
 FEED_ID = "https://rosati-tom.github.io/mathstoa/"
 FEED_PATH = ROOT / "docs" / "feed.xml"

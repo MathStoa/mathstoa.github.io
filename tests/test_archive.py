@@ -93,10 +93,10 @@ class ArchiveTests(unittest.TestCase):
         root = ET.fromstring(render_feed(self.data))
         self.assertEqual(root.find(f"{{{ATOM}}}id").text, "https://rosati-tom.github.io/mathstoa/")
         links = {link.attrib["rel"]: link.attrib["href"] for link in root.findall(f"{{{ATOM}}}link")}
-        self.assertEqual(links["self"], "https://mathstoa.github.io/feed.xml")
-        self.assertEqual(links["alternate"], "https://mathstoa.github.io/")
+        self.assertEqual(links["self"], "https://math-stoa.org/feed.xml")
+        self.assertEqual(links["alternate"], "https://math-stoa.org/")
         entry = root.find(f"{{{ATOM}}}entry")
-        self.assertEqual(entry.find(f"{{{ATOM}}}link").attrib["href"], "https://mathstoa.github.io/project.html?id=test-project")
+        self.assertEqual(entry.find(f"{{{ATOM}}}link").attrib["href"], "https://math-stoa.org/project.html?id=test-project")
         with patch("scripts.feed.SITE_URL", "https://research.example.org/mathstoa/"):
             moved = ET.fromstring(render_feed(self.data))
         self.assertEqual(moved.find(f"{{{ATOM}}}id").text, root.find(f"{{{ATOM}}}id").text)
