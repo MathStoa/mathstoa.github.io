@@ -4,6 +4,7 @@
 {% block content %}
   <h1>Your account</h1>
   <p>Connected sign-in methods all open this same MathStoa account and its submissions.</p>
+  <p class="form-note">To add or remove a sign-in method, sign in using an existing method within the last five minutes. If needed, sign out and sign in again first.</p>
   <section class="account-section">
     <h2>Connected accounts</h2>
     {% if form.accounts %}
@@ -42,5 +43,6 @@
     </section>
   {% endif %}
   {% if email_login_enabled %}<p><a href="{% url 'account_email' %}">Manage your private email address</a></p>{% endif %}
+  <p><a href="{% url 'mfa_index' %}">Set up or manage your authenticator</a></p>
   <p><a href="{% url 'submissions:list' %}">View my submissions</a></p>
 {% endblock %}

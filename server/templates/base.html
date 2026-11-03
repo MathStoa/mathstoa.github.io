@@ -20,6 +20,7 @@
       {% if user.is_authenticated %}
         <a href="{% url 'submissions:list' %}">My submissions</a>
         <a href="{% url 'socialaccount_connections' %}">Account</a>
+        {% if user.is_staff %}<a href="{% url 'admin:index' %}">Administration</a>{% endif %}
         <form method="post" action="{% url 'account_logout' %}" class="inline-form">
           {% csrf_token %}<button type="submit" class="text-button">Sign out</button>
         </form>

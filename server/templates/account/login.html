@@ -5,6 +5,8 @@
   <p class="eyebrow">Your research, your submissions</p>
   <h1>Sign in to MathStoa</h1>
   <p class="lede">Submit a project, return to update it, and manage who can edit it.</p>
+  {% if registration_open %}{% include "account/retention_notice.html" %}{% endif %}
+  {% if not registration_open %}<p class="notice">New account registration is currently closed. Existing accounts can still sign in using their connected methods.</p>{% endif %}
   {{ form.non_field_errors }}
   {% get_providers as providers %}
   {% if providers %}
@@ -16,7 +18,7 @@
         </form>
       {% endfor %}
     </div>
-    <p class="form-note">Your first sign-in creates a MathStoa account. You can connect additional sign-in methods from your account settings.</p>
+    <p class="form-note">{% if registration_open %}Your first sign-in creates a MathStoa account. {% endif %}You can connect additional sign-in methods from your account settings.</p>
   {% endif %}
   {% if email_login_enabled %}
     <section class="email-option" aria-labelledby="email-heading">
@@ -24,7 +26,7 @@
       <p>We send a one-time code to your inbox.</p>
       <div class="actions">
         <a class="button" href="{{ request_login_code_url }}">Email me a sign-in code</a>
-        <a href="{{ signup_url }}">Create an account with email</a>
+        {% if registration_open %}<a href="{{ signup_url }}">Create an account with email</a>{% endif %}
       </div>
     </section>
   {% elif not providers %}

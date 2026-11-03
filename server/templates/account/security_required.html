@@ -1,0 +1,14 @@
+{% extends "allauth/layouts/base.html" %}
+{% block head_title %}Confirm your account{% endblock %}
+{% block content %}
+  <h1>Confirm your account</h1>
+  <p>{{ security_message }}</p>
+  {% if confirm_url %}<p><a class="button" href="{{ confirm_url }}">Continue with account security</a></p>{% endif %}
+  {% if user.is_authenticated %}
+    <form method="post" action="{% url 'account_logout' %}">
+      {% csrf_token %}<button type="submit">Sign out to sign in again</button>
+    </form>
+  {% else %}
+    <p><a href="{% url 'account_login' %}">Sign in</a></p>
+  {% endif %}
+{% endblock %}

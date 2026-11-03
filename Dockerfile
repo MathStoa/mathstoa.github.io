@@ -19,4 +19,4 @@ EXPOSE 8000
 # Run one application replica while using this startup migration command.
 # Larger deployments should run migrations once as a separate release job.
 # Request logs omit URLs, which can contain callback codes or invitation tokens.
-CMD ["sh", "-c", "python server/manage.py migrate --noinput && python server/manage.py createcachetable && python server/manage.py collectstatic --noinput && exec gunicorn --chdir server config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --access-logfile - --error-logfile - --access-logformat '%(t)s \"%(m)s\" %(s)s %(b)s'"]
+CMD ["sh", "-c", "python server/manage.py migrate --noinput && python server/manage.py createcachetable && python server/manage.py collectstatic --noinput && exec python server/manage.py run_web"]

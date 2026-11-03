@@ -1,5 +1,6 @@
 """Same-origin MathStoa application. Provider credentials come from the host."""
 import os
+import json
 import re
 import sys
 from pathlib import Path
@@ -25,6 +26,15 @@ if not SECRET_KEY:
     SECRET_KEY = "local-development-only-do-not-use-on-a-public-server-mathstoa"
 if not DEBUG and (len(SECRET_KEY) < 50 or SECRET_KEY.startswith("local-development")):
     raise ImproperlyConfigured("Production needs a random DJANGO_SECRET_KEY of at least 50 characters.")
+try:
+    SECRET_KEY_FALLBACKS = json.loads(os.environ.get("DJANGO_SECRET_KEY_FALLBACKS", "[]"))
+except (TypeError, ValueError) as exc:
+    raise ImproperlyConfigured("DJANGO_SECRET_KEY_FALLBACKS must be a JSON list of previous keys.") from exc
+if not isinstance(SECRET_KEY_FALLBACKS, list) or any(
+    not isinstance(key, str) or not key or (not DEBUG and (len(key) < 50 or key.startswith("local-development")))
+    for key in SECRET_KEY_FALLBACKS
+):
+    raise ImproperlyConfigured("DJANGO_SECRET_KEY_FALLBACKS must contain only strong previous keys.")
 
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1" if DEBUG else "").split(",") if h.strip()]
 # Render assigns the service hostname only when it creates the service. Trust
@@ -50,12 +60,13 @@ if not DEBUG and (public_url.scheme != "https" or not ALLOWED_HOSTS or "*" in AL
 CSRF_TRUSTED_ORIGINS = [u.strip() for u in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", PUBLIC_BASE_URL).split(",") if u.strip()]
 if render_origin and render_origin not in CSRF_TRUSTED_ORIGINS:
     CSRF_TRUSTED_ORIGINS.append(render_origin)
-PUBLIC_CONTACT_EMAIL = os.environ.get("PUBLIC_CONTACT_EMAIL", "")
+PUBLIC_CONTACT_EMAIL = os.environ.get("PUBLIC_CONTACT_EMAIL", "").strip()
+PUBLIC_REGISTRATION_ENABLED = flag("PUBLIC_REGISTRATION_ENABLED", DEBUG)
 
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
-    "allauth", "allauth.account", "allauth.socialaccount",
+    "allauth", "allauth.account", "allauth.socialaccount", "allauth.mfa",
     "allauth.socialaccount.providers.orcid", "allauth.socialaccount.providers.github",
     "allauth.socialaccount.providers.gitlab", "allauth.socialaccount.providers.openid_connect",
     "accounts.apps.AccountsConfig", "submissions", "repository_verification.apps.RepositoryVerificationConfig",
@@ -66,6 +77,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware", "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware", "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware", "accounts.middleware.AccountPolicyMiddleware",
+    "accounts.staff_mfa.StaffSecurityMiddleware",
 ]
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
@@ -80,8 +92,8 @@ TEMPLATES = [{
 DATABASES = {"default": dj_database_url.config(default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}", conn_max_age=60, conn_health_checks=True)}
 if not DEBUG and DATABASES["default"]["ENGINE"] != "django.db.backends.postgresql":
     raise ImproperlyConfigured("Production needs a persistent PostgreSQL DATABASE_URL.")
-CACHES = {"default": {"BACKEND": "django.core.cache.backends.db.DatabaseCache", "LOCATION": "mathstoa_cache", "TIMEOUT": 300}}
-AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend", "allauth.account.auth_backends.AuthenticationBackend"]
+CACHES = {"default": {"BACKEND": "accounts.security_cache.SecurityDatabaseCache", "LOCATION": "mathstoa_cache", "TIMEOUT": 300, "KEY_FUNCTION": "accounts.cache.private_cache_key"}}
+AUTHENTICATION_BACKENDS = ["accounts.backends.PasswordlessModelBackend", "allauth.account.auth_backends.AuthenticationBackend"]
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 12}},
@@ -103,6 +115,7 @@ REPOSITORY_VERIFICATION_VALID_DAYS = int(os.environ.get("REPOSITORY_VERIFICATION
 if not 1 <= REPOSITORY_VERIFICATION_VALID_DAYS <= 30:
     raise ImproperlyConfigured("Repository authorization must expire within 1–30 days.")
 
+SESSION_ENGINE = "accounts.sessions"
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_AGE = 14 * 24 * 60 * 60
@@ -137,6 +150,16 @@ LOGIN_URL = "account_login"
 LOGIN_REDIRECT_URL = "/submissions/"
 ACCOUNT_LOGOUT_REDIRECT_URL = "/"
 ACCOUNT_ADAPTER = "accounts.adapters.AccountAdapter"
+MFA_ADAPTER = "accounts.mfa_adapter.MFAAdapter"
+MFA_SUPPORTED_TYPES = ["totp", "recovery_codes"]
+MFA_ALLOW_UNVERIFIED_EMAIL = False
+MFA_REAUTHENTICATION_REQUIRED = True
+MFA_RECOVERY_CODES_SHOW_ONCE = True
+MFA_TOTP_ISSUER = "Math Stoa"
+MFA_TRUST_ENABLED = False
+ACCOUNT_LOGIN_BY_CODE_TRUST_ENABLED = False
+STAFF_MFA_MAX_AGE = 15 * 60
+ACCOUNT_SECURITY_FRESH_LOGIN_MAX_AGE = 5 * 60
 ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*"]
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
@@ -149,7 +172,17 @@ ACCOUNT_LOGIN_BY_CODE_TIMEOUT = 180
 ACCOUNT_LOGIN_BY_CODE_MAX_ATTEMPTS = 3
 ACCOUNT_LOGIN_BY_CODE_SUPPORTS_RESEND = True
 ACCOUNT_PREVENT_ENUMERATION = True
-ACCOUNT_RATE_LIMITS = {"repository_verification": "5/m/user,10/h/user,5/m/key,10/h/key"}
+ACCOUNT_RATE_LIMITS = {
+    "repository_verification": "5/m/user,10/h/user,5/m/key,10/h/key",
+    "admin_login_network": "30/5m/key",
+    "admin_login_account": "5/5m/key",
+    "submission_create": "5/5m/user",
+    "submission_edit": "30/5m/user,15/5m/key",
+    "submission_submit": "20/h/user,5/h/key",
+    "submission_access_grant": "20/h/user,10/h/key",
+    "submission_access_revoke": "60/5m/user,30/5m/key",
+    "submission_accept_invitation": "10/h/user",
+}
 ACCOUNT_LOGOUT_ON_GET = False
 ACCOUNT_EMAIL_SUBJECT_PREFIX = "[MathStoa] "
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http" if DEBUG else "https"

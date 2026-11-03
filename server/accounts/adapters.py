@@ -6,18 +6,50 @@ from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.conf import settings
 from django.core.exceptions import ValidationError
 
+from .policy import registration_is_open
+
 
 class AccountAdapter(DefaultAccountAdapter):
     def is_open_for_signup(self, request):
-        return settings.EMAIL_LOGIN_ENABLED
+        return settings.EMAIL_LOGIN_ENABLED and registration_is_open()
 
     def authenticate(self, request, **credentials):
-        # Public accounts use provider sign-in or email codes. Staff passwords
-        # remain available only through Django's separate admin sign-in.
+        # Authors and staff both use provider sign-in or verified email codes.
         return None
+
+    def get_reauthentication_methods(self, user):
+        # There is no usable password sign-in path, including for staff.
+        return [method for method in super().get_reauthentication_methods(user) if method["id"] != "reauthenticate"]
+
+    def is_reauthentication_required(self, *, app=""):
+        from .staff_mfa import fresh_bound_first_factor, has_primary_factor, has_recent_mfa
+
+        if app == "allauth.mfa" and self.request and self.request.user.is_authenticated:
+            # Enrollment needs a recent existing first factor. Once enrolled,
+            # only actual MFA proof qualifies, even if a password record exists.
+            if has_recent_mfa(self.request):
+                return False
+            if not has_primary_factor(self.request.user) and fresh_bound_first_factor(self.request):
+                return False
+        return super().is_reauthentication_required(app=app)
 
 
 class MinimalSocialAccountAdapter(DefaultSocialAccountAdapter):
+    def pre_social_login(self, request, sociallogin):
+        from allauth.core.exceptions import ImmediateHttpResponse
+        from allauth.socialaccount.providers.base import AuthProcess
+        from .staff_mfa import require_fresh_account_change
+
+        data = sociallogin.state.get("data")
+        verification_only = isinstance(data, dict) and "mathstoa_verification" in data
+        # The repository verification receiver always exits before linking,
+        # including invalid attempts. It does not change any sign-in method.
+        if sociallogin.state.get("process") == AuthProcess.CONNECT and not verification_only:
+            response = require_fresh_account_change(request)
+            if response is not None:
+                raise ImmediateHttpResponse(response)
+        return super().pre_social_login(request, sociallogin)
+
     def populate_user(self, request, sociallogin, data):
         # Run before allauth's lookup, which updates existing SocialAccount rows.
         # Retain only provider + stable uid, including on repeat sign-ins.
@@ -27,7 +59,7 @@ class MinimalSocialAccountAdapter(DefaultSocialAccountAdapter):
         return super().populate_user(request, sociallogin, {"username": "author-" + secrets.token_hex(12)})
 
     def is_open_for_signup(self, request, sociallogin):
-        return True
+        return registration_is_open()
 
     def validate_disconnect(self, account, accounts):
         enabled_providers = {provider.sub_id for provider in self.list_providers(self.request)}

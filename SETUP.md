@@ -33,11 +33,9 @@ Open <http://localhost:8000/accounts/login/>. Development uses
 code there. This demonstrates the workflow; it does not deliver email or verify
 that you control the typed address. Never use console email for a public service.
 
-To create an administrator account:
-
-```sh
-python server/manage.py createsuperuser
-```
+To enable administration, sign in normally and grant that existing provider
+account a staff role using the [staff enrollment procedure](STAFF_SECURITY.md).
+Local password authentication is disabled; `createsuperuser` is not a login path.
 
 Use <http://localhost:8000/admin/> for administration and
 <http://localhost:8000/submissions/> for your submissions. One-time codes expire
@@ -80,7 +78,12 @@ email and all providers disabled means no user sign-in is available.
 
 Set `PUBLIC_CONTACT_EMAIL` to a monitored mailbox for privacy and account
 questions. This address is public; submitters' private contact addresses are not
-published as part of their listings.
+published as part of their listings. New production accounts remain closed by
+default. Set `PUBLIC_REGISTRATION_ENABLED=true` only when the account service is
+ready to open; a nonempty `PUBLIC_CONTACT_EMAIL` is also required. Closing
+registration does not disable existing accounts' configured sign-in methods.
+Local `DJANGO_DEBUG=1` development defaults to open registration without requiring
+a contact address.
 
 ## Register sign-in providers
 
@@ -144,10 +147,12 @@ Install Docker and the Docker Compose plugin on the application host, then run:
 ```sh
 docker compose config --quiet
 docker compose up --build -d
-docker compose exec app python server/manage.py createsuperuser
 docker compose exec app python server/manage.py check --deploy
 docker compose exec app python server/manage.py check_login_setup --require-all
 ```
+
+After testing one provider, follow [staff enrollment](STAFF_SECURITY.md) to grant
+the operator's existing account its role and complete mandatory MFA.
 
 The application starts only after PostgreSQL is ready. Startup applies database
 migrations, creates the shared database cache table, collects static assets into
@@ -200,14 +205,50 @@ submitter is not authenticated by that collaborator merely because it has a
 valid format. Confirm the public privacy notice and actual retention practices
 before launching.
 
-Remove expired sessions and old invitations regularly, for example with daily
-scheduled commands:
+The reusable cleanup removes expired sessions and database-cache entries as well
+as old terminal invitations and unused, expired verification attempts, and applies
+the approved account and never-submitted draft retention rules. Preview
+its aggregate counts before running it:
 
 ```sh
-docker compose exec -T app python server/manage.py clearsessions
-docker compose exec -T app python server/manage.py purge_expired_invitations
-docker compose exec -T app python server/manage.py purge_repository_verification_attempts --days 30
+docker compose exec -T app python server/manage.py purge_transient_data --dry-run
+docker compose exec -T app python server/manage.py purge_transient_data
 ```
+
+The supplied Docker startup launches Gunicorn and a supervised cleanup process
+in the same container. Cleanup runs at startup and then hourly, with a five-minute
+retry after a failure and a five-minute limit per run. It does not delay the web
+server or require a separate paid scheduler. PostgreSQL advisory locking prevents
+overlap across instances. Shutdown signals reach both processes, and a web-server
+exit stops the supervisor so the platform can restart the service. Automatic
+cleanup logs only generic outcomes; the manual command above reports counts.
+If you override the container command or run Gunicorn directly, run the cleanup
+regularly yourself. SQLite development supports one instance only.
+`accounts.maintenance.purge_transient_data` is also callable directly and returns
+`None` if another PostgreSQL session holds the cleanup lock. Active sessions/cache
+entries and all submitted/public records remain. `--days` changes only the
+30-day age threshold for terminal invitations and unused verification attempts;
+it does not change account, draft or session retention.
+
+The approved retention defaults are seven days for empty unverified signups,
+90 days without saved or access/verification activity for never-submitted drafts,
+and 365 days since account creation or last successful sign-in (whichever is
+later) for accounts with no responsibilities. Staff, superusers, accounts with
+roles/permissions, owners/editors, and accounts referenced by retained application
+records are protected. Any submitted revision, including pending or rejected,
+protects its draft. Recent invitation/verification activity and active invitations
+or verification work protect unused drafts; expired completed proof is removed
+only together with its never-submitted unused draft. The cleanup records the
+latest real draft activity in `updated_at` before pruning short-lived supporting
+records. Simply viewing a page does not extend retention.
+
+Each candidate is locked and rechecked before deletion; rows another request is
+editing are skipped on PostgreSQL. Accounts are evaluated before drafts, so an
+account freed of its last draft waits for a later cleanup run. Dry-run reports
+counts without deleting or refreshing timestamps. No reminder email is sent.
+The production cache uses an HMAC key function so rate-limit identifiers are
+not readable in stored cache keys; existing legacy keys disappear on expiry and
+cleanup. Changing `DJANGO_SECRET_KEY` invalidates these keyed cache entries.
 
 Invitations are valid for seven days and grant editing access to the signed-in
 account that accepts the bearer link. Share them privately. The invitation purge
@@ -216,8 +257,8 @@ default. It does not delete project drafts, submitted revisions, or scholarly
 credit. Those records require the operator's documented retention and request
 handling process.
 
-Unused, expired repository-verification attempts can be removed after thirty
-days by the third command. Completed verification evidence is kept with the
+Unused, expired repository-verification attempts created more than thirty
+days ago are removed by the cleanup. Completed verification evidence is kept with the
 submission history. See `server/repository_verification/README.md` for the
 verification model and its limits. `REPOSITORY_GITHUB_READ_TOKEN` is an optional
 read-only server credential for public API quota; it never proves a submitter's
@@ -258,3 +299,45 @@ python server/manage.py test accounts submissions repository_verification --sett
 Test each configured sign-in method against the actual provider and production
 mail service before making it available. Local tests cannot establish that live
 credentials, institutional agreements, DNS, certificates, or mail delivery work.
+
+
+## Security review and launch gate
+
+Keep `PUBLIC_REGISTRATION_ENABLED=false` until the live sign-in and recovery
+checks are complete. The code enforces author/editor access, fixed submitted
+revisions, repository authorization, CSRF and OAuth state, mandatory staff MFA,
+fresh authentication for account changes, encrypted session/MFA contents,
+minimal provider scopes and profile retention, and the approved cleanup rules.
+The CI workflow tests SQLite and PostgreSQL and checks runtime dependencies for
+known published vulnerabilities. A passing scan is not a guarantee of safety.
+
+Before public launch:
+
+- Exercise each enabled provider with its real registered callback. Leave other
+  providers disabled until their credentials and any institutional agreement are
+  ready. Email sign-in also needs tested delivery and domain authentication.
+- Enroll the initial operator's authenticator personally and test recovery. Keep
+  hosting, GitHub, ORCID, domain-registration and mail accounts protected with MFA.
+- Replace any credentials exposed during setup. Enter final keys directly in the
+  hosting secret store, do not paste them into chat or logs, and do not reveal
+  them to browser automation afterward. Keep the encryption master key in a
+  secure password manager so database backups remain recoverable.
+- Test restoration of the database and encryption key into an isolated service.
+  Record the host's actual backup and log retention, and check a cleanup success
+  after deployment. Paid database backups alone do not prove restoration works.
+- Confirm the public privacy contact, correction/export/closure procedure, and
+  how retained submitted or public scholarly records are handled on a request.
+  Automatic expiry is not a complete account-closure process.
+
+Monitor database usage and failed cleanup runs. The security cache never evicts
+unexpired counters to make space; its capacity setting is a cleanup trigger,
+not a storage cap. Floods can therefore consume storage until expiry, and severe
+service or database stalls can affect availability. The allauth cache lock also
+assumes its short counter operation finishes within its ten-second lease.
+
+Remaining trust limits are explicit: authenticator codes can be phished, a
+compromised application/hosting account can expose live data and keys, invitation
+links grant access to their possessor, and repository proof records authority at
+a point in time rather than continuously checking a maintainer's current role.
+Use private invitation delivery, revoke access promptly, refresh repository
+proof when roles change, and keep permissions and dependency updates under review.

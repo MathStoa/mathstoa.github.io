@@ -2,8 +2,9 @@
 {% block head_title %}Create an account{% endblock %}
 {% block content %}
   <h1>Create an account with email</h1>
-  {% if email_login_enabled %}
+  {% if email_login_enabled and registration_open %}
     <p>We will send a code to verify your email address. Your email stays private.</p>
+    {% include "account/retention_notice.html" %}
     <form method="post" action="{% url 'account_signup' %}" class="account-form">
       {% csrf_token %}
       {{ form.as_p }}
@@ -12,7 +13,7 @@
     </form>
     <p class="privacy-note">Read <a href="/privacy/">how MathStoa uses your information</a>.</p>
   {% else %}
-    <p>Email registration is not currently available.</p>
+    <p>New account registration is currently closed. Existing accounts can still sign in.</p>
   {% endif %}
   <p><a href="{{ login_url }}">Return to sign in</a></p>
 {% endblock %}

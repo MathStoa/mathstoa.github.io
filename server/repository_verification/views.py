@@ -161,7 +161,7 @@ def github_start(request, pk):
             request, process="connect",
             next_url=reverse("verification:overview", kwargs={"pk": submission.pk}),
             data={"mathstoa_verification": str(attempt.pk), "nonce": nonce},
-            scope=["read:user"],
+            scope=[],
         )
     except (ValidationError, GitHubError) as error:
         _error(request, error)

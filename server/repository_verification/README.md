@@ -23,8 +23,9 @@ on other hosts need a future provider implementation.
   The callback uses the user's transient token to obtain the immutable GitHub
   user ID and repository permissions. Personal repositories require their owner;
   organization repositories require explicit admin or maintain permission.
-  Missing permissions fail closed and offer the file method. No `repo` or
-  `public_repo` write scope is requested. This one-time verification records the
+  Missing permissions fail closed and offer the file method. No OAuth scopes
+  are requested: GitHub permits public profile and repository reads without a
+  scope. Private profile fields and repository-write access are not requested. This one-time verification records the
   GitHub identity as evidence; it does not add a GitHub sign-in method or save an
   OAuth credential. Ordinary account connections remain independent.
 

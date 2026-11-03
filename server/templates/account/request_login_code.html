@@ -10,7 +10,7 @@
       {{ redirect_field }}
       <button type="submit" class="button">Send sign-in code</button>
     </form>
-    <p class="privacy-note">New to MathStoa? <a href="{% url 'account_signup' %}">Create an account with email</a>.</p>
+    {% if registration_open %}<p class="privacy-note">New to MathStoa? <a href="{% url 'account_signup' %}">Create an account with email</a>.</p>{% else %}<p class="notice">New account registration is currently closed. This form is for existing accounts.</p>{% endif %}
   {% else %}
     <p>Email sign-in is not currently available.</p>
   {% endif %}

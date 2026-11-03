@@ -21,5 +21,6 @@ class Command(BaseCommand):
         stale = EditorInvitation.objects.filter(Q(expires_at__lt=cutoff) | Q(accepted_at__lt=cutoff) | Q(revoked_at__lt=cutoff))
         count = stale.count()
         if not options["dry_run"]:
-            stale.delete()
+            count, _ = stale.delete()
+        self.record_count = count
         self.stdout.write(f"{'Would remove' if options['dry_run'] else 'Removed'} {count} old invitation records.")

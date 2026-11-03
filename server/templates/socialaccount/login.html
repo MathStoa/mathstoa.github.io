@@ -1,0 +1,18 @@
+{% extends "account/base_entrance.html" %}
+{% block head_title %}{% if process == "connect" %}Connect{% else %}Sign in{% endif %} with {{ provider.name }}{% endblock %}
+{% block content %}
+  <h1>{% if process == "connect" %}Connect{% else %}Sign in{% endif %} with {{ provider.name }}</h1>
+  {% if process == "connect" %}
+    <p>Connect this sign-in method to your existing MathStoa account.</p>
+  {% elif registration_open %}
+    <p>Your first sign-in creates a MathStoa account.</p>
+    {% include "account/retention_notice.html" %}
+  {% else %}
+    <p>New account registration is currently closed. Existing accounts can still sign in.</p>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <button class="button" type="submit">Continue</button>
+  </form>
+  <p><a href="{% url 'account_login' %}">Return to sign in</a></p>
+{% endblock %}

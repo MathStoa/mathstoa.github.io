@@ -110,7 +110,9 @@ class LoginTests(TestCase):
         self.oauth("github", {"id": 55, "email": user.email})
         self.assertNotEqual(SocialAccount.objects.get().user_id, user.pk)
         self.client.logout()
-        self.client.force_login(user)
+        with patch("allauth.account.adapter.DefaultAccountAdapter.generate_login_code", return_value="123456"):
+            self.client.post("/accounts/login/code/", {"email": user.email})
+        self.client.post("/accounts/login/code/confirm/", {"code": "123456"})
         self.oauth("gitlab", {"id": 88}, connect=True)
         self.assertEqual(SocialAccount.objects.get(provider="gitlab").user_id, user.pk)
 
@@ -184,7 +186,7 @@ class LoginTests(TestCase):
     def test_disconnect_prevents_lockout_and_allows_verified_email_alternative(self):
         user = User.objects.create_user(username="disconnect")
         account = SocialAccount.objects.create(user=user, provider="github", uid="99")
-        self.client.force_login(user)
+        self.oauth("github", {"id": 99})
         self.client.post(reverse("socialaccount_connections"), {"account": account.pk})
         self.assertTrue(SocialAccount.objects.filter(pk=account.pk).exists())
         EmailAddress.objects.create(user=user, email="recover@example.org", verified=True, primary=True)
@@ -195,7 +197,7 @@ class LoginTests(TestCase):
         user = User.objects.create_user(username="disabled-alternative")
         github = SocialAccount.objects.create(user=user, provider="github", uid="github-42")
         SocialAccount.objects.create(user=user, provider="gitlab", uid="gitlab-42")
-        self.client.force_login(user)
+        self.oauth("github", {"id": "github-42"})
         with override_settings(EMAIL_LOGIN_ENABLED=False, SOCIALACCOUNT_PROVIDERS={"github": settings.SOCIALACCOUNT_PROVIDERS["github"]}):
             self.client.post(reverse("socialaccount_connections"), {"account": github.pk})
         self.assertTrue(SocialAccount.objects.filter(pk=github.pk).exists())

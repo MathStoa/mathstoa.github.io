@@ -318,7 +318,7 @@ class VerificationUITests(TestCase):
             if url == "https://github.com/login/oauth/access_token":
                 self.assertEqual(method, "POST")
                 token_exchanges.append(kwargs["data"])
-                payload = {"access_token": "private-oauth-token", "token_type": "bearer", "scope": "read:user"}
+                payload = {"access_token": "private-oauth-token", "token_type": "bearer", "scope": ""}
             elif url == "https://api.github.com/user":
                 self.assertEqual(method.lower(), "get")
                 payload = {"id": 456, "login": "owner", "type": "User"}
@@ -334,7 +334,7 @@ class VerificationUITests(TestCase):
             self.assertEqual(start.status_code, 302)
             query = parse_qs(urlsplit(start["Location"]).query)
             self.assertEqual(query["code_challenge_method"], ["S256"])
-            self.assertEqual(query["scope"], ["read:user"])
+            self.assertNotIn("scope", query)
             self.assertNotIn("private-oauth-token", start["Location"])
             attempt = VerificationAttempt.objects.get(submission=self.submission)
             callback_url = reverse("github_callback")

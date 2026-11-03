@@ -15,6 +15,8 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from accounts.middleware import limit_action
+
 from .forms import SubmissionForm, review_form
 from .models import EditorInvitation, Submission, SubmissionRevision
 
@@ -30,6 +32,10 @@ def submission_list(request):
 
 @login_required
 def create(request):
+    if request.method == "POST":
+        limited = limit_action(request, action="submission_create", user=request.user, retry_after=300)
+        if limited:
+            return limited
     form = SubmissionForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         submission = form.save(commit=False)
@@ -57,6 +63,10 @@ def edit(request, pk):
         submission = get_object_or_404(Submission.objects.select_for_update(), pk=pk)
         if not submission.can_edit(request.user):
             raise Http404
+        if request.method == "POST":
+            limited = limit_action(request, action="submission_edit", user=request.user, key=str(submission.pk), retry_after=300)
+            if limited:
+                return limited
         form = SubmissionForm(request.POST or None, instance=submission)
         if request.method == "POST" and form.is_valid():
             if form.cleaned_data["revision"] != submission.revision:
@@ -80,6 +90,16 @@ def submit(request, pk):
         if request.POST.get("revision") != str(submission.revision):
             messages.error(request, "The draft changed. Please review the current details and submit again.")
             return redirect("submissions:detail", pk=pk)
+        existing = submission.revisions.filter(number=submission.revision).first()
+        if existing:
+            if existing.status == "rejected":
+                messages.info(request, "Please edit and save a new draft before resubmitting.")
+            else:
+                messages.info(request, "This revision has already been submitted.")
+            return redirect("submissions:detail", pk=pk)
+        limited = limit_action(request, action="submission_submit", user=request.user, key=str(submission.pk))
+        if limited:
+            return limited
         form = review_form(submission)
         if not form.is_valid():
             messages.error(request, "Please complete the highlighted details before submitting for review.")
@@ -105,6 +125,9 @@ def submit(request, pk):
 def invite(request, pk):
     with transaction.atomic():
         submission = get_object_or_404(Submission.objects.select_for_update(), pk=pk, owner=request.user)
+        limited = limit_action(request, action="submission_access_grant", user=request.user, key=str(submission.pk))
+        if limited:
+            return limited
         if submission.invitations.filter(expires_at__gt=timezone.now(), revoked_at__isnull=True, accepted_at__isnull=True).count() >= 10:
             messages.error(request, "There are already ten active invitations. Revoke an unused invitation first.")
         else:
@@ -117,9 +140,15 @@ def invite(request, pk):
 @login_required
 @require_POST
 def revoke_invitation(request, pk, invitation_id):
-    submission = get_object_or_404(Submission, pk=pk, owner=request.user)
-    get_object_or_404(submission.invitations, pk=invitation_id)
-    submission.invitations.filter(pk=invitation_id).update(revoked_at=timezone.now())
+    with transaction.atomic():
+        submission = get_object_or_404(Submission.objects.select_for_update(), pk=pk, owner=request.user)
+        get_object_or_404(submission.invitations, pk=invitation_id)
+        limited = limit_action(request, action="submission_access_revoke", user=request.user, key=str(submission.pk), retry_after=300)
+        if limited:
+            return limited
+        now = timezone.now()
+        submission.invitations.filter(pk=invitation_id).update(revoked_at=now)
+        Submission.objects.filter(pk=pk).update(updated_at=now)
     messages.success(request, "Invitation revoked.")
     return redirect("submissions:detail", pk=pk)
 
@@ -127,8 +156,13 @@ def revoke_invitation(request, pk, invitation_id):
 @login_required
 @require_POST
 def remove_editor(request, pk, user_id):
-    submission = get_object_or_404(Submission, pk=pk, owner=request.user)
-    submission.editors.remove(user_id)
+    with transaction.atomic():
+        submission = get_object_or_404(Submission.objects.select_for_update(), pk=pk, owner=request.user)
+        limited = limit_action(request, action="submission_access_revoke", user=request.user, key=str(submission.pk), retry_after=300)
+        if limited:
+            return limited
+        submission.editors.remove(user_id)
+        Submission.objects.filter(pk=pk).update(updated_at=timezone.now())
     messages.success(request, "Editing access removed.")
     return redirect("submissions:detail", pk=pk)
 
@@ -142,6 +176,9 @@ def accept_invitation(request, token):
         if not invitation.is_active:
             raise Http404("This invitation has expired, been revoked or already been used.")
         if request.method == "POST":
+            limited = limit_action(request, action="submission_accept_invitation", user=request.user)
+            if limited:
+                return limited
             if invitation.submission.owner_id != request.user.pk:
                 invitation.submission.editors.add(request.user)
                 invitation.accepted_at = timezone.now()

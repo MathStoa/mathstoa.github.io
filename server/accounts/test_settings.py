@@ -80,8 +80,20 @@ class RenderSettingsTests(SimpleTestCase):
         self.assertEqual(development["PUBLIC_BASE_URL"], "http://localhost:8000")
         self.assertEqual(development["ALLOWED_HOSTS"], ["localhost", "127.0.0.1"])
         self.assertEqual(development["CSRF_TRUSTED_ORIGINS"], ["http://localhost:8000"])
+        self.assertTrue(development["PUBLIC_REGISTRATION_ENABLED"])
         production = self.load_settings(DJANGO_ALLOWED_HOSTS="math-stoa.org")
         self.assertEqual(production["PUBLIC_BASE_URL"], "https://math-stoa.org")
         self.assertEqual(production["ALLOWED_HOSTS"], ["math-stoa.org"])
+        self.assertFalse(production["PUBLIC_REGISTRATION_ENABLED"])
         with self.assertRaises(ImproperlyConfigured):
             self.load_settings()
+
+    def test_previous_encryption_keys_must_be_a_list_of_strong_keys(self):
+        configured = self.load_settings(
+            DJANGO_ALLOWED_HOSTS="math-stoa.org",
+            DJANGO_SECRET_KEY_FALLBACKS='["previous-test-key-' + "x" * 64 + '"]',
+        )
+        self.assertEqual(len(configured["SECRET_KEY_FALLBACKS"]), 1)
+        for value in ('"not-a-list"', '["short"]', '[null]', '{"key":"value"}', 'malformed'):
+            with self.subTest(value=value), self.assertRaises(ImproperlyConfigured):
+                self.load_settings(DJANGO_ALLOWED_HOSTS="math-stoa.org", DJANGO_SECRET_KEY_FALLBACKS=value)

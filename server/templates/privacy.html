@@ -6,8 +6,9 @@
     <p class="lede">MathStoa keeps a small amount of account information so contributors can submit projects and return to edit them.</p>
     <section>
       <h2>Sign-in and private account information</h2>
-      <p>We keep the identifier supplied by your sign-in provider and a record of which submissions your account may edit. When you sign in with ORCID, GitHub, GitLab or an institution, your password stays with that provider.</p>
+      <p>We keep the identifier supplied by your sign-in provider, its connection to your MathStoa account, account creation and sign-in dates, and a record of which submissions your account may edit. We discard the provider's profile payload and do not retain its OAuth access or refresh tokens. When you sign in with ORCID, GitHub, GitLab or an institution, your password stays with that provider.</p>
       <p>If you choose email sign-in or add an email address to your account, we keep it for verification and account access. It is not included in the public archive. Sign-in sessions use cookies that allow the service to recognise your signed-in browser.</p>
+      <p>Temporary sign-in state, including pending email verification details and codes, is held in encrypted server-side sessions. If you enable an authenticator, we also retain its encrypted setup secret, recovery-code data and usage dates; no phone number is needed. Abuse prevention processes network and account identifiers; stored rate-limit cache keys use keyed digests rather than readable IP addresses or email identifiers.</p>
       <p>Your sign-in provider operates its own service and privacy policy. Connecting an ORCID confirms control of that ORCID account; it does not certify authorship, employment or mathematical correctness.</p>
     </section>
     <section>
@@ -17,16 +18,31 @@
       <p>Project repositories remain on their existing hosts. Their contents, access rules and privacy policies are managed there.</p>
     </section>
     <section>
+      <h2>Repository authorization</h2>
+      <p>To record permission to submit a repository, we retain the repository and owner identifiers, the account that verified access, dates and verification results. Depending on the method, this includes a GitHub account identifier, login name and permission level, or the commit identifying a verification file. A connected ORCID may be included. This evidence is private to account access and staff review; it is not part of the public listing.</p>
+      <p>A verification file that you place in a public repository is public there, including its submission identifier and any connected ORCID. Removing it from the current files may not remove it from the repository's history.</p>
+    </section>
+    <section>
       <h2>Editing and keeping a publication record</h2>
       <p>Submission revisions and review decisions record how a listing changes. An accepted version remains public while a revised submission is reviewed. Private invitation links grant editing access after the recipient signs in; share these links only with the intended collaborator.</p>
       <p>Publicly available information about a person is still personal information. Account information and access records are kept separate from the public archive.</p>
+    </section>
+    <section>
+      <h2 id="retention">Expiry and retention</h2>
+      <p>Sign-in sessions last up to 14 days, and email sign-in and verification codes expire after three minutes. Editor invitations expire after seven days. Repository verification challenges expire after ten minutes for GitHub authorization or 24 hours for a verification file. Expiry stops these credentials from being used; it does not by itself erase every stored record.</p>
+      <p>The maintenance cleanup removes expired sessions and database-cache entries, invitations that expired, were used or were revoked more than 30 days ago, and expired verification attempts created more than 30 days ago that have no completed proof. The standard deployment runs this cleanup at startup and hourly, retrying failed runs. Outages can delay removal.</p>
+      <p>Unverified email signups are removed after seven days if they have never signed in successfully, have no verified email or connected provider identity, and have no project responsibilities or other retained records.</p>
+      <p>Drafts that have never been submitted are removed after 90 days without a saved edit, editor-access change, invitation activity or repository-verification activity. Active invitations or verification work can delay removal. Opening a page alone does not restart this period. When such an unused draft is removed, its expired verification evidence and related private access records are also removed.</p>
+      <p>Accounts with no submissions, editing responsibilities or retained review/verification records are removed after 12 months (365 days) without a successful sign-in, measured from account creation if there has been no sign-in. Staff accounts and accounts with administrative roles or other retained records are excluded. We do not send reminder emails before automatic removal.</p>
+      <p>Published project records remain. Submitted revisions, including rejected and pending submissions, their verification evidence, and review and staff action records have no automatic deletion period. Account closure and changes to public scholarly attribution require separate handling; contact us to request access, correction or deletion.</p>
+      <p>Our hosting services also process operational logs and backups. These can contain personal information and have separate retention settings. A deleted database record may remain in a backup until that backup expires.</p>
     </section>
     <section>
       <h2>Questions and corrections</h2>
       {% if privacy_contact %}
         <p>For questions about your information, corrections or account deletion requests, contact <a href="mailto:{{ privacy_contact }}">{{ privacy_contact }}</a>. Publication records and private account information may need different treatment when an account is closed.</p>
       {% else %}
-        <p>A private contact address will be provided before the account service opens for public registration.</p>
+        <p>Public registration remains closed until a contact address is provided for privacy and account requests.</p>
       {% endif %}
     </section>
   </article>

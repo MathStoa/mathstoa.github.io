@@ -7,6 +7,7 @@ from unittest.mock import Mock, patch
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.core.cache import cache
 from django.core.management import call_command
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -18,6 +19,7 @@ from .models import EditorInvitation, Submission, SubmissionRevision
 
 class SubmissionTests(TestCase):
     def setUp(self):
+        cache.clear()
         users = get_user_model()
         self.owner = users.objects.create_user(username="owner", email="private-owner@example.org")
         self.other = users.objects.create_user(username="other", email="private-other@example.org")
@@ -345,6 +347,7 @@ class VerificationBoundaryTests(TestCase):
     """Exercise real submission gates and proof records; mock only host transport."""
 
     def setUp(self):
+        cache.clear()
         self.owner = get_user_model().objects.create_user(username="proof-owner")
         self.staff = get_user_model().objects.create_superuser(username="proof-reviewer", email="reviewer@example.org", password="test-only")
         self.client.force_login(self.owner)
