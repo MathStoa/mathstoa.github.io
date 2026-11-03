@@ -7,7 +7,8 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 import dj_database_url
-from django.core.exceptions import ImproperlyConfigured
+from django.core.exceptions import ImproperlyConfigured, ValidationError
+from django.core.validators import validate_email
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 REPO_ROOT = BASE_DIR.parent
@@ -61,6 +62,13 @@ CSRF_TRUSTED_ORIGINS = [u.strip() for u in os.environ.get("DJANGO_CSRF_TRUSTED_O
 if render_origin and render_origin not in CSRF_TRUSTED_ORIGINS:
     CSRF_TRUSTED_ORIGINS.append(render_origin)
 PUBLIC_CONTACT_EMAIL = os.environ.get("PUBLIC_CONTACT_EMAIL", "").strip()
+# Reviewers' mailbox for one notice per submitted revision; blank disables the notice.
+MODERATION_NOTIFY_EMAIL = os.environ.get("MODERATION_NOTIFY_EMAIL", "").strip()
+if MODERATION_NOTIFY_EMAIL:
+    try:
+        validate_email(MODERATION_NOTIFY_EMAIL)
+    except ValidationError:
+        raise ImproperlyConfigured("MODERATION_NOTIFY_EMAIL must be a single email address.")
 PUBLIC_REGISTRATION_ENABLED = flag("PUBLIC_REGISTRATION_ENABLED", DEBUG)
 
 INSTALLED_APPS = [
@@ -87,6 +95,7 @@ TEMPLATES = [{
     "OPTIONS": {"context_processors": [
         "django.template.context_processors.request", "django.contrib.auth.context_processors.auth",
         "django.contrib.messages.context_processors.messages", "accounts.context_processors.account_options",
+        "submissions.context_processors.review_queue",
     ]},
 }]
 DATABASES = {"default": dj_database_url.config(default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}", conn_max_age=60, conn_health_checks=True)}

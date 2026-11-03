@@ -86,6 +86,15 @@ registration does not disable existing accounts' configured sign-in methods.
 Local `DJANGO_DEBUG=1` development defaults to open registration without requiring
 a contact address.
 
+Set `MODERATION_NOTIFY_EMAIL` to the reviewers' mailbox to receive one email per
+submitted revision, carrying the project title and a link to the review page and
+nothing about the submitter's account. Sending needs the SMTP settings above and
+`DEFAULT_FROM_EMAIL`, even while email sign-in stays disabled; without them the
+notice is skipped, and the **Review queue** count in the site header and the
+pending filter in the admin remain the way to find submissions. A failed send is
+logged and never blocks a submission. A role address on the site's domain,
+forwarded to every reviewer, suits both this setting and `PUBLIC_CONTACT_EMAIL`.
+
 ## Register sign-in providers
 
 Register a separate application with each provider you want to enable. The

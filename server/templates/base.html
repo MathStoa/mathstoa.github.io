@@ -22,6 +22,7 @@
         <a href="{% url 'submissions:list' %}">My submissions</a>
         <a href="{% url 'socialaccount_connections' %}">Account</a>
         {% if user.is_staff %}<a href="{% url 'admin:index' %}">Administration</a>{% endif %}
+        {% if pending_reviews is not None %}<a href="{% url 'admin:submissions_submissionrevision_changelist' %}?status__exact=pending">Review queue{% if pending_reviews %} ({{ pending_reviews }}){% endif %}</a>{% endif %}
         <form method="post" action="{% url 'account_logout' %}" class="inline-form">
           {% csrf_token %}<button type="submit" class="text-button">Sign out</button>
         </form>

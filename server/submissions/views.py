@@ -19,6 +19,7 @@ from accounts.middleware import limit_action
 
 from .forms import SubmissionForm, review_form
 from .models import EditorInvitation, Submission, SubmissionRevision
+from .notifications import notify_moderators
 
 
 def accessible(user):
@@ -112,7 +113,12 @@ def submit(request, pk):
             return redirect("submissions:detail", pk=pk)
         revision, created = SubmissionRevision.objects.get_or_create(submission=submission, number=submission.revision, defaults={"snapshot": submission.snapshot(), "submitted_by": request.user})
         if created:
-            messages.success(request, "Submitted for editorial review. You can continue editing a new draft.")
+            transaction.on_commit(lambda: notify_moderators(revision))
+            confirmation = ("Submitted for editorial review. The decision and any note from the reviewers will appear "
+                            "on this page, usually within a week. You can continue editing a new draft.")
+            if settings.PUBLIC_CONTACT_EMAIL:
+                confirmation += f" Questions: {settings.PUBLIC_CONTACT_EMAIL}"
+            messages.success(request, confirmation)
         elif revision.status == "rejected":
             messages.info(request, "Please edit and save a new draft before resubmitting.")
         else:

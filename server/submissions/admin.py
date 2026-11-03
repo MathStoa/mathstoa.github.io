@@ -1,7 +1,10 @@
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
-from django.utils.html import format_html
+from django.utils import timezone
+from django.utils.html import format_html, format_html_join
 import json
+
+from repository_verification.models import RepositoryVerification
 
 from .models import Submission, SubmissionRevision
 
@@ -24,13 +27,44 @@ class SubmissionRevisionAdmin(admin.ModelAdmin):
     list_display = ("submission", "number", "status", "created_at", "reviewed_by")
     list_filter = ("status",)
     search_fields = ("submission__title",)
-    fields = ("submission", "number", "submitted_by", "snapshot_display", "status", "review_note", "created_at", "reviewed_by", "reviewed_at")
-    readonly_fields = ("submission", "number", "submitted_by", "snapshot_display", "status", "created_at", "reviewed_by", "reviewed_at")
+    fields = ("submission", "number", "submitted_by", "snapshot_display", "verification_display", "status", "review_note", "created_at", "reviewed_by", "reviewed_at")
+    readonly_fields = ("submission", "number", "submitted_by", "snapshot_display", "verification_display", "status", "created_at", "reviewed_by", "reviewed_at")
     actions = ("approve_selected", "request_changes")
 
     @admin.display(description="Exact submitted details")
     def snapshot_display(self, obj):
         return format_html("<pre style='white-space:pre-wrap'>{}</pre>", json.dumps(obj.snapshot, ensure_ascii=False, indent=2))
+
+    @admin.display(description="Repository verification")
+    def verification_display(self, obj):
+        """Latest proof for the submission, for the reviewer's eyes; approval re-runs the real check."""
+        from repository_verification.services import has_current_verification
+
+        def stamp(value):
+            return timezone.localtime(value).strftime("%d %b %Y %H:%M %Z")
+
+        proof = RepositoryVerification.objects.filter(submission_id=obj.submission_id).order_by("-verified_at", "-pk").first()
+        if proof is None:
+            return "No repository verification on record. Approval will be refused until the owner verifies the repository."
+        if proof.method == "github":
+            evidence = f"GitHub authorization by {proof.github_login} (GitHub user id {proof.github_user_id}, role: {proof.role})"
+        else:
+            evidence = f"Verification file read at commit {proof.commit_sha}"
+        if proof.revoked_at:
+            state = f"revoked {stamp(proof.revoked_at)}; approval will be refused until the owner verifies again"
+        elif has_current_verification(obj.submission):
+            state = f"current, valid until {stamp(proof.valid_until)}"
+        else:
+            state = "expired or revoked; approval will be refused until the owner verifies again"
+        lines = [
+            evidence,
+            f"Repository: {proof.repository_url} (GitHub repository id {proof.repository_id}, owner id {proof.repository_owner_id})",
+            f"Verified {stamp(proof.verified_at)}" + (f" with ORCID {proof.orcid}" if proof.orcid else ""),
+            f"Status: {state}",
+        ]
+        if obj.snapshot.get("repository_url") != proof.repository_url:
+            lines.append("Warning: this revision names a different repository URL from the proof. Approval will be refused.")
+        return format_html("<ul style='margin:0;padding-left:18px'>{}</ul>", format_html_join("", "<li>{}</li>", ((line,) for line in lines)))
 
     def has_add_permission(self, request):
         return False

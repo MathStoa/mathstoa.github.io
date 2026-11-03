@@ -67,6 +67,14 @@ The project steward should state these rules before inviting contributions. math
 3. Inspect the resulting public listing and announcement. Illustrative examples remain excluded from announcements. Handle corrections through a new reviewed revision, and retain a clear record of removal or attribution decisions.
 4. Keep backups and run the retention commands described in [SETUP.md](SETUP.md). Drafts and review revisions are not automatically deleted when a session or invitation expires. Handle account and attribution requests according to the published privacy policy.
 
+Moderation rules:
+
+- Decide within a week of submission. The site header shows reviewers a **Review queue** count, and a moderation mailbox can receive a notice for every submitted revision (see [SETUP.md](SETUP.md)).
+- One reviewer is enough to publish, but nobody approves a project they own, edit or submitted; the service refuses such an approval. Ask the other reviewer.
+- Every decision carries a review note. The note is the only message the submitter receives: accounts created through ORCID, GitHub or GitLab hold no email address, so submitters read the outcome on their draft page.
+- "Request changes" is also how to decline. State the reason, including out-of-scope or duplicate listings, so the submitter can respond or stop.
+- Never approve a test or demonstration draft; use "Request changes" to clear it from the queue.
+
 ### Legacy JSON archive
 
 1. Review the issue and confirm the steward's permission. Keep source links and the review decision in the issue.

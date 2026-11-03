@@ -107,6 +107,8 @@ class SubmissionRevision(models.Model):
             revision = type(self).objects.select_for_update().get(pk=self.pk)
             if revision.status != "pending":
                 raise ValidationError("This revision has already been reviewed.")
+            if approve and (reviewer.pk in {submission.owner_id, revision.submitted_by_id} or submission.editors.filter(pk=reviewer.pk).exists()):
+                raise ValidationError("You cannot approve a submission you own, edit or submitted. Ask another reviewer to publish it.")
             if approve and submission.published_revision_id and submission.published_revision.number >= revision.number:
                 raise ValidationError("A newer revision is already published. This review cannot replace it.")
             if approve:

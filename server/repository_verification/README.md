@@ -37,6 +37,8 @@ hint. **Every submission/review transition must call `require_verified` inside
 the same database transaction that locks and transitions the submission.** The
 gate locks proof evidence too, serializing concurrent identity revocation.
 Callers continue to enforce owner/editor/reviewer permissions themselves.
+The Django admin shows the latest proof on each submitted revision and lists
+completed proofs read-only; attempts and token digests are never shown.
 
 Proof is bound to the local submission owner, authenticated ORCID (if connected),
 exact repository URL, immutable repository ID and immutable owner ID. It stores
