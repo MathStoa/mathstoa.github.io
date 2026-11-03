@@ -17,6 +17,7 @@
     <a class="wordmark" href="/index.html" aria-label="mathStoa home">math<span lang="el">Στοά</span></a>
     <nav aria-label="Main navigation">
       <a href="/index.html#archive">Archive</a>
+      <a href="/about.html">About</a>
       {% if user.is_authenticated %}
         <a href="{% url 'submissions:list' %}">My submissions</a>
         <a href="{% url 'socialaccount_connections' %}">Account</a>
@@ -41,8 +42,8 @@
   <footer class="site-footer wrap">
     <div><a class="wordmark footer-wordmark" href="/index.html">math<span lang="el">Στοά</span></a></div>
     <nav aria-label="Footer navigation">
-      <a href="/about.html#guidelines">Submission guidelines</a>
       <a href="/privacy/">Privacy</a>
+      <a href="/about.html#guidelines">Submission guidelines</a>
       <a href="/feed.xml">Announcement feed</a>
       <a href="https://github.com/MathStoa/mathstoa.github.io">GitHub</a>
     </nav>

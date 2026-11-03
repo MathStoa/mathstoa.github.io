@@ -4,9 +4,9 @@ mathStoa lists living mathematical projects hosted in public Git repositories. E
 
 ## Submit a project
 
-Once the account service is deployed, sign in at `/accounts/login/` and use `/submissions/new/`. The available sign-in methods depend on the operator's configuration. Create a private draft, add the project details and public collaborator attribution, verify repository control, review the declaration, and submit it for staff review. A submission is a proposal; it does not immediately change the public archive.
+Sign in at <https://math-stoa.org/accounts/login/> and use `/submissions/new/`. The available sign-in methods depend on the operator's configuration. Create a private draft, add the project details and public collaborator attribution, verify repository control, review the declaration, and submit it for staff review. A submission is a proposal; it does not immediately change the public archive.
 
-Until the account service is deployed, use the [GitHub project submission form](https://github.com/MathStoa/mathstoa.github.io/issues/new?template=submit-project.yml). GitHub issue submissions and their review discussion are public. Do not put private contact details in that form or its discussion.
+If you cannot use the account service, the [GitHub project submission form](https://github.com/MathStoa/mathstoa.github.io/issues/new?template=submit-project.yml) remains available as a legacy route. GitHub issue submissions and their review discussion are public. Do not put private contact details in that form or its discussion.
 
 A registered project should have:
 

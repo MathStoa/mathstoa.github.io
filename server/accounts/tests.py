@@ -212,3 +212,34 @@ class LoginTests(TestCase):
             self.assertEqual(self.client.get(path).status_code, 404)
         self.assertEqual(self.client.get("/").status_code, 200)
         self.assertEqual(self.client.get("/feed.xml").status_code, 200)
+
+
+
+class PublicPageTests(TestCase):
+    def test_public_pages_link_the_account_and_privacy_routes(self):
+        for path in ("/", "/index.html", "/about.html", "/project.html", "/404.html"):
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 200, path)
+            html = response.content.decode()
+            self.assertIn('<a href="/accounts/login/">Sign in</a><a class="button button-small" href="/submissions/new/">', html, path)
+            self.assertIn('<nav aria-label="Footer navigation"><a href="/privacy/">Privacy</a>', html, path)
+            self.assertNotIn('href="submit.html"', html, path)
+        self.client.force_login(User.objects.create_user(username="public-page-reader"))
+        html = self.client.get("/").content.decode()
+        self.assertIn('<a href="/submissions/">My submissions</a><a class="button button-small" href="/submissions/new/">', html)
+        self.assertNotIn('<a href="/accounts/login/">Sign in</a>', html)
+
+    def test_service_pages_share_the_public_navigation(self):
+        html = self.client.get("/privacy/").content.decode()
+        self.assertIn('<a href="/index.html#archive">Archive</a>', html)
+        self.assertIn('<a href="/about.html">About</a>', html)
+        self.assertIn('<a href="/privacy/">Privacy</a>', html)
+
+    def test_unknown_pages_use_the_site_404_page(self):
+        for path in ("/missing-page", "/about-us.html", "/assets/missing.css"):
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 404, path)
+            html = response.content.decode()
+            self.assertIn("<h1>Page not found</h1>", html, path)
+            self.assertIn('<a href="/privacy/">Privacy</a>', html, path)
+            self.assertNotIn(path, html)

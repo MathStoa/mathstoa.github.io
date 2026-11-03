@@ -16,11 +16,15 @@ def public_page(request, page="index.html"):
         raise Http404
     text = (settings.REPO_ROOT / "docs" / page).read_text(encoding="utf-8")
     text = text.replace('href="assets/', 'href="/assets/').replace('src="assets/', 'src="/assets/')
+    # The static pages describe the legacy GitHub route; the service takes
+    # submissions itself, and its pages link the same account and privacy routes.
+    text = text.replace('href="submit.html"', 'href="/submissions/new/"')
     if request.user.is_authenticated:
         account_link = '<a href="/submissions/">My submissions</a>'
     else:
         account_link = '<a href="/accounts/login/">Sign in</a>'
-    text = text.replace('<nav aria-label="Main navigation">', '<nav aria-label="Main navigation">' + account_link)
+    submit_button = '<a class="button button-small" href="/submissions/new/">'
+    text = text.replace(submit_button, account_link + submit_button)
     text = text.replace('<nav aria-label="Footer navigation">', '<nav aria-label="Footer navigation"><a href="/privacy/">Privacy</a>')
     response = HttpResponse(text)
     patch_vary_headers(response, ["Cookie"])

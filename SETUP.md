@@ -176,8 +176,9 @@ The public archive and the account routes must reach the same Django service.
 After testing HTTPS, sign-in, email delivery, submission, administration, and
 static pages on the target host, change the domain's DNS to that host. Keep the
 existing site available until the replacement is ready. This setup does not
-change DNS, buy hosting, or register provider applications. `docs/CNAME` may
-remain in the repository while the static pilot is still hosted by GitHub Pages.
+change DNS, buy hosting, or register provider applications. `docs/CNAME` stays in
+the repository so that the GitHub Pages copy of the static pages keeps redirecting
+to the canonical domain after the cutover.
 
 For a non-Docker process manager, install `server/requirements.txt`, set the
 production environment, and run the equivalent release and server commands:

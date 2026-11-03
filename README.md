@@ -12,7 +12,7 @@ New registrations require a project steward's permission and a human review. Res
 
 The public archive provides search and subject filters, readable project pages, repository links, and an Atom announcement feed. This repository also includes a Django account and submission service: email-code sign-in, optional ORCID/GitHub/GitLab/institutional sign-in, private drafts, project editor invitations, and staff review of versioned submissions. It registers public repository links rather than copying repository contents. Submission and approval require verification of repository control; the initial implementation supports public GitHub repositories. GitLab sign-in is available independently, but verified publication from other repository hosts is not yet supported.
 
-The account service requires a production host, PostgreSQL, configured sign-in providers or SMTP, and a domain cutover. It is not activated by publishing this code to GitHub Pages. Until that deployment is complete, the existing public pilot and [GitHub submission form](https://github.com/MathStoa/mathstoa.github.io/issues/new?template=submit-project.yml) remain the operational route. See [SETUP.md](SETUP.md) for the exact setup and limitations.
+The account service runs on a production host with PostgreSQL and configured sign-in providers or SMTP; publishing this code to GitHub Pages does not activate it. Since 3 November 2026 the service has served <https://math-stoa.org/>, and signed-in submission at `/submissions/new/` is the operational route. The [GitHub submission form](https://github.com/MathStoa/mathstoa.github.io/issues/new?template=submit-project.yml) remains available as the legacy public route. See [SETUP.md](SETUP.md) for the exact setup and limitations.
 
 ## Run locally
 
@@ -40,7 +40,7 @@ Commit the updated feed with the archive when the generator changes it.
 
 ## Content and deployment
 
-- `docs/` is the complete public site.
+- `docs/` holds the public pages and assets. The Django service serves them together with the account routes; the GitHub Pages copy only redirects to the canonical domain.
 - `docs/data/projects.json` holds the existing manually reviewed archive.
 - `server/` contains the Django account and submission service. Approved submission revisions are stored in its database and merged into the public archive and feed when served by Django.
 - `scripts/validate.py` checks the archive contract.
@@ -49,7 +49,7 @@ Commit the updated feed with the archive when the generator changes it.
 - `.github/ISSUE_TEMPLATE/submit-project.yml` provides the legacy public submission route.
 - `Dockerfile`, `compose.yaml`, and `.env.example` provide the application and PostgreSQL deployment configuration. [SETUP.md](SETUP.md) covers provider callbacks, email, HTTPS, backups, and operations.
 
-The static pilot uses GitHub Pages from **branch `main`, folder `/docs`** at <https://math-stoa.org/>. Project repositories and their contents remain external. Deploy the account service to a server that runs Python and PostgreSQL, serving both the public site and account routes at that address. GitHub can continue to host the source repository.
+The Django service serves both the public site and the account routes at <https://math-stoa.org/>, currently from Render with a PostgreSQL database; see [OPERATIONS.md](OPERATIONS.md). GitHub Pages, built from **branch `main`, folder `/docs`**, now only redirects to that domain through `docs/CNAME`. Project repositories and their contents remain external, and GitHub continues to host the source repository.
 
 For a host move, preserve the canonical domain where possible. If the public URL changes, update `PUBLIC_BASE_URL`, the allowed hosts and trusted origins, provider callbacks, public links, the recovery base URL in `docs/404.html`, and `SITE_URL` in `scripts/feed.py`, then regenerate the static feed. Keep `FEED_ID` unchanged: it is the permanent Atom feed identity, not a navigation link. Back up and migrate the submission database as well as the static archive. Preserve submission issues and review decisions if the GitHub repository also moves. Do not delete the database volume during a routine application update.
 
