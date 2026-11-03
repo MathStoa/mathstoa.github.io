@@ -57,8 +57,7 @@ class VerificationServicesTests(TestCase):
         self.assertNotEqual(attempt.token_hash, token)
         self.assertEqual(len(attempt.token_hash), 64)
 
-    def test_editor_cannot_issue_owner_claim(self):
-        self.submission.editors.add(self.other)
+    def test_other_account_cannot_issue_owner_claim(self):
         with self.assertRaises(VerificationError):
             start_attempt(self.submission, self.other, "file", client=self.api)
         self.api.resolve_repository.assert_not_called()

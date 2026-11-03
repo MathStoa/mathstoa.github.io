@@ -100,10 +100,8 @@ class PrivacyToolsTests(TestCase):
         self.assertEqual(self.client.post(reverse("account_privacy_export")).status_code, 200)
         self.assertEqual(self.client.post(reverse("account_privacy_request"), {"action": "access", "details": "Review my retained historical data.", "confirm": "on"}).status_code, 200)
 
-    def test_export_contains_only_currently_authorized_content_and_own_metadata(self):
-        owned = Submission.objects.create(owner=self.user, title="Owned draft")
-        shared = Submission.objects.create(owner=self.other, title="Shared draft", collaborators=[{"name": "Public Author", "role": "author", "orcid": "0000-0002-1825-0097", "unexpected_secret": "nested-secret"}])
-        shared.editors.add(self.user)
+    def test_export_contains_only_owned_content_and_own_metadata(self):
+        owned = Submission.objects.create(owner=self.user, title="Owned draft", collaborators=[{"name": "Public Author", "role": "author", "orcid": "0000-0002-1825-0097", "unexpected_secret": "nested-secret"}])
         private = Submission.objects.create(owner=self.other, title="other-private-title", abstract="other-private-abstract")
         old_revision = SubmissionRevision.objects.create(submission=private, number=1, submitted_by=self.user, reviewed_by=self.other, snapshot={"abstract": "lost-editor-history"}, review_note="private-review-note")
         self.identity.extra_data = {"private_payload": "unretained-provider-profile"}
@@ -114,7 +112,7 @@ class PrivacyToolsTests(TestCase):
         attempt = VerificationAttempt.objects.create(submission=owned, user=self.user, method="github", repository_url="https://github.com/requester/research", repository_id=1, repository_owner_id=2, full_name="requester/research", token_hash="verification-credential-must-not-export", expires_at=timezone.now() + timedelta(minutes=10))
         RepositoryVerification.objects.create(attempt=attempt, submission=owned, user=self.user, method="github", repository_url=attempt.repository_url, repository_id=1, repository_owner_id=2, full_name=attempt.full_name, valid_until=timezone.now() + timedelta(days=1))
         data = account_export(self.user)
-        self.assertEqual({row["id"] for row in data["projects"]}, {str(owned.pk), str(shared.pk)})
+        self.assertEqual({row["id"] for row in data["projects"]}, {str(owned.pk)})
         self.assertEqual(data["own_submission_actions"], [{"action": "submitted", "project_id": str(private.pk), "revision": old_revision.number, "at": old_revision.created_at.isoformat()}])
         text = json.dumps(data)
         for secret in (private.title, private.abstract, "lost-editor-history", "private-review-note", "nested-secret", "unretained-provider-profile", other_identity.uid, self.other.email, attempt.token_hash, auth.data["secret"], recovery.instance.data["seed"], self.user.password):
@@ -122,18 +120,16 @@ class PrivacyToolsTests(TestCase):
         self.assertIn("Public Author", text)
         self.user.is_staff = self.user.is_superuser = True
         self.user.save()
-        self.assertEqual({row["id"] for row in account_export(self.user)["projects"]}, {str(owned.pk), str(shared.pk)})
+        self.assertEqual({row["id"] for row in account_export(self.user)["projects"]}, {str(owned.pk)})
 
-    def test_export_route_ignores_other_user_identifiers_and_rechecks_current_access(self):
-        project = Submission.objects.create(owner=self.other, title="shared-then-revoked")
-        project.editors.add(self.user)
+    def test_export_route_ignores_other_user_identifiers(self):
+        own = Submission.objects.create(owner=self.user, title="own-draft")
+        Submission.objects.create(owner=self.other, title="other-private-draft")
         self.record()
         data = self.client.post(reverse("account_privacy_export"), {"user_id": self.other.pk}).json()
         self.assertEqual(data["account"]["id"], str(self.user.pk))
-        self.assertEqual(len(data["projects"]), 1)
-        project.editors.remove(self.user)
-        data = self.client.post(reverse("account_privacy_export")).json()
-        self.assertEqual(data["projects"], [])
+        self.assertEqual([row["id"] for row in data["projects"]], [str(own.pk)])
+        self.assertNotIn("other-private-draft", json.dumps(data))
 
     def test_request_is_downloaded_without_account_email_or_database_retention(self):
         self.record()

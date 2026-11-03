@@ -18,7 +18,7 @@ from django.utils import timezone
 from accounts import retention
 from accounts.maintenance import purge_transient_data
 from repository_verification.models import RepositoryVerification, VerificationAttempt
-from submissions.models import EditorInvitation, Submission, SubmissionRevision
+from submissions.models import Submission, SubmissionRevision
 
 
 User = get_user_model()
@@ -105,13 +105,9 @@ class RetentionTests(RetentionFixtures, TestCase):
         permission_user.user_permissions.add(Permission.objects.first())
         owner = self.user(age=400)
         draft = self.draft(age=1, owner=owner)
-        editor = self.user(age=400)
-        draft.editors.add(editor)
         submitter = self.user(age=400)
         reviewer = self.user(age=400)
         SubmissionRevision.objects.create(submission=draft, number=1, snapshot=draft.snapshot(), submitted_by=submitter, reviewed_by=reviewer, status="rejected")
-        accepter = self.user(age=400)
-        EditorInvitation.objects.create(submission=draft, token_hash="a" * 64, expires_at=self.now + timedelta(days=1), accepted_at=self.now, accepted_by=accepter)
         verifier = self.user(age=400)
         self.attempt(draft, age=1, user=verifier, expires_at=self.now + timedelta(days=1))
         audit_user = self.user(age=400)
@@ -154,31 +150,25 @@ class RetentionTests(RetentionFixtures, TestCase):
         self.assertTrue(RepositoryVerification.objects.filter(pk=published_proof.pk).exists())
         self.assertTrue(SubmissionRevision.objects.filter(pk=revision.pk).exists())
 
-    def test_recent_verification_and_active_access_preserve_old_drafts(self):
+    def test_recent_verification_and_active_attempts_preserve_old_drafts(self):
         recent_attempt = self.draft(age=100)
         self.attempt(recent_attempt, age=5)
         recent_proof = self.draft(age=100)
         self.proof(recent_proof, age=40)
         active_attempt = self.draft(age=100)
         self.attempt(active_attempt, age=100, expires_at=self.now + timedelta(days=1))
-        active_invite = self.draft(age=100)
-        invitation = EditorInvitation.objects.create(submission=active_invite, token_hash="b" * 64, expires_at=self.now + timedelta(days=1))
-        EditorInvitation.objects.filter(pk=invitation.pk).update(created_at=self.now - timedelta(days=100))
         active_proof = self.draft(age=100)
         self.proof(active_proof, age=100, valid_until=self.now + timedelta(days=1))
         self.assertEqual(self.clean()["unused_drafts"], 0)
-        self.assertEqual(Submission.objects.count(), 5)
+        self.assertEqual(Submission.objects.count(), 4)
 
     def test_recent_activity_survives_pruning_its_transient_record(self):
         draft = self.draft(age=100)
-        invitation = EditorInvitation.objects.create(submission=draft, token_hash="c" * 64, expires_at=self.now - timedelta(days=93), revoked_at=self.now - timedelta(days=1))
-        EditorInvitation.objects.filter(pk=invitation.pk).update(created_at=self.now - timedelta(days=100))
         attempt = self.attempt(draft, age=100)
         VerificationAttempt.objects.filter(pk=attempt.pk).update(revoked_at=self.now - timedelta(hours=1))
         with patch("accounts.maintenance.timezone.now", return_value=self.now):
             counts = purge_transient_data()
         self.assertEqual(counts["unused_drafts"], 0)
-        self.assertFalse(EditorInvitation.objects.filter(pk=invitation.pk).exists())
         self.assertFalse(VerificationAttempt.objects.filter(pk=attempt.pk).exists())
         draft.refresh_from_db()
         self.assertEqual(draft.updated_at, self.now - timedelta(hours=1))

@@ -13,7 +13,7 @@ from .models import Submission, SubmissionRevision
 class SubmissionAdmin(admin.ModelAdmin):
     list_display = ("title", "owner", "revision", "updated_at")
     search_fields = ("title",)
-    readonly_fields = [field.name for field in Submission._meta.fields] + ["editors"]
+    readonly_fields = [field.name for field in Submission._meta.fields]
 
     def has_add_permission(self, request):
         return False

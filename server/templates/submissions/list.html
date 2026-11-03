@@ -8,7 +8,7 @@
     </div>
     <a href="{% url 'submissions:create' %}" class="button">New submission</a>
   </div>
-  <p class="notice">Drafts that have never been submitted expire after 90 days without editing or access/verification activity. Save your changes to keep working on a draft; opening this page alone does not extend that period. Submitted and published records are preserved. <a href="/privacy/#retention">Read the retention rules.</a></p>
+  <p class="notice">Drafts that have never been submitted expire after 90 days without an edit or a repository check. Save your changes to keep working on a draft; opening this page alone does not extend that period. Submitted and published records are preserved. <a href="/privacy/#retention">Read the retention rules.</a></p>
   {% if submissions %}
     <div class="submission-list">
       {% for submission in submissions %}
@@ -16,7 +16,6 @@
           <h2><a href="{% url 'submissions:detail' pk=submission.pk %}">{{ submission.title|default:"Untitled draft" }}</a></h2>
           <div class="submission-meta">
             <span class="status">{{ submission.get_status_display|default:submission.status }}</span>
-            <span>{% if submission.owner_id == user.pk %}Owner{% else %}Editor{% endif %}</span>
             <span>Updated {{ submission.updated_at|date:"j M Y" }}</span>
             {% if submission.published_revision %}<a href="/project.html?id={{ submission.public_id|urlencode }}">View published listing</a>{% endif %}
           </div>

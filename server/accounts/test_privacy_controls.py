@@ -18,7 +18,7 @@ from accounts.cache import private_cache_key
 from accounts.maintenance import purge_transient_data
 from accounts.policy import registration_is_open
 from repository_verification.models import RepositoryVerification, VerificationAttempt
-from submissions.models import EditorInvitation, Submission, SubmissionRevision
+from submissions.models import Submission, SubmissionRevision
 
 
 User = get_user_model()
@@ -191,9 +191,7 @@ class TransientDataCleanupTests(TransactionTestCase):
         cache.clear()
         self.now = timezone.now()
         self.owner = User.objects.create_user(username="owner")
-        self.editor = User.objects.create_user(username="editor")
         self.submission = Submission.objects.create(owner=self.owner, title="Preserved project", repository_url="https://github.com/example/project")
-        self.submission.editors.add(self.editor)
         self.revision = SubmissionRevision.objects.create(submission=self.submission, number=1, snapshot=self.submission.snapshot(), status="approved", submitted_by=self.owner)
         self.submission.published_revision = self.revision
         self.submission.save(update_fields=["published_revision"])
@@ -201,9 +199,6 @@ class TransientDataCleanupTests(TransactionTestCase):
         self.active_session = Session.objects.create(session_key="active", session_data="", expire_date=self.now + timedelta(days=1))
         cache.set("old-ip:198.51.100.7", 1, timeout=-60)
         cache.set("active-email:author@example.org", 1, timeout=3600)
-        self.old_invitation = EditorInvitation.objects.create(submission=self.submission, token_hash="a" * 64, expires_at=self.now - timedelta(days=31))
-        self.recent_invitation = EditorInvitation.objects.create(submission=self.submission, token_hash="b" * 64, expires_at=self.now + timedelta(days=1), accepted_at=self.now - timedelta(days=1), accepted_by=self.editor)
-        self.active_invitation = EditorInvitation.objects.create(submission=self.submission, token_hash="c" * 64, expires_at=self.now + timedelta(days=1))
         self.old_attempt = self.attempt("d", days_old=40)
         self.recent_attempt = self.attempt("e", days_old=1)
         self.proven_attempt = self.attempt("f", days_old=40)
@@ -239,27 +234,23 @@ class TransientDataCleanupTests(TransactionTestCase):
     def test_dry_run_counts_without_deleting_then_cleanup_keeps_content_and_proof(self):
         output = StringIO()
         call_command("purge_transient_data", dry_run=True, stdout=output)
-        self.assertIn("Would remove: sessions=1, cache_entries=1, invitations=1, verification_attempts=1,", output.getvalue())
+        self.assertIn("Would remove: sessions=1, cache_entries=1, verification_attempts=1,", output.getvalue())
         self.assertEqual(Session.objects.count(), 2)
         self.assertEqual(len(self.cache_keys()), 2)
-        self.assertEqual(EditorInvitation.objects.count(), 3)
         self.assertEqual(VerificationAttempt.objects.count(), 3)
         counts = purge_transient_data()
         retained = {"unverified_accounts": 0, "inactive_accounts": 0, "unused_drafts": 0, "draft_verifications": 0}
-        self.assertEqual(counts, {"sessions": 1, "cache_entries": 1, "invitations": 1, "verification_attempts": 1, **retained})
+        self.assertEqual(counts, {"sessions": 1, "cache_entries": 1, "verification_attempts": 1, **retained})
         self.assertFalse(Session.objects.filter(pk=self.expired_session.pk).exists())
         self.assertTrue(Session.objects.filter(pk=self.active_session.pk).exists())
         self.assertEqual(len(self.cache_keys()), 1)
         self.assertEqual(cache.get("active-email:author@example.org"), 1)
-        self.assertFalse(EditorInvitation.objects.filter(pk=self.old_invitation.pk).exists())
-        self.assertEqual(EditorInvitation.objects.count(), 2)
         self.assertFalse(VerificationAttempt.objects.filter(pk=self.old_attempt.pk).exists())
         self.assertEqual(VerificationAttempt.objects.count(), 2)
         self.assertTrue(RepositoryVerification.objects.filter(pk=self.proof.pk).exists())
         self.assertTrue(Submission.objects.filter(pk=self.submission.pk, published_revision=self.revision).exists())
-        self.assertTrue(self.submission.editors.filter(pk=self.editor.pk).exists())
-        self.assertEqual(User.objects.count(), 2)
-        self.assertEqual(purge_transient_data(), {"sessions": 0, "cache_entries": 0, "invitations": 0, "verification_attempts": 0, **retained})
+        self.assertEqual(User.objects.count(), 1)
+        self.assertEqual(purge_transient_data(), {"sessions": 0, "cache_entries": 0, "verification_attempts": 0, **retained})
 
     def test_invalid_retention_does_not_remove_anything(self):
         with self.assertRaises(CommandError):

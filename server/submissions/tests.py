@@ -7,13 +7,12 @@ from unittest.mock import Mock, patch
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.cache import cache
-from django.core.management import call_command
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
 from .forms import DOI_GUIDE_URL, ORCID_REGISTER_URL, SubmissionForm, normalize_doi, normalize_orcid
-from .models import EditorInvitation, Submission, SubmissionRevision, display_name
+from .models import Submission, SubmissionRevision, display_name
 
 
 class SubmissionTests(TestCase):
@@ -106,10 +105,9 @@ class SubmissionTests(TestCase):
         self.assertFalse(Submission.objects.exists())
 
     def test_owner_is_assigned_from_session_not_posted_fields(self):
-        submission = self.create_submission({**self.payload, "owner": self.other.pk, "editors": [self.other.pk], "published_revision": "1", "revision": "999"})
+        submission = self.create_submission({**self.payload, "owner": self.other.pk, "published_revision": "1", "revision": "999"})
         self.assertEqual(submission.owner, self.owner)
         self.assertEqual(submission.revision, 1)
-        self.assertFalse(submission.editors.exists())
         self.assertIsNone(submission.published_revision)
 
     def test_owner_can_return_and_edit(self):
@@ -450,19 +448,6 @@ class SubmissionTests(TestCase):
             form = SubmissionForm({**self.payload, key: self.payload[key] + "\x01"})
             self.assertFalse(form.is_valid())
             self.assertIn(field, form.errors)
-
-    def test_cleanup_removes_old_invitation_tokens_without_removing_editors(self):
-        submission = self.create_submission()
-        submission.editors.add(self.other)
-        expired, _ = EditorInvitation.issue(submission)
-        expired.expires_at = timezone.now() - timedelta(days=40)
-        expired.save()
-        active, _ = EditorInvitation.issue(submission)
-        from io import StringIO
-        call_command("purge_expired_invitations", stdout=StringIO())
-        self.assertFalse(EditorInvitation.objects.filter(pk=expired.pk).exists())
-        self.assertTrue(EditorInvitation.objects.filter(pk=active.pk).exists())
-        self.assertTrue(submission.can_edit(self.other))
 
 
 class VerificationBoundaryTests(TestCase):

@@ -15,7 +15,7 @@ from submissions.models import Submission, SubmissionRevision
 
 class Command(BaseCommand):
     help = (
-        "Erase a submission with all its revisions, invitations and verification records, or remove one "
+        "Erase a submission with all its revisions and verification records, or remove one "
         "contributor from its draft and every revision. Prints an inventory and changes nothing without --execute."
     )
 
@@ -38,8 +38,6 @@ class Command(BaseCommand):
         return {
             "revisions": submission.revisions.count(),
             "published": bool(submission.published_revision_id),
-            "editors": submission.editors.count(),
-            "invitations": submission.invitations.count(),
             "verification_attempts": submission.verification_attempts.count(),
             "repository_verifications": submission.repository_verifications.count(),
         }

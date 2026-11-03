@@ -230,8 +230,8 @@ valid format. Confirm the public privacy notice and actual retention practices
 before launching.
 
 The reusable cleanup removes expired sessions and database-cache entries as well
-as old terminal invitations and unused, expired verification attempts, and applies
-the approved account and never-submitted draft retention rules. Preview
+as unused, expired verification attempts, and applies the approved account and
+never-submitted draft retention rules. Preview
 its aggregate counts before running it:
 
 ```sh
@@ -251,17 +251,17 @@ regularly yourself. SQLite development supports one instance only.
 `accounts.maintenance.purge_transient_data` is also callable directly and returns
 `None` if another PostgreSQL session holds the cleanup lock. Active sessions/cache
 entries and all submitted/public records remain. `--days` changes only the
-30-day age threshold for terminal invitations and unused verification attempts;
-it does not change account, draft or session retention.
+30-day age threshold for unused verification attempts; it does not change
+account, draft or session retention.
 
 The approved retention defaults are seven days for empty unverified signups,
-90 days without saved or access/verification activity for never-submitted drafts,
+90 days without saved or verification activity for never-submitted drafts,
 and 365 days since account creation or last successful sign-in (whichever is
 later) for accounts with no responsibilities. Staff, superusers, accounts with
-roles/permissions, owners/editors, and accounts referenced by retained application
+roles/permissions, owners, and accounts referenced by retained application
 records are protected. Any submitted revision, including pending or rejected,
-protects its draft. Recent invitation/verification activity and active invitations
-or verification work protect unused drafts; expired completed proof is removed
+protects its draft. Recent verification activity and active verification work
+protect unused drafts; expired completed proof is removed
 only together with its never-submitted unused draft. The cleanup records the
 latest real draft activity in `updated_at` before pruning short-lived supporting
 records. Simply viewing a page does not extend retention.
@@ -273,12 +273,6 @@ counts without deleting or refreshing timestamps. No reminder email is sent.
 The production cache uses an HMAC key function so rate-limit identifiers are
 not readable in stored cache keys; existing legacy keys disappear on expiry and
 cleanup. Changing `DJANGO_SECRET_KEY` invalidates these keyed cache entries.
-
-Editor invitations are no longer issued. The invitation purge still removes any
-remaining invitation records that expired, were revoked or were used more than
-thirty days ago. It does not delete project drafts, submitted revisions, or
-scholarly credit. Those records require the operator's documented retention and
-request handling process.
 
 Unused, expired repository-verification attempts created more than thirty
 days ago are removed by the cleanup. Completed verification evidence is kept with the
@@ -332,7 +326,7 @@ credentials, institutional agreements, DNS, certificates, or mail delivery work.
 ## Security review and launch gate
 
 Keep `PUBLIC_REGISTRATION_ENABLED=false` until the live sign-in and recovery
-checks are complete. The code enforces author/editor access, fixed submitted
+checks are complete. The code enforces owner-only draft access, fixed submitted
 revisions, repository authorization, CSRF and OAuth state, mandatory staff MFA,
 fresh authentication for account changes, encrypted session/MFA contents,
 minimal provider scopes and profile retention, and the approved cleanup rules.

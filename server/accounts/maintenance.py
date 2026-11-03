@@ -10,7 +10,6 @@ from django.db import connections, router
 from django.utils import timezone
 
 from repository_verification.management.commands.purge_repository_verification_attempts import Command as VerificationCleanup
-from submissions.management.commands.purge_expired_invitations import Command as InvitationCleanup
 from .retention import purge_retained_data
 
 
@@ -71,14 +70,10 @@ def _purge_transient_data(*, dry_run, days):
                 counts["cache_entries"] = cursor.rowcount
 
     # Inspect account responsibilities and preserve draft activity before the
-    # short-lived supporting invitation/attempt records are removed.
+    # short-lived supporting verification attempt records are removed.
     retention_counts = purge_retained_data(now=now, dry_run=dry_run)
-    for name, command_type in (
-        ("invitations", InvitationCleanup),
-        ("verification_attempts", VerificationCleanup),
-    ):
-        command = command_type()
-        call_command(command, days=days, dry_run=dry_run, stdout=StringIO())
-        counts[name] = command.record_count
+    command = VerificationCleanup()
+    call_command(command, days=days, dry_run=dry_run, stdout=StringIO())
+    counts["verification_attempts"] = command.record_count
     counts.update(retention_counts)
     return counts

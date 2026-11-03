@@ -55,15 +55,15 @@ route without granting access to another person's private submissions.
 - The self-export includes explicit account fields, currently accessible project
   drafts, and conservative metadata for the account's own historic actions and
   verification records. It does not grant staff a wider project export or return
-  historical snapshot contents based on past editor or moderator status. For broader
+  historical snapshot contents based on past submitter or moderator status. For broader
   access/export requests, inspect the person's account metadata, connected provider
-  identifiers, supplied email, project ownership/editing rights, submission and
-  moderation records, invitation involvement, and repository-verification records.
+  identifiers, supplied email, project ownership, submission and moderation records,
+  and repository-verification records.
   Search supplied collaborator attribution in drafts, revision snapshots and the
   static archive too; it is separate from account identity. Produce a scoped,
   human-readable export, reviewing other people's private data before delivery.
   Exclude passwords and hashes, session cookies and contents, MFA/recovery secrets,
-  invitation credentials, verification-token hashes and service credentials.
+  verification-token hashes and service credentials.
   Never send a whole database dump. Deliver through the verified private channel
   and remove the working export once it is no longer needed.
 - For correction, distinguish editable account/draft details from already
@@ -72,8 +72,8 @@ route without granting access to another person's private submissions.
   attribution from retained records needs an explicit reviewed correction plan.
   Do not assume that being public, or being a scholarly record, settles the request.
 - For closure, first inventory protected references. `Submission.owner` and
-  `RepositoryVerification.user` prevent blind user deletion; invitations, editor
-  memberships, submitted and moderated revisions and staff logs also need checking.
+  `RepositoryVerification.user` prevent blind user deletion; submitted and
+  moderated revisions and staff logs also need checking.
   Do not silently transfer a project or remove collaborators' work. Agree any
   replacement steward and their repository authority separately.
 
@@ -111,8 +111,8 @@ given. Run it in Render → web service → **Shell**:
     python server/manage.py erase_submission <id> --execute
     python server/manage.py erase_submission <id> --remove-contributor "<name, email or ORCID>" --execute
 
-Whole erasure deletes the submission, every revision, invitations,
-verification attempts and evidence, and blanks the description of matching
+Whole erasure deletes the submission, every revision, verification
+attempts and evidence, and blanks the description of matching
 admin log entries; accounts are left alone (close them separately, below).
 Contributor removal edits the draft and every revision snapshot in place
 (the only sanctioned exception to revision immutability) and updates a
@@ -135,8 +135,8 @@ invalidate its sessions while the agreed changes are implemented. Setting `is_ac
 to false and changing the unusable-password hash stops existing account access;
 remove its remaining session rows as part of cleanup. Decode them with
 `accounts.sessions.SessionStore`, never Django's default `Session.get_decoded`,
-and never log their contents. Review editor memberships, outstanding invitations
-for its owned projects, and verification authorizations for revocation.
+and never log their contents. Review the verification authorizations of its
+owned projects for revocation.
 
 Prepare a reviewed transaction for the remaining data. Where no retained
 references remain, account deletion can remove dependent authentication records.

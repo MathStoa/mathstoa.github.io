@@ -64,16 +64,6 @@ class SubmissionMutationLimitTests(TestCase):
         self.assertEqual(response["Retry-After"], "3600")
         self.assertEqual(self.submission.revisions.count(), 2)
 
-    @override_settings(ACCOUNT_RATE_LIMITS={"submission_submit": "10/h/user,1/h/key"})
-    def test_project_limit_cannot_be_bypassed_using_another_editor(self):
-        self.submission.editors.add(self.other)
-        with patch("repository_verification.services.require_verified") as verify:
-            self.assertEqual(self.submit().status_code, 302)
-            self.new_revision()
-            self.client.force_login(self.other)
-            self.assertEqual(self.submit().status_code, 429)
-        self.assertEqual(verify.call_count, 1)
-
     @override_settings(ACCOUNT_RATE_LIMITS={"submission_create": "2/5m/user"})
     def test_draft_creation_is_limited_per_user_not_shared_ip(self):
         url = reverse("submissions:create")

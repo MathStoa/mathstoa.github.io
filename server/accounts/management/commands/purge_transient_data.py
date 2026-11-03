@@ -7,7 +7,7 @@ class Command(BaseCommand):
     help = "Remove expired operational data, empty unverified accounts after 7 days, unused never-submitted drafts after 90 days, and accounts without responsibilities after 365 days of inactivity; preserve submitted/public records."
 
     def add_arguments(self, parser):
-        parser.add_argument("--days", type=int, default=30, help="Retention for terminal invitations and unused verification attempts (default: 30).")
+        parser.add_argument("--days", type=int, default=30, help="Retention for unused verification attempts (default: 30).")
         parser.add_argument("--dry-run", action="store_true")
 
     def handle(self, *args, **options):

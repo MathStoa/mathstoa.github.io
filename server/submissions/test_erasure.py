@@ -12,7 +12,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from repository_verification.models import RepositoryVerification, VerificationAttempt
-from .models import EditorInvitation, Submission, SubmissionRevision
+from .models import Submission, SubmissionRevision
 
 
 ADA = {"name": "Ada Example", "orcid": "https://orcid.org/0000-0002-1825-0097"}
@@ -33,13 +33,11 @@ class EraseSubmissionTests(TestCase):
         self.submission = Submission.objects.create(
             owner=self.owner, title="Private research", repository_url="https://github.com/example/research", category="math.NT", collaborators=[ADA, BEN],
         )
-        self.submission.editors.add(User.objects.create_user(username="erase-editor"))
         self.revision = SubmissionRevision.objects.create(
             submission=self.submission, number=1, snapshot=self.submission.snapshot(), submitted_by=self.owner,
             status="approved", reviewed_by=self.reviewer, reviewed_at=timezone.now(),
         )
         Submission.objects.filter(pk=self.submission.pk).update(published_revision=self.revision)
-        EditorInvitation.issue(self.submission)
         attempt = VerificationAttempt.objects.create(
             submission=self.submission, user=self.owner, method="github", repository_url=self.submission.repository_url,
             repository_id=1, repository_owner_id=2, full_name="example/research", token_hash="b" * 64,
@@ -69,7 +67,6 @@ class EraseSubmissionTests(TestCase):
         self.assertNotIn("Private research", output)
         self.assertFalse(Submission.objects.exists())
         self.assertFalse(SubmissionRevision.objects.exists())
-        self.assertFalse(EditorInvitation.objects.exists())
         self.assertFalse(VerificationAttempt.objects.exists())
         self.assertFalse(RepositoryVerification.objects.exists())
         entry = LogEntry.objects.get()

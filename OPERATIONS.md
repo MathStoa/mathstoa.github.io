@@ -113,11 +113,10 @@ recovery codes are the root of trust and belong in the password manager. Nobody 
 |---|---|---|
 | Sessions | 14 days from sign-in; expired rows removed hourly | `SESSION_COOKIE_AGE`; `purge_transient_data` |
 | Rate-limit counters | Expire with their window, at most an hour; expired rows removed hourly | `server/accounts/security_cache.py`; cleanup |
-| Editor invitations (no longer issued) | Remaining records removed 30 days after expiry, use or revocation | `server/submissions/management/commands/purge_expired_invitations.py` |
 | Verification attempts | Challenge valid 24 h (file) or 10 min (GitHub); unused expired attempts removed after 30 days | `server/repository_verification/management/commands/purge_repository_verification_attempts.py` |
 | Verification evidence | Valid 30 days; kept with submission history; removed only with an unused draft | `server/accounts/retention.py` |
 | Unverified sign-ups | 7 days with no sign-in, verified email or provider identity | `retention.py` |
-| Never-submitted drafts | 90 days without saved, invitation or verification activity | `retention.py` |
+| Never-submitted drafts | 90 days without saved or verification activity | `retention.py` |
 | Accounts without responsibilities | 365 days after creation or last sign-in, whichever is later | `retention.py` |
 | Submitted revisions, moderation decisions, published records | No automatic deletion; by request only | PRIVACY_REQUESTS.md |
 | Render backups and logs, and Cloudflare edge logs | Point-in-time recovery 3 days (observed); exports and platform logs per the Render plan; edge-network logs (IP addresses, full URLs) under the provider's own retention. Record both here: ____ | Render |

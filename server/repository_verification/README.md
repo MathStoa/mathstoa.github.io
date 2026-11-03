@@ -36,7 +36,7 @@ include in the Django configuration. `has_current_verification` is a display
 hint. **Every submission/moderation transition must call `require_verified` inside
 the same database transaction that locks and transitions the submission.** The
 gate locks proof evidence too, serializing concurrent identity revocation.
-Callers continue to enforce owner/editor/moderator permissions themselves.
+Callers continue to enforce owner/moderator permissions themselves.
 The Django admin shows the latest proof on each submitted revision and lists
 completed proofs read-only; attempts and token digests are never shown.
 

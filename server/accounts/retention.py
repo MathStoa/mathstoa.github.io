@@ -66,7 +66,6 @@ def _purge_account(pk, *, now, dry_run):
 def _draft_activity(submission):
     dates = [submission.created_at, submission.updated_at]
     for records, fields in (
-        (submission.invitations, ("created_at", "accepted_at", "revoked_at")),
         (submission.verification_attempts, ("created_at", "consumed_at", "revoked_at")),
         (submission.repository_verifications, ("verified_at", "revoked_at")),
     ):
@@ -81,12 +80,10 @@ def _purge_draft(pk, *, now, dry_run):
             return 0, 0
         activity = _draft_activity(submission)
         if not dry_run and activity > submission.updated_at:
-            # Preserve real access/verification activity after its short-lived
-            # invitation or attempt record is pruned later in this same run.
+            # Preserve real verification activity after its short-lived attempt
+            # record is pruned later in this same run.
             Submission.objects.filter(pk=pk).update(updated_at=activity)
         if activity >= now - timedelta(days=DRAFT_DAYS):
-            return 0, 0
-        if submission.invitations.filter(expires_at__gt=now, accepted_at__isnull=True, revoked_at__isnull=True).exists():
             return 0, 0
         if submission.verification_attempts.filter(expires_at__gt=now, consumed_at__isnull=True, revoked_at__isnull=True).exists():
             return 0, 0
@@ -120,7 +117,7 @@ def purge_retained_data(*, now, dry_run=False):
         if category:
             counts[category] += 1
     # Refresh retained activity even on younger drafts before transient cleanup
-    # can remove the invitation/verification timestamps that explain it.
+    # can remove the verification timestamps that explain it.
     candidates = Submission.objects.filter(published_revision__isnull=True, revisions__isnull=True)
     for pk in candidates.values_list("pk", flat=True).iterator(chunk_size=200):
         try:

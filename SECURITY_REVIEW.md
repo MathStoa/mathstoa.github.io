@@ -39,7 +39,7 @@ was not. It is not a statement that the service is secure.
 
 | Control | Implementation | Tests |
 |---|---|---|
-| Author/editor access | Drafts visible only to owner or editors (`accessible()`, `Submission.can_edit`: `server/submissions/views.py`, `models.py`); review needs an active staff user with `submissions.change_submissionrevision` (`SubmissionRevision.review`). | `server/submissions/tests.py` |
+| Owner access | Drafts visible only to their owner (`accessible()`: `server/submissions/views.py`); review needs an active staff user with `submissions.change_submissionrevision` (`SubmissionRevision.review`). | `server/submissions/tests.py` |
 | Fixed submitted revisions | `SubmissionRevision.save` rejects changes to a snapshot; admin is read-only with no add or delete (`server/submissions/admin.py`); approval validates the frozen snapshot with `scripts/validate.py` under row locks. | `server/submissions/tests.py` |
 | Repository-control verification | `require_verified` runs inside the locked submit and approve transactions and re-fetches public metadata (`server/repository_verification/services.py`, `github.py`). Limits: public github.com only; attests authority at `verified_at` for at most 30 days; cannot see a later role removal; GitLab repositories not verifiable. | `server/repository_verification/test_services.py`, `test_views.py`, `test_github.py` |
 | CSRF and OAuth state | `CsrfViewMiddleware`; allauth state, with PKCE for GitHub, GitLab and OIDC (`server/config/settings.py`); client-supplied `scope` and `auth_params` rejected on login routes (`server/accounts/middleware.py`); ORCID iD taken only from the server-side token exchange (`server/accounts/orcid.py`). | `server/accounts/test_oauth_parameters.py` |
@@ -61,7 +61,7 @@ was not. It is not a statement that the service is secure.
 | Login identifiers: random username, provider and UID, optional email, creation and last sign-in dates | `auth_user`, `socialaccount_socialaccount`, `account_emailaddress` |
 | Session rows: ID, expiry and Fernet-encrypted payload (sign-in records, pending codes, OAuth state) | `django_session` |
 | MFA: encrypted TOTP secret and recovery seed with used-code mask, type, creation and last-use times | `mfa_authenticator` |
-| Private drafts and editor memberships; collaborator attribution typed by submitters (third parties' names, ORCID iDs, affiliations); invitation token hashes | `submissions_submission`, `submissions_submission_editors`, `submissions_editorinvitation` |
+| Private drafts; collaborator attribution typed by submitters (third parties' names, ORCID iDs, affiliations) | `submissions_submission` |
 | Submitted snapshots, submitter, reviewer, review notes and dates; no automatic deletion | `submissions_submissionrevision` |
 | Verification evidence: GitHub user ID, login and role or commit SHA, repository and owner IDs, ORCID; attempt token hashes | `repository_verification_*` |
 | Rate-limit counters under HMAC keys, at most an hour | `mathstoa_cache` |
@@ -75,7 +75,7 @@ was not. It is not a statement that the service is secure.
 |---|---|---|
 | Phishable TOTP and recovery codes | Medium / high for staff | 15-minute re-challenge, fresh sign-in, no password path. Accepted until WebAuthn after the domain is final. |
 | Hosting or application account compromise (Render, GitHub) | Low / critical: database plus master key exposes everything above | Platform MFA, single member, incident checklist in OPERATIONS.md. Accepted; no external key manager. |
-| Bearer invitation links | Retired | Editor invitations were withdrawn on 2026-11-03; remaining records are purged 30 days after they end. |
+| Bearer invitation links | Retired | Editor invitations were withdrawn on 2026-11-03 and their tables dropped the same day; no invitation or editor record remains. |
 | Point-in-time repository proof | Medium / low to medium | Rechecks catch transfers and privacy changes, not role removal within 30 days; staff review. Accepted. |
 | Session-ID replay until expiry | Low / medium | HttpOnly, Secure, SameSite=Lax, 14-day limit, revocable by row deletion. Accepted. |
 | Security-cache growth under floods | Low / medium, availability | Hourly expired-row cleanup, monthly storage check. Accepted by design. |

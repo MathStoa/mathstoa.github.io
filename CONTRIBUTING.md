@@ -58,7 +58,7 @@ The project steward should state these rules before inviting contributions. math
 1. Open the submitted revision in the Django administration interface at `/admin/`. Confirm repository-control verification and the steward's permission, the public repository link, that any DOI resolves to an archived release of that repository, the website link if one is given, the original summary, contributor attribution, subject categories, and the reuse terms and contribution policy stated in the repository.
 2. Record the moderation note and use the revision's approval or request-changes action. Judge the fixed submitted snapshot, not a later working draft. Approval publishes that revision to the database-backed archive and feed; requesting changes leaves any previously approved version public.
 3. Inspect the resulting public listing and announcement. Illustrative examples remain excluded from announcements. Handle corrections through a new moderated revision, and retain a clear record of removal or attribution decisions.
-4. Keep backups and run the retention commands described in [SETUP.md](SETUP.md). Drafts and submitted revisions are not automatically deleted when a session or invitation expires. Handle account and attribution requests according to the published privacy policy.
+4. Keep backups and run the retention commands described in [SETUP.md](SETUP.md). Drafts and submitted revisions are not automatically deleted when a session expires. Handle account and attribution requests according to the published privacy policy.
 
 Moderation rules:
 

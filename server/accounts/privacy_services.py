@@ -17,7 +17,7 @@ from django.utils.crypto import constant_time_compare, salted_hmac
 from django.views.decorators.debug import sensitive_variables
 
 from repository_verification.models import RepositoryVerification, VerificationAttempt
-from submissions.models import EditorInvitation, Submission, SubmissionRevision
+from submissions.models import Submission, SubmissionRevision
 
 REQUEST_ACTIONS = (("access", "Access or additional information"), ("correction", "Correct information"), ("closure", "Close my account or remove information"))
 REQUEST_MAX_AGE = 7 * 24 * 60 * 60
@@ -158,8 +158,7 @@ def verify_request_bundle(raw):
 def account_export(user):
     """Current account data only; broader historical access needs manual review."""
     projects = []
-    accessible = Submission.objects.filter(Q(owner=user) | Q(editors=user)).distinct().order_by("pk")
-    for project in accessible:
+    for project in Submission.objects.filter(owner=user).order_by("pk"):
         content = {field: getattr(project, field) for field in ("title", "repository_url", "doi", "reading_url", "abstract", "category", "secondary_categories")}
         # Drafts saved before contributors became name and ORCID only can still hold roles and affiliations.
         content["collaborators"] = [
@@ -167,8 +166,7 @@ def account_export(user):
             for person in project.collaborators if isinstance(person, dict)
         ]
         projects.append({
-            "id": str(project.pk), "access": "owner" if project.owner_id == user.pk else "editor",
-            "revision": project.revision, "created_at": _date(project.created_at),
+            "id": str(project.pk), "revision": project.revision, "created_at": _date(project.created_at),
             "updated_at": _date(project.updated_at), "content": content,
         })
     actions = []
@@ -199,5 +197,4 @@ def account_export(user):
         "authenticators": [{"type": row.type, "created_at": _date(row.created_at), "last_used_at": _date(row.last_used_at)} for row in Authenticator.objects.filter(user=user).order_by("pk")],
         "projects": projects, "own_submission_actions": actions, "repository_verifications": proofs,
         "verification_attempts": attempts,
-        "accepted_invitations": [{"project_id": str(row.submission_id), "accepted_at": _date(row.accepted_at)} for row in EditorInvitation.objects.filter(accepted_by=user).order_by("pk")],
     }

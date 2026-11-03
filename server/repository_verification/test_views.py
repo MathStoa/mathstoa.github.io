@@ -87,7 +87,6 @@ class VerificationUITests(TestCase):
         return SimpleNamespace(**values)
 
     def test_only_owner_can_view_or_perform_verification(self):
-        self.submission.editors.add(self.other)
         self.client.force_login(self.other)
         self.assertEqual(self.client.get(self.url()).status_code, 404)
         for name in ("issue_file", "verify_file", "github_start"):

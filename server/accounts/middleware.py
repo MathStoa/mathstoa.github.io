@@ -70,7 +70,7 @@ class AccountPolicyMiddleware:
         if path.startswith(("/accounts/", "/submissions/", "/verify/", "/admin/")):
             add_never_cache_headers(response)
             # Keep same-origin form Origin/Referer checks working. External
-            # navigation receives no referrer, including invitation paths.
+            # navigation receives no referrer.
             response["Referrer-Policy"] = "same-origin"
         # Browsers may apply form-action to the OAuth POST's redirect target.
         # Permit only known login origins, never origins supplied in a request.

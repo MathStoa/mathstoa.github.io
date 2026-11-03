@@ -6,8 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Q
-from django.http import Http404, HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -19,7 +18,7 @@ from .notifications import notify_contributors, notify_moderators
 
 
 def accessible(user):
-    return Submission.objects.filter(Q(owner=user) | Q(editors=user)).distinct()
+    return Submission.objects.filter(owner=user)
 
 
 @login_required
@@ -47,9 +46,8 @@ def create(request):
 def detail(request, pk):
     from repository_verification.services import has_current_verification
     submission = get_object_or_404(accessible(request.user).select_related("published_revision"), pk=pk)
-    owner = submission.owner_id == request.user.pk
     context = {
-        "submission": submission, "revisions": submission.revisions.all(), "can_manage": owner,
+        "submission": submission, "revisions": submission.revisions.all(),
         "repository_verified": has_current_verification(submission),
         # Once this draft revision has been submitted, the page states the outcome instead of offering submission.
         "current_revision": submission.revisions.filter(number=submission.revision).first(),
@@ -60,9 +58,7 @@ def detail(request, pk):
 @login_required
 def edit(request, pk):
     with transaction.atomic():
-        submission = get_object_or_404(Submission.objects.select_for_update(), pk=pk)
-        if not submission.can_edit(request.user):
-            raise Http404
+        submission = get_object_or_404(accessible(request.user).select_for_update(), pk=pk)
         if request.method == "POST":
             limited = limit_action(request, action="submission_edit", user=request.user, key=str(submission.pk), retry_after=300)
             if limited:
@@ -84,9 +80,7 @@ def edit(request, pk):
 @require_POST
 def submit(request, pk):
     with transaction.atomic():
-        submission = get_object_or_404(Submission.objects.select_for_update(), pk=pk)
-        if not submission.can_edit(request.user):
-            raise Http404
+        submission = get_object_or_404(accessible(request.user).select_for_update(), pk=pk)
         if request.POST.get("revision") != str(submission.revision):
             messages.error(request, "The draft changed. Please check the current details and submit again.")
             return redirect("submissions:detail", pk=pk)

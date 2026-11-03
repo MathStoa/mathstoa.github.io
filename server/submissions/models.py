@@ -1,8 +1,5 @@
 """Private drafts and immutable, explicitly moderated public revisions."""
-import hashlib
-import secrets
 import uuid
-from datetime import timedelta
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -35,7 +32,6 @@ SNAPSHOT_FIELDS = ("title", "repository_url", "doi", "reading_url", "abstract", 
 class Submission(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="owned_submissions")
-    editors = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="editable_submissions")
     title = models.CharField(max_length=120)
     repository_url = models.URLField(max_length=500, blank=True)
     doi = models.CharField("DOI", max_length=300, blank=True)
@@ -75,9 +71,6 @@ class Submission(models.Model):
     def secondary_category_labels(self):
         labels = dict(CATEGORIES)
         return [labels.get(code, code) for code in self.secondary_categories]
-
-    def can_edit(self, user):
-        return user.is_authenticated and (self.owner_id == user.pk or self.editors.filter(pk=user.pk).exists())
 
     def snapshot(self):
         return {name: getattr(self, name) for name in SNAPSHOT_FIELDS}
@@ -168,23 +161,3 @@ class SubmissionRevision(models.Model):
             "example": False,
         }
 
-
-class EditorInvitation(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name="invitations")
-    token_hash = models.CharField(max_length=64, unique=True, editable=False)
-    expires_at = models.DateTimeField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    revoked_at = models.DateTimeField(null=True, blank=True)
-    accepted_at = models.DateTimeField(null=True, blank=True)
-    accepted_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
-
-    @classmethod
-    def issue(cls, submission):
-        token = secrets.token_urlsafe(32)
-        invitation = cls.objects.create(submission=submission, token_hash=hashlib.sha256(token.encode()).hexdigest(), expires_at=timezone.now() + timedelta(days=7))
-        return invitation, token
-
-    @property
-    def is_active(self):
-        return not self.revoked_at and not self.accepted_at and self.expires_at > timezone.now()

@@ -36,7 +36,7 @@ required (no large-scale monitoring or special category data).
 |---|---|---|---|---|---|
 | Accounts and sign-in | Account holders | Provider identifier, random username, creation and sign-in dates, encrypted MFA secret and recovery-code data, session data | Art. 6(1)(b) contract | Render (processor) | 365 days without sign-in if no responsibilities; otherwise until closure (`server/accounts/retention.py`) |
 | Security and abuse prevention | Visitors, account holders | IP-derived keyed digests in rate-limit cache; request log without URLs or IPs; Render and Cloudflare platform logs | Art. 6(1)(f) security | Render, Cloudflare (processors) | Counters ≤ 1 hour; platform logs per provider (OPERATIONS.md retention table) |
-| Drafts, editing access, invitations | Account holders, named contributors | Draft fields, contributor names, ORCID iDs and institutional emails (required for moderation, never public), editor memberships, hashed invitation tokens | Art. 6(1)(b) for the account holder; 6(1)(f) for contributors | Render | Unused drafts 90 days; invitations 30 days after end |
+| Drafts | Account holders, named contributors | Draft fields, contributor names, ORCID iDs and institutional emails (required for moderation, never public) | Art. 6(1)(b) for the account holder; 6(1)(f) for contributors | Render | Unused drafts 90 days |
 | Repository verification | Submitters | GitHub user id, login, permission level, commit SHA, connected ORCID, dates | Art. 6(1)(f) authorised submissions | Render; GitHub (independent controller, API queries) | With the submission's records |
 | Moderation and publication | Submitters, moderators, named contributors | Immutable revision snapshots, moderation notes, moderator identity; public listing of names and ORCID iDs | Art. 6(1)(f) scholarly attribution and accountable moderation | Public (listing only); Render | While listed or under moderation; never-accepted projects until removal is requested |
 | Moderation notices | Submitters (by project) | Project title and link in an email to moderators | Art. 6(1)(f) | SMTP provider when configured (processor) | Moderators' mailboxes |
@@ -80,7 +80,7 @@ someone else did not supply it themselves; each is emailed when a project
 listing them is submitted, and this is further mitigated by the submitter's confirmation that they may list them, the
 notice's dedicated section, the right to object without an account, and the
 `erase_submission --remove-contributor` command. Private records are visible
-only to the owner, editors and the controllers. Outcome: the interests are
+only to the owner and the controllers. Outcome: the interests are
 not overridden, provided objections are honoured promptly.
 
 ## Records kept elsewhere (restricted, not in this repository)
