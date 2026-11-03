@@ -16,7 +16,7 @@ CATEGORIES = [
     ("math.DG", "Differential geometry"), ("math.DS", "Dynamical systems"),
     ("math.FA", "Functional analysis"), ("math.LO", "Logic and foundations"),
     ("math.NT", "Number theory"), ("math.PR", "Probability"),
-    ("math.GM", "General mathematics"),
+    ("cs.LO", "Lean formalisation"), ("math.GM", "General mathematics"),
 ]
 # Submitted revisions freeze these fields. Older snapshots may hold fields that have since been removed.
 SNAPSHOT_FIELDS = ("title", "repository_url", "doi", "reading_url", "abstract", "category", "collaborators")
@@ -139,7 +139,7 @@ class SubmissionRevision(models.Model):
             "summary": data["abstract"], "description": data["abstract"],
             "categories": [{"code": data["category"], "label": dict(CATEGORIES)[data["category"]]}],
             "repositoryUrl": data["repository_url"],
-            # The website is optional, and revisions submitted before the DOI requirement have no DOI.
+            # The DOI and website are optional.
             **{key: data[name] for key, name in (("doi", "doi"), ("readingUrl", "reading_url")) if data.get(name)},
             "credits": [
                 {"name": author["name"], **({"orcid": author["orcid"]} if author.get("orcid") else {})}

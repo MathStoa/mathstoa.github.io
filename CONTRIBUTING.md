@@ -11,7 +11,7 @@ If you cannot use the account service, the [GitHub project submission form](http
 A registered project should have:
 
 - A public Git repository with meaningful mathematical content.
-- A DOI for an archived release of the repository. GitHub explains [how to get a DOI for a repository with Zenodo](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content#issuing-a-persistent-identifier-for-your-repository-with-zenodo).
+- Optionally, a DOI for an archived release of the repository. GitHub explains [how to get a DOI for a repository with Zenodo](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content#issuing-a-persistent-identifier-for-your-repository-with-zenodo).
 - Optionally, a publicly accessible project website explaining its aims and introducing the material in the repository.
 - A named steward who agrees to the listing and can keep its status current.
 - A short original abstract and relevant subject categories.
@@ -32,7 +32,7 @@ The DOI identifies the archived release that a listing announces; a mutable repo
 
 ## Review and corrections
 
-mathStoa maintainers check scope, readable content, public links and the DOI, permission to register, attribution, and clarity of the requested collaboration. They may ask for revisions or decline an empty, misleading, duplicate, or out-of-scope submission. This is an archive review, not mathematical peer review.
+mathStoa maintainers check scope, readable content, public links and any DOI, permission to register, attribution, and clarity of the requested collaboration. They may ask for revisions or decline an empty, misleading, duplicate, or out-of-scope submission. This is an archive review, not mathematical peer review.
 
 In the account service, submitting a draft creates a fixed revision for staff review. Staff can approve it or request changes. A previously approved revision remains public while an update is being reviewed; editing a draft does not silently replace the published listing. Review decisions are retained with the submitted revision. Legacy submissions retain their decisions in the GitHub issue or pull request.
 
@@ -55,7 +55,7 @@ The project steward should state these rules before inviting contributions. math
 
 ### Account-service submissions
 
-1. Review the submitted revision in the Django administration interface at `/admin/`. Confirm repository-control verification and the steward's permission, the public repository link, that the DOI resolves to an archived release of that repository, the website link if one is given, the original summary, contributor attribution, subject categories, and the reuse terms and contribution policy stated in the repository.
+1. Review the submitted revision in the Django administration interface at `/admin/`. Confirm repository-control verification and the steward's permission, the public repository link, that any DOI resolves to an archived release of that repository, the website link if one is given, the original summary, contributor attribution, subject categories, and the reuse terms and contribution policy stated in the repository.
 2. Record the review note and use the revision's approval or request-changes action. Review the fixed submitted snapshot, not a later working draft. Approval publishes that revision to the database-backed archive and feed; requesting changes leaves any previously approved version public.
 3. Inspect the resulting public listing and announcement. Illustrative examples remain excluded from announcements. Handle corrections through a new reviewed revision, and retain a clear record of removal or attribution decisions.
 4. Keep backups and run the retention commands described in [SETUP.md](SETUP.md). Drafts and review revisions are not automatically deleted when a session or invitation expires. Handle account and attribution requests according to the published privacy policy.
@@ -72,7 +72,7 @@ Moderation rules:
 
 1. Review the issue and confirm the steward's permission. Keep source links and the review decision in the issue.
 2. Add or update the entry in `docs/data/projects.json`, following the existing structure. Use a stable, unique project ID. Record the actual acceptance date in `added`; keep `example: true` for illustrative entries and use `false` only for accepted registrations.
-3. Confirm that the title, summary, DOI, category labels, and project credits accurately reflect the source and submission. Record the DOI as an `https://doi.org/` link in `doi`; `readingUrl` is optional. Do not copy research content into the archive.
+3. Confirm that the title, summary, DOI, category labels, and project credits accurately reflect the source and submission. Record any DOI as an `https://doi.org/` link in `doi`; `doi` and `readingUrl` are optional. Do not copy research content into the archive.
 4. Run `python3 scripts/validate.py`, `python3 scripts/feed.py`, and `python3 -m unittest discover -s tests -v`.
 5. Preview with `python3 -m http.server 4173 --directory docs`, inspect the listing and links, and include any changed generated feed in the pull request.
 6. Merge the reviewed change into `main` and link the published listing from the submission issue.

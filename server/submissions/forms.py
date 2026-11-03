@@ -133,19 +133,21 @@ class SubmissionForm(forms.ModelForm):
     permission_confirmed = forms.BooleanField(required=False, label="I maintain this project or have permission to submit it and its contributor details.")
     license_confirmed = forms.BooleanField(required=False, label="I have permission to publish this original abstract under CC BY 4.0. The linked project keeps its own licence.")
     # Everything else is required before a draft can be submitted for review.
-    optional_fields = ("reading_url",)
+    optional_fields = ("doi", "reading_url")
 
     class Meta:
         model = Submission
         fields = ["title", "repository_url", "doi", "reading_url", "abstract", "category", "collaborators", "permission_confirmed", "license_confirmed"]
         labels = {"repository_url": "Public repository", "reading_url": "Project website", "abstract": "Short abstract", "category": "Main subject"}
         help_texts = {
-            "title": "Required to save a draft. You can complete the other details before submitting.",
-            "doi": format_html('The DOI of an archived release of the repository, such as 10.5281/zenodo.1234567. <a href="{}" target="_blank" rel="noopener noreferrer">How to get a DOI for a GitHub repository</a>', DOI_GUIDE_URL),
+            "doi": format_html('If you have one, the DOI of an archived release of the repository, such as 10.5281/zenodo.1234567. <a href="{}" target="_blank" rel="noopener noreferrer">How to get a DOI for a GitHub repository</a>', DOI_GUIDE_URL),
             "reading_url": "A public website that explains the project’s aims and introduces the material in the repository.",
             "abstract": "80–1,500 characters when submitting for review.",
         }
-        widgets = {"abstract": forms.Textarea(attrs={"rows": 5})}
+        widgets = {
+            "title": forms.TextInput(attrs={"placeholder": "e.g. Formalising the Sensitivity Conjecture in Lean"}),
+            "abstract": forms.Textarea(attrs={"rows": 5}),
+        }
 
     def __init__(self, *args, for_submission=False, **kwargs):
         super().__init__(*args, **kwargs)

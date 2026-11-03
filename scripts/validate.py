@@ -16,7 +16,7 @@ FIELDS = {
     "id", "title", "summary", "description", "categories", "repositoryUrl",
     "credits", "added", "example", "highlights",
 }
-# The project website is optional; listings approved before the DOI requirement have no DOI.
+# The DOI and project website are optional.
 OPTIONAL_FIELDS = {"doi", "readingUrl"}
 DOI_URL = re.compile(r"https://doi\.org/10\.\d{4,9}(?:\.\d+)*/[-._;()/:A-Za-z0-9]+")
 

@@ -114,16 +114,19 @@ class SubmissionTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertFalse(submission.revisions.exists())
 
-    def test_form_marks_only_the_website_optional_and_links_to_the_doi_guide(self):
+    def test_form_marks_the_doi_and_website_optional_and_links_to_the_doi_guide(self):
         response = self.client.get(reverse("submissions:create"))
+        self.assertContains(response, "DOI <span>(optional)</span>")
         self.assertContains(response, "Project website <span>(optional)</span>")
-        self.assertContains(response, "(optional)", count=1)
+        self.assertContains(response, "(optional)", count=2)
+        self.assertContains(response, 'placeholder="e.g. Formalising the Sensitivity Conjecture in Lean"')
+        self.assertNotContains(response, "Required to save a draft")
         self.assertNotContains(response, "optional in a draft")
         self.assertContains(response, DOI_GUIDE_URL)
         self.assertContains(response, f'<a href="{ORCID_REGISTER_URL}"')
         self.assertContains(response, 'name="collaborators-name"')
-        self.assertTrue(SubmissionForm({**self.payload, "reading_url": ""}, for_submission=True).is_valid())
-        for field in ("doi", "repository_url", "abstract", "category", "collaborators"):
+        self.assertTrue(SubmissionForm({**self.payload, "doi": "", "reading_url": ""}, for_submission=True).is_valid())
+        for field in ("repository_url", "abstract", "category", "collaborators"):
             with self.subTest(field=field):
                 form = SubmissionForm({key: value for key, value in self.payload.items() if not key.startswith(field)}, for_submission=True)
                 self.assertFalse(form.is_valid())
@@ -151,6 +154,21 @@ class SubmissionTests(TestCase):
         submission = self.create_submission()
         self.assertEqual(submission.doi, "https://doi.org/10.5281/zenodo.1234567")
         self.assertContains(self.client.get(reverse("submissions:detail", args=[submission.pk])), 'href="https://doi.org/10.5281/zenodo.1234567"')
+
+    def test_doi_is_optional_for_review_and_publication(self):
+        submission = self.create_submission({**self.payload, "doi": ""})
+        self.assertContains(self.client.get(reverse("submissions:detail", args=[submission.pk])), "<dt>DOI</dt><dd>None (optional)</dd>")
+        self.submit(submission).review(self.staff, approve=True)
+        project = next(p for p in self.client.get("/data/projects.json").json()["projects"] if p["id"] == submission.public_id)
+        self.assertNotIn("doi", project)
+        self.assertEqual(self.client.get("/feed.xml").status_code, 200)
+
+    def test_lean_formalisation_is_a_subject_that_publishes(self):
+        self.assertContains(self.client.get(reverse("submissions:create")), '<option value="cs.LO">Lean formalisation</option>')
+        submission = self.create_submission({**self.payload, "category": "cs.LO"})
+        self.submit(submission).review(self.staff, approve=True)
+        project = next(p for p in self.client.get("/data/projects.json").json()["projects"] if p["id"] == submission.public_id)
+        self.assertEqual(project["categories"], [{"code": "cs.LO", "label": "Lean formalisation"}])
 
     def test_website_is_optional_for_review_and_publication(self):
         submission = self.create_submission({**self.payload, "reading_url": ""})

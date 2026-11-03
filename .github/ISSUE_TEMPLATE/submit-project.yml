@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Your repository should contain meaningful mathematical work and have a DOI for an archived release ([how to get a DOI for a GitHub repository](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content#issuing-a-persistent-identifier-for-your-repository-with-zenodo)). A public website explaining the project’s aims is optional.
+        Your repository should contain meaningful mathematical work and ideally a DOI for an archived release ([how to get a DOI for a GitHub repository](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content#issuing-a-persistent-identifier-for-your-repository-with-zenodo)). A public website explaining the project’s aims is optional.
         Please read [CONTRIBUTING.md](https://github.com/MathStoa/mathstoa.github.io/blob/main/CONTRIBUTING.md). This issue and its review are public; do not include private contact details or correspondence. Submission does not publish a listing automatically.
   - type: input
     id: project-title
@@ -23,11 +23,11 @@ body:
   - type: input
     id: doi
     attributes:
-      label: DOI
-      description: The DOI of an archived release of the repository. [How to get a DOI for a GitHub repository](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content#issuing-a-persistent-identifier-for-your-repository-with-zenodo).
+      label: DOI (optional)
+      description: If you have one, the DOI of an archived release of the repository. [How to get a DOI for a GitHub repository](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content#issuing-a-persistent-identifier-for-your-repository-with-zenodo).
       placeholder: 10.5281/zenodo.1234567
     validations:
-      required: true
+      required: false
   - type: input
     id: reading-url
     attributes:
@@ -57,6 +57,7 @@ body:
         - math.LO — Logic and foundations
         - math.NT — Number theory
         - math.PR — Probability
+        - cs.LO — Lean formalisation
         - math.GM — General mathematics
     validations:
       required: true
