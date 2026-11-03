@@ -12,10 +12,7 @@ from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 ARCHIVE = ROOT / "docs" / "data" / "projects.json"
-FIELDS = {
-    "id", "title", "summary", "description", "categories", "repositoryUrl",
-    "credits", "added", "example", "highlights",
-}
+FIELDS = {"id", "title", "summary", "categories", "repositoryUrl", "credits", "added", "example"}
 # The DOI and project website are optional.
 OPTIONAL_FIELDS = {"doi", "readingUrl"}
 DOI_URL = re.compile(r"https://doi\.org/10\.\d{4,9}(?:\.\d+)*/[-._;()/:A-Za-z0-9]+")
@@ -84,7 +81,7 @@ def validate_archive(data: object) -> dict:
         if slug in ids:
             fail(f"{path}.id", f"duplicate ID: {slug}")
         ids.add(slug)
-        for field in ("title", "summary", "description"):
+        for field in ("title", "summary"):
             text(project[field], f"{path}.{field}", 200 if field == "title" else 10000)
         if type(project["example"]) is not bool:
             fail(f"{path}.example", "must be true or false, never a string")
@@ -124,8 +121,6 @@ def validate_archive(data: object) -> dict:
                 check = (12 - total % 11) % 11
                 if digits[-1] != ("X" if check == 10 else str(check)):
                     fail(f"{path}.credits.orcid", "has an invalid check digit")
-        for highlight in sequence(project["highlights"], f"{path}.highlights", 10):
-            text(highlight, f"{path}.highlights", 1000)
     return data
 
 

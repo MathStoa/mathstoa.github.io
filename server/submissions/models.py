@@ -155,7 +155,7 @@ class SubmissionRevision(models.Model):
         codes = dict.fromkeys([data["category"], *data.get("secondary_categories", [])])
         return {
             "id": self.submission.public_id, "title": data["title"],
-            "summary": data["abstract"], "description": data["abstract"],
+            "summary": data["abstract"],
             "categories": [{"code": code, "label": labels[code]} for code in codes],
             "repositoryUrl": data["repository_url"],
             # The DOI and website are optional.
@@ -166,7 +166,6 @@ class SubmissionRevision(models.Model):
             ],
             "added": (first.reviewed_at if first else self.reviewed_at or timezone.now()).date().isoformat(),
             "example": False,
-            "highlights": [f"Follow the {'project website' if data.get('reading_url') else 'repository'} for the research and its latest version."],
         }
 
 

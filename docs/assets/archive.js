@@ -110,8 +110,8 @@ function card(project) {
 function matchesQuery(project, words) {
   if (state.field === 'author') return project.credits.some(credit => words.every(word => folded(credit.name).includes(word)));
   const values = state.field === 'title' ? [project.title]
-    : state.field === 'abstract' ? [project.summary, project.description]
-    : [project.title, project.summary, project.description, project.repositoryUrl, project.doi,
+    : state.field === 'abstract' ? [project.summary]
+    : [project.title, project.summary, project.repositoryUrl, project.doi,
       ...project.categories.flatMap(category => [category.code, category.label]), ...project.credits.map(credit => credit.name)];
   const text = folded(values.join(' '));
   return words.every(word => text.includes(word));

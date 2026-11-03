@@ -12,13 +12,12 @@ class ArchiveTests(unittest.TestCase):
     def setUp(self):
         self.data = {"version": 1, "projects": [{
             "id": "test-project", "title": "Example project", "summary": "An example summary.",
-            "description": "An example project used only by the test suite.",
             "categories": [{"code": "math.LO", "label": "Logic"}],
             "repositoryUrl": "https://github.com/example/project",
             "doi": "https://doi.org/10.5281/zenodo.1234567",
             "readingUrl": "https://example.org/notes",
             "credits": [{"name": "Example contributors"}],
-            "added": "2026-10-31", "example": True, "highlights": ["An example question"],
+            "added": "2026-10-31", "example": True,
         }]}
 
     def test_repository_archive_is_valid(self):
@@ -61,7 +60,7 @@ class ArchiveTests(unittest.TestCase):
                     validate_archive(data)
 
     def test_missing_attribution_and_removed_fields_fail(self):
-        for field, value in (("credits", []), ("stage", "Exploration"), ("licenseNote", "MIT")):
+        for field, value in (("credits", []), ("stage", "Exploration"), ("licenseNote", "MIT"), ("description", "A longer text"), ("highlights", ["A bullet"])):
             with self.subTest(field=field):
                 data = deepcopy(self.data)
                 data["projects"][0][field] = value
