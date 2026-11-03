@@ -218,6 +218,16 @@ class StaffMFATests(TestCase):
         self.assertFalse(other.has_usable_password())
         self.assertFalse(Authenticator.objects.filter(user=other).exists())
 
+    def test_recovery_codes_page_continues_to_admin_once_the_codes_are_saved(self):
+        _, secret = self.primary()
+        self.confirm(secret)
+        RecoveryCodes.activate(self.user)
+        response = self.client.get(reverse("mfa_view_recovery_codes"))
+        self.assertContains(response, 'id="codes_saved" required')
+        self.assertContains(response, 'action="' + reverse("admin:index") + '"')
+        self.assertContains(response, "Continue to administration")
+        self.assertContains(response, 'href="' + reverse("mfa_index") + '"')
+
 
 class AccountMethodSecurityTests(TestCase):
     def setUp(self):

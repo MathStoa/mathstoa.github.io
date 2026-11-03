@@ -87,3 +87,22 @@ class AuthorMFASecurityTests(TestCase):
     def test_author_account_page_offers_optional_authenticator_settings(self):
         response = self.client.get(reverse("socialaccount_connections"))
         self.assertContains(response, 'href="' + reverse("mfa_index") + '"')
+
+    def test_recovery_codes_page_leads_on_once_the_codes_are_saved(self):
+        self.record("socialaccount", provider="github", uid="existing-author")
+        self.client.get(reverse("mfa_activate_totp"))
+        secret = self.client.session["mfa.totp.secret"]
+        response = self.client.post(reverse("mfa_activate_totp"), {"code": self.code(secret)})
+        self.assertEqual(response.url, reverse("mfa_view_recovery_codes"))
+        self.confirm(secret)
+        codes = Authenticator.objects.get(user=self.user, type="recovery_codes").wrap().get_unused_codes()
+        response = self.client.get(reverse("mfa_view_recovery_codes"))
+        self.assertContains(response, codes[0])
+        self.assertContains(response, 'id="codes_saved" required')
+        self.assertContains(response, 'action="' + reverse("mfa_index") + '"')
+        self.assertContains(response, ">Continue</button>")
+        # Shown once: the next visit offers a new set instead of the codes.
+        response = self.client.get(reverse("mfa_view_recovery_codes"))
+        self.assertNotContains(response, codes[0])
+        self.assertContains(response, 'href="' + reverse("mfa_generate_recovery_codes") + '"')
+        self.assertContains(response, 'href="' + reverse("mfa_index") + '"')

@@ -1,0 +1,38 @@
+{% extends "mfa/recovery_codes/base.html" %}
+{% load static %}
+{% block head_title %}Recovery codes{% endblock %}
+{% block content %}
+  <h1>Recovery codes</h1>
+  {% if can_view_codes %}
+    <p>Each code below signs you in once if you lose your authenticator app. The codes are shown only now. Keep them somewhere safe, such as a password manager, before you continue.</p>
+    <form method="get" action="{% if user.is_staff %}{% url 'admin:index' %}{% else %}{% url 'mfa_index' %}{% endif %}" class="account-form">
+      <p>
+        <label for="recovery_codes">Unused codes</label>
+        <textarea id="recovery_codes" class="recovery-codes" rows="{{ unused_codes|length }}" readonly spellcheck="false">{% for code in unused_codes %}{% if forloop.counter0 %}
+{% endif %}{{ code }}{% endfor %}</textarea>
+        <span class="helptext">Click the list to select the codes.</span>
+      </p>
+      <p>
+        <label class="checkbox-row" for="codes_saved"><input type="checkbox" id="codes_saved" required> I have saved my recovery codes</label>
+      </p>
+      <div class="actions">
+        <button type="submit">{% if user.is_staff %}Continue to administration{% else %}Continue{% endif %}</button>
+        {% if user.is_staff %}<a href="{% url 'mfa_index' %}">Authenticator settings</a>{% endif %}
+      </div>
+    </form>
+  {% else %}
+    <p>You have {{ unused_codes|length }} of {{ total_count }} recovery codes left. They were shown once, when they were generated, and cannot be shown again.</p>
+    <p>If you no longer have them, generate a new set. The remaining old codes then stop working.</p>
+    <div class="actions">
+      {% if can_generate_codes %}<a class="button" href="{% url 'mfa_generate_recovery_codes' %}">Generate new codes</a>{% endif %}
+      <a href="{% url 'mfa_index' %}">Authenticator settings</a>
+    </div>
+  {% endif %}
+{% endblock %}
+{% block extra_body %}
+  {% if can_view_codes %}
+    <script src="{% static 'mfa/js/recovery_codes.js' %}"></script>
+    <script src="{% static 'account/js/onload.js' %}"></script>
+    <script data-allauth-onload="allauth.recoveryCodes.forms.viewForm" type="application/json">{"ids": {"saveConfirmation": "codes_saved", "recoveryCodes": "recovery_codes"}}</script>
+  {% endif %}
+{% endblock %}
