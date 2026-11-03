@@ -47,7 +47,7 @@ was not. It is not a statement that the service is secure.
 | Fresh sign-in for account changes | Sign-in method and email changes, MFA enrolment and privacy downloads need a first-factor sign-in within 300 s, rechecked at the OAuth callback (`staff_mfa.py`, `adapters.py`, `privacy_views.py`). | `test_author_mfa_security.py`, `test_privacy_tools.py` |
 | Encrypted session and MFA contents | Fernet keys derived by HKDF-SHA256 from `DJANGO_SECRET_KEY` for the purposes `sessions` and `mfa`, fallbacks via MultiFernet, plaintext and legacy signed payloads rejected (`server/accounts/security_crypto.py`, `sessions.py`, `mfa_adapter.py`); production refuses keys under 50 characters. | `test_staff_security.py`, `test_settings.py` |
 | Minimal scopes, stripped profiles | ORCID `/authenticate`, GitHub none, GitLab `read_user`, OIDC `openid`; tokens not stored; `extra_data`, emails and phone cleared on every sign-in; random usernames (`settings.py`, `adapters.py`, `orcid.py`). | `tests.py`, `test_orcid_privacy.py` |
-| Rate limits and security cache | allauth limits for admin login (socket address and account), submissions, invitations, verification and privacy actions (`ACCOUNT_RATE_LIMITS`; `middleware.py`); database cache that never evicts live counters and fails closed on a failed write; HMAC-hashed keys (`security_cache.py`, `cache.py`). | `test_limits.py`, `test_security_cache.py`, `server/submissions/test_limits.py` |
+| Rate limits and security cache | allauth limits for admin login (socket address and account), submissions, verification and privacy actions (`ACCOUNT_RATE_LIMITS`; `middleware.py`); database cache that never evicts live counters and fails closed on a failed write; HMAC-hashed keys (`security_cache.py`, `cache.py`). | `test_limits.py`, `test_security_cache.py`, `server/submissions/test_limits.py` |
 | Retention cleanup | Hourly supervised `purge_transient_data` under a PostgreSQL advisory lock with the 7/90/365-day rules (`retention.py`, `maintenance.py`, `supervisor.py`, `run_web.py`). | `test_retention.py`, `test_supervisor.py` |
 | Privacy exports and verified requests | Self-export and signed request files bound to account, request digest and security state for seven days; stateless verification needs staff, recent MFA and `auth.view_user` (`privacy_services.py`, `privacy_views.py`). | `test_privacy_tools.py` |
 | Log minimisation | Gunicorn access log carries time, method, status and size only; cleanup output discarded; privacy and verification code marked sensitive for error reports (`run_web.py`, `supervisor.py`). Render's proxy logs are outside this control [live]. | `test_supervisor.py` |
@@ -75,7 +75,7 @@ was not. It is not a statement that the service is secure.
 |---|---|---|
 | Phishable TOTP and recovery codes | Medium / high for staff | 15-minute re-challenge, fresh sign-in, no password path. Accepted until WebAuthn after the domain is final. |
 | Hosting or application account compromise (Render, GitHub) | Low / critical: database plus master key exposes everything above | Platform MFA, single member, incident checklist in OPERATIONS.md. Accepted; no external key manager. |
-| Bearer invitation links | Medium / medium: editing a draft | 7-day expiry, single use, hash at rest, revocable. Accepted. |
+| Bearer invitation links | Retired | Editor invitations were withdrawn on 2026-11-03; remaining records are purged 30 days after they end. |
 | Point-in-time repository proof | Medium / low to medium | Rechecks catch transfers and privacy changes, not role removal within 30 days; staff review. Accepted. |
 | Session-ID replay until expiry | Low / medium | HttpOnly, Secure, SameSite=Lax, 14-day limit, revocable by row deletion. Accepted. |
 | Security-cache growth under floods | Low / medium, availability | Hourly expired-row cleanup, monthly storage check. Accepted by design. |
@@ -85,7 +85,7 @@ was not. It is not a statement that the service is secure.
 | GitLab repositories not verifiable | Certain / low | Documented; GitLab users sign in but cannot publish GitLab repositories. Accepted. |
 | Credentials bound to `onrender.com` | Certain at cutover / low | Affects WebAuthn (none yet), cookies and provider callbacks, not TOTP; re-test sign-in at math-stoa.org [live]. |
 | No WebAuthn | Certain / medium | Planned after cutover; needs two keys or a recovery process first. |
-| Platform and edge logs may hold callback codes and invitation tokens | Unknown / medium [live] | Check Render's log fields and retention; SETUP.md warns of this. |
+| Platform and edge logs may hold callback codes | Unknown / medium [live] | Check Render's log fields and retention; SETUP.md warns of this. |
 
 ## Open items before public registration [live]
 

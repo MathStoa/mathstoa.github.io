@@ -13,7 +13,6 @@ from django.core.cache import cache
 from django.core.management import call_command
 from django.db import close_old_connections, connection, transaction
 from django.test import TestCase, TransactionTestCase
-from django.urls import reverse
 from django.utils import timezone
 
 from accounts import retention
@@ -232,16 +231,9 @@ class RetentionTests(RetentionFixtures, TestCase):
         self.assertTrue(response.url.startswith("/accounts/login/"))
         self.assertFalse(User.objects.filter(pk=user.pk).exists())
 
-    def test_access_changes_refresh_activity_and_user_notices_are_visible(self):
+    def test_user_notices_are_visible(self):
         draft = self.draft(age=100)
-        editor = self.user()
-        draft.editors.add(editor)
-        invitation, _ = EditorInvitation.issue(draft)
         self.client.force_login(draft.owner)
-        self.client.post(reverse("submissions:remove_editor", kwargs={"pk": draft.pk, "user_id": editor.pk}))
-        draft.refresh_from_db()
-        self.assertGreaterEqual(draft.updated_at, self.now)
-        self.client.post(reverse("submissions:revoke_invitation", kwargs={"pk": draft.pk, "invitation_id": invitation.pk}))
         self.assertContains(self.client.get("/submissions/"), "90 days")
         self.client.logout()
         self.assertContains(self.client.get("/accounts/login/"), "365 days")

@@ -6,7 +6,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from submissions.forms import SubmissionForm
-from submissions.models import EditorInvitation, Submission
+from submissions.models import Submission
 
 
 class SubmissionMutationLimitTests(TestCase):
@@ -48,7 +48,6 @@ class SubmissionMutationLimitTests(TestCase):
         with patch("repository_verification.services.require_verified") as verify, patch("submissions.views.limit_action") as limited:
             self.assertEqual(self.submit().status_code, 404)
             self.assertEqual(self.client.post(reverse("submissions:edit", args=[self.submission.pk]), self.payload).status_code, 404)
-            self.assertEqual(self.client.post(reverse("submissions:invite", args=[self.submission.pk])).status_code, 404)
         verify.assert_not_called()
         limited.assert_not_called()
 
@@ -97,29 +96,3 @@ class SubmissionMutationLimitTests(TestCase):
         self.submission.refresh_from_db()
         self.assertEqual(self.submission.title, "Saved update")
         self.assertEqual(self.submission.revision, 2)
-
-    @override_settings(ACCOUNT_RATE_LIMITS={"submission_access_grant": "1/h/user,1/h/key", "submission_access_revoke": "2/5m/user,2/5m/key"})
-    def test_grant_limit_does_not_block_emergency_revocation(self):
-        invite_url = reverse("submissions:invite", args=[self.submission.pk])
-        self.assertEqual(self.client.post(invite_url).status_code, 302)
-        self.assertEqual(self.client.post(invite_url).status_code, 429)
-        invitation = self.submission.invitations.get()
-        response = self.client.post(reverse("submissions:revoke_invitation", args=[self.submission.pk, invitation.pk]))
-        self.assertEqual(response.status_code, 302)
-        invitation.refresh_from_db()
-        self.assertFalse(invitation.is_active)
-        self.submission.editors.add(self.other)
-        self.assertEqual(self.client.post(reverse("submissions:remove_editor", args=[self.submission.pk, self.other.pk])).status_code, 302)
-        self.assertFalse(self.submission.editors.exists())
-
-    @override_settings(ACCOUNT_RATE_LIMITS={"submission_accept_invitation": "1/h/user"})
-    def test_invitation_limit_does_not_consume_or_grant_a_blocked_invitation(self):
-        first, first_token = EditorInvitation.issue(self.submission)
-        second, second_token = EditorInvitation.issue(self.submission)
-        self.client.force_login(self.other)
-        self.assertEqual(self.client.post(reverse("submissions:accept_invitation", args=[first_token])).status_code, 302)
-        self.assertEqual(self.client.post(reverse("submissions:accept_invitation", args=[second_token])).status_code, 429)
-        first.refresh_from_db()
-        second.refresh_from_db()
-        self.assertFalse(first.is_active)
-        self.assertTrue(second.is_active)

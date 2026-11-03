@@ -1,6 +1,5 @@
 """Authorisation, review integrity and privacy tests; no live provider calls."""
 from datetime import timedelta
-import hashlib
 import sys
 from types import ModuleType
 from unittest.mock import Mock, patch
@@ -129,7 +128,7 @@ class SubmissionTests(TestCase):
         self.assertNotContains(self.client.get(reverse("submissions:list")), submission.title)
         for name in ("detail", "edit"):
             self.assertEqual(self.client.get(reverse("submissions:" + name, args=[submission.pk])).status_code, 404)
-        for name, payload in (("edit", self.payload), ("submit", {"revision": 1}), ("invite", {})):
+        for name, payload in (("edit", self.payload), ("submit", {"revision": 1})):
             self.assertEqual(self.client.post(reverse("submissions:" + name, args=[submission.pk]), payload).status_code, 404)
         submission.refresh_from_db()
         self.assertEqual(submission.revision, 1)
@@ -405,7 +404,7 @@ class SubmissionTests(TestCase):
         submission = self.create_submission()
         client = Client(enforce_csrf_checks=True)
         client.force_login(self.owner)
-        for name, payload in (("edit", self.payload), ("submit", {"revision": 1}), ("invite", {})):
+        for name, payload in (("edit", self.payload), ("submit", {"revision": 1})):
             self.assertEqual(client.post(reverse("submissions:" + name, args=[submission.pk]), payload).status_code, 403)
         self.assertEqual(client.get(reverse("submissions:submit", args=[submission.pk])).status_code, 405)
         self.assertFalse(submission.revisions.exists())
@@ -416,68 +415,12 @@ class SubmissionTests(TestCase):
         self.assertIn("no-store", response["Cache-Control"])
         self.assertEqual(response["Referrer-Policy"], "same-origin")
 
-    def test_one_use_invitation_grants_editing_only_on_authenticated_post(self):
+    def test_detail_page_offers_no_editor_invitations(self):
         submission = self.create_submission()
-        invitation, token = EditorInvitation.issue(submission)
-        self.assertNotEqual(invitation.token_hash, token)
-        self.assertEqual(invitation.token_hash, hashlib.sha256(token.encode()).hexdigest())
-        url = reverse("submissions:accept_invitation", args=[token])
-        self.client.logout()
-        self.assertEqual(self.client.get(url).status_code, 302)
-        self.client.force_login(self.other)
-        self.assertEqual(self.client.get(url).status_code, 200)
-        self.assertFalse(submission.can_edit(self.other))
-        self.assertEqual(self.client.post(url).status_code, 302)
-        self.assertTrue(submission.can_edit(self.other))
-        self.assertEqual(self.client.post(url).status_code, 404)
-        self.assertEqual(self.client.post(reverse("submissions:edit", args=[submission.pk]), {**self.payload, "title": "Collaborator's update"}).status_code, 302)
-        self.assertEqual(self.client.post(reverse("submissions:invite", args=[submission.pk])).status_code, 404)
-
-    def test_revoked_expired_and_unknown_invites_grant_no_access(self):
-        submission = self.create_submission()
-        self.client.force_login(self.other)
-        for changes in ({"expires_at": timezone.now() - timedelta(seconds=1)}, {"revoked_at": timezone.now()}):
-            invitation, token = EditorInvitation.issue(submission)
-            for key, value in changes.items():
-                setattr(invitation, key, value)
-            invitation.save()
-            self.assertEqual(self.client.post(reverse("submissions:accept_invitation", args=[token])).status_code, 404)
-        self.assertEqual(self.client.post(reverse("submissions:accept_invitation", args=["unknown"])).status_code, 404)
-        self.assertFalse(submission.can_edit(self.other))
-
-    def test_only_owner_can_remove_editors_or_revoke_invites(self):
-        submission = self.create_submission()
-        submission.editors.add(self.other)
-        invitation, token = EditorInvitation.issue(submission)
-        self.client.force_login(self.other)
-        remove = reverse("submissions:remove_editor", args=[submission.pk, self.other.pk])
-        revoke = reverse("submissions:revoke_invitation", args=[submission.pk, invitation.pk])
-        self.assertEqual(self.client.post(remove).status_code, 404)
-        self.assertEqual(self.client.post(revoke).status_code, 404)
-        self.client.force_login(self.owner)
-        self.assertEqual(self.client.post(remove).status_code, 302)
-        self.assertFalse(submission.can_edit(self.other))
-        self.assertEqual(self.client.post(revoke).status_code, 302)
-        invitation.refresh_from_db()
-        self.assertFalse(invitation.is_active)
-
-    def test_invitation_secret_is_only_shown_once_and_bounded(self):
-        submission = self.create_submission()
-        self.client.post(reverse("submissions:invite", args=[submission.pk]))
-        first = self.client.get(reverse("submissions:detail", args=[submission.pk]))
-        self.assertContains(first, "Copy this private invitation link")
-        second = self.client.get(reverse("submissions:detail", args=[submission.pk]))
-        self.assertNotContains(second, "Copy this private invitation link")
-        for _ in range(12):
-            self.client.post(reverse("submissions:invite", args=[submission.pk]))
-        self.assertEqual(submission.invitations.count(), 10)
-
-    def test_invitation_link_is_not_displayed_on_another_submission(self):
-        first = self.create_submission()
-        second = self.create_submission({**self.payload, "title": "Another project"})
-        self.client.post(reverse("submissions:invite", args=[first.pk]))
-        self.assertNotContains(self.client.get(reverse("submissions:detail", args=[second.pk])), "Copy this private invitation link")
-        self.assertContains(self.client.get(reverse("submissions:detail", args=[first.pk])), "Copy this private invitation link")
+        response = self.client.get(reverse("submissions:detail", args=[submission.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Editing access")
+        self.assertNotContains(response, "invitation")
 
     def test_unsafe_links_are_rejected_before_storage(self):
         for url in ("javascript:alert(1)", "http://example.org/repo", "https://user:pass@example.org/repo", "https://localhost/repo", "https://127.0.0.1/repo", "https://example.org:444/repo", "https://example.org/%0aevil", "https://example.org\\@evil.org"):

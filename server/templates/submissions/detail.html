@@ -73,51 +73,5 @@
         </ul>
       </section>
     </article>
-    <aside class="editor-tools" aria-labelledby="editors-heading">
-      <h2 id="editors-heading">Editing access</h2>
-      <p>The submitting account owns this project. Credited contributors receive access only when invited.</p>
-      {% if can_manage %}
-      <h3>Editors</h3>
-      <ul>
-        {% for editor in editors %}
-          <li>{{ editor.get_full_name|default:editor.username }}
-            {% if can_manage %}
-              <form method="post" action="{% url 'submissions:remove_editor' pk=submission.pk user_id=editor.pk %}">
-                {% csrf_token %}<button type="submit">Remove access</button>
-              </form>
-            {% endif %}
-          </li>
-        {% empty %}<li>No additional editors.</li>{% endfor %}
-      </ul>
-      {% else %}<p>You have editing access to this submission.</p>{% endif %}
-      {% if can_manage %}
-        <h3>Invite a collaborator</h3>
-        <p>Create a private invitation link and share it with the person you want to invite. Anyone with the link can accept after signing in. The link expires after seven days and can be used once.</p>
-        <form method="post" action="{% url 'submissions:invite' pk=submission.pk %}">
-          {% csrf_token %}<button type="submit">Create invitation link</button>
-        </form>
-        {% if created_invitation_url %}
-          <div class="notice">
-            <label for="invitation-link">Copy this private invitation link</label>
-            <textarea id="invitation-link" class="invite-link" rows="4" readonly>{{ created_invitation_url }}</textarea>
-            <p>This link is shown once. Keep it private.</p>
-          </div>
-        {% endif %}
-        {% if invitations %}
-          <h3>Active invitations</h3>
-          <ul>
-            {% for invitation in invitations %}
-              <li>Expires {{ invitation.expires_at|date:"j M Y, H:i" }}
-                <form method="post" action="{% url 'submissions:revoke_invitation' pk=submission.pk invitation_id=invitation.pk %}">
-                  {% csrf_token %}<button type="submit">Revoke invitation</button>
-                </form>
-              </li>
-            {% endfor %}
-          </ul>
-        {% endif %}
-      {% else %}
-        <p>Only the owner can invite or remove editors.</p>
-      {% endif %}
-    </aside>
   </div>
 {% endblock %}

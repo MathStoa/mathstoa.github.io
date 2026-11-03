@@ -274,12 +274,11 @@ The production cache uses an HMAC key function so rate-limit identifiers are
 not readable in stored cache keys; existing legacy keys disappear on expiry and
 cleanup. Changing `DJANGO_SECRET_KEY` invalidates these keyed cache entries.
 
-Invitations are valid for seven days and grant editing access to the signed-in
-account that accepts the bearer link. Share them privately. The invitation purge
-removes expired, revoked, or consumed invitations older than thirty days by
-default. It does not delete project drafts, submitted revisions, or scholarly
-credit. Those records require the operator's documented retention and request
-handling process.
+Editor invitations are no longer issued. The invitation purge still removes any
+remaining invitation records that expired, were revoked or were used more than
+thirty days ago. It does not delete project drafts, submitted revisions, or
+scholarly credit. Those records require the operator's documented retention and
+request handling process.
 
 Unused, expired repository-verification attempts created more than thirty
 days ago are removed by the cleanup. Completed verification evidence is kept with the
@@ -306,7 +305,7 @@ Back up PostgreSQL to access-controlled storage, test restoration, and define a
 retention period for backups and operational logs. The supplied Gunicorn access
 log omits request paths, query strings, and client IP addresses; check the reverse
 proxy and hosting platform's logs too, because sign-in callbacks can contain
-temporary codes and invitation URLs can contain access tokens. Database cache
+temporary codes. Database cache
 expiry and session expiry are not a complete policy for
 deleting accounts or historic submissions. Handle correction, account deletion,
 and public attribution requests according to the published policy.
@@ -365,8 +364,7 @@ service or database stalls can affect availability. The allauth cache lock also
 assumes its short counter operation finishes within its ten-second lease.
 
 Remaining trust limits are explicit: authenticator codes can be phished, a
-compromised application/hosting account can expose live data and keys, invitation
-links grant access to their possessor, and repository proof records authority at
-a point in time rather than continuously checking a maintainer's current role.
-Use private invitation delivery, revoke access promptly, refresh repository
-proof when roles change, and keep permissions and dependency updates under review.
+compromised application/hosting account can expose live data and keys, and
+repository proof records authority at a point in time rather than continuously
+checking a maintainer's current role. Refresh repository proof when roles
+change, and keep permissions and dependency updates under review.

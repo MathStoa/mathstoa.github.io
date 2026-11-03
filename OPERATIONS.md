@@ -113,7 +113,7 @@ recovery codes are the root of trust and belong in the password manager. Nobody 
 |---|---|---|
 | Sessions | 14 days from sign-in; expired rows removed hourly | `SESSION_COOKIE_AGE`; `purge_transient_data` |
 | Rate-limit counters | Expire with their window, at most an hour; expired rows removed hourly | `server/accounts/security_cache.py`; cleanup |
-| Editor invitations | Valid 7 days, single use; records removed 30 days after expiry, use or revocation | `server/submissions/management/commands/purge_expired_invitations.py` |
+| Editor invitations (no longer issued) | Remaining records removed 30 days after expiry, use or revocation | `server/submissions/management/commands/purge_expired_invitations.py` |
 | Verification attempts | Challenge valid 24 h (file) or 10 min (GitHub); unused expired attempts removed after 30 days | `server/repository_verification/management/commands/purge_repository_verification_attempts.py` |
 | Verification evidence | Valid 30 days; kept with submission history; removed only with an unused draft | `server/accounts/retention.py` |
 | Unverified sign-ups | 7 days with no sign-in, verified email or provider identity | `retention.py` |

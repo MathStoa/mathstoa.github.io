@@ -1,6 +1,4 @@
-import hashlib
 import json
-import re
 from pathlib import Path
 
 from django.conf import settings
@@ -11,14 +9,12 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
-from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from accounts.middleware import limit_action
 
 from .forms import SubmissionForm, review_form
-from .models import EditorInvitation, Submission, SubmissionRevision
+from .models import Submission, SubmissionRevision
 from .notifications import notify_contributors, notify_moderators
 
 
@@ -53,13 +49,11 @@ def detail(request, pk):
     submission = get_object_or_404(accessible(request.user).select_related("published_revision"), pk=pk)
     owner = submission.owner_id == request.user.pk
     context = {
-        "submission": submission, "revisions": submission.revisions.all(), "can_manage": owner, "editors": submission.editors.all(),
+        "submission": submission, "revisions": submission.revisions.all(), "can_manage": owner,
         "repository_verified": has_current_verification(submission),
         # Once this draft revision has been submitted, the page states the outcome instead of offering submission.
         "current_revision": submission.revisions.filter(number=submission.revision).first(),
     }
-    if owner:
-        context.update(invitations=submission.invitations.filter(expires_at__gt=timezone.now(), revoked_at__isnull=True, accepted_at__isnull=True), created_invitation_url=request.session.pop(f"created_invitation_url:{submission.pk}", None))
     return render(request, "submissions/detail.html", context)
 
 
@@ -126,80 +120,6 @@ def submit(request, pk):
         else:
             messages.info(request, "This revision has already been submitted.")
     return redirect("submissions:detail", pk=pk)
-
-
-@login_required
-@require_POST
-def invite(request, pk):
-    with transaction.atomic():
-        submission = get_object_or_404(Submission.objects.select_for_update(), pk=pk, owner=request.user)
-        limited = limit_action(request, action="submission_access_grant", user=request.user, key=str(submission.pk))
-        if limited:
-            return limited
-        if submission.invitations.filter(expires_at__gt=timezone.now(), revoked_at__isnull=True, accepted_at__isnull=True).count() >= 10:
-            messages.error(request, "There are already ten active invitations. Revoke an unused invitation first.")
-        else:
-            invitation, token = EditorInvitation.issue(submission)
-            request.session[f"created_invitation_url:{submission.pk}"] = request.build_absolute_uri(reverse("submissions:accept_invitation", args=[token]))
-            messages.success(request, "Private invitation created. Share it only with the person you want to grant editing access.")
-    return redirect("submissions:detail", pk=pk)
-
-
-@login_required
-@require_POST
-def revoke_invitation(request, pk, invitation_id):
-    with transaction.atomic():
-        submission = get_object_or_404(Submission.objects.select_for_update(), pk=pk, owner=request.user)
-        get_object_or_404(submission.invitations, pk=invitation_id)
-        limited = limit_action(request, action="submission_access_revoke", user=request.user, key=str(submission.pk), retry_after=300)
-        if limited:
-            return limited
-        now = timezone.now()
-        submission.invitations.filter(pk=invitation_id).update(revoked_at=now)
-        Submission.objects.filter(pk=pk).update(updated_at=now)
-    messages.success(request, "Invitation revoked.")
-    return redirect("submissions:detail", pk=pk)
-
-
-@login_required
-@require_POST
-def remove_editor(request, pk, user_id):
-    with transaction.atomic():
-        submission = get_object_or_404(Submission.objects.select_for_update(), pk=pk, owner=request.user)
-        limited = limit_action(request, action="submission_access_revoke", user=request.user, key=str(submission.pk), retry_after=300)
-        if limited:
-            return limited
-        submission.editors.remove(user_id)
-        Submission.objects.filter(pk=pk).update(updated_at=timezone.now())
-    messages.success(request, "Editing access removed.")
-    return redirect("submissions:detail", pk=pk)
-
-
-@login_required
-def accept_invitation(request, token):
-    if not re.fullmatch(r"[\w-]{43}", token, flags=re.ASCII):
-        raise Http404
-    with transaction.atomic():
-        invitation = get_object_or_404(EditorInvitation.objects.select_for_update().select_related("submission"), token_hash=hashlib.sha256(token.encode()).hexdigest())
-        if not invitation.is_active:
-            raise Http404("This invitation has expired, been revoked or already been used.")
-        if request.method == "POST":
-            limited = limit_action(request, action="submission_accept_invitation", user=request.user)
-            if limited:
-                return limited
-            if invitation.submission.owner_id != request.user.pk:
-                invitation.submission.editors.add(request.user)
-                invitation.accepted_at = timezone.now()
-                invitation.accepted_by = request.user
-                invitation.save(update_fields=["accepted_at", "accepted_by"])
-                messages.success(request, "You now have editing access to this submission.")
-            else:
-                messages.info(request, "You already own this submission. Share the invitation with your collaborator.")
-            return redirect("submissions:detail", pk=invitation.submission_id)
-        response = render(request, "submissions/invitation.html", {"invitation": invitation, "submission": invitation.submission})
-        response["Referrer-Policy"] = "same-origin"
-        response["Cache-Control"] = "no-store"
-        return response
 
 
 def public_archive():

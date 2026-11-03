@@ -24,7 +24,7 @@ The account service initially verifies public GitHub repositories through a veri
 
 List every contributor, including yourself, by name and surname and ORCID iD. Anyone can [register for an ORCID iD](https://orcid.org/register) free of charge. Confirm that you are authorised to publish the attribution you supply, and keep personal email addresses and private correspondence out of these public fields. Entering someone else's ORCID iD does not authenticate that person or confirm their agreement.
 
-The account service lets the project owner invite editors with an invitation link. Share it privately with the intended editor: the signed-in account accepting a valid link gains editing access. Invitations expire after seven days and can be used once. Being credited as a collaborator does not grant access to the submission, and accepting editing access does not automatically confer scholarly authorship.
+Only the account that created a submission can edit it. Being credited as a collaborator does not grant access to the submission.
 
 Choose one main subject and, if the project spans several areas, up to three further subjects. Use the closest subject codes where available, such as `math.AG` or `math.CO`, and describe an unmatched subject in the submission. These are discovery categories, not an assertion of arXiv endorsement or registration.
 
