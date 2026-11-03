@@ -28,7 +28,9 @@ function render(updateURL = true) {
     return words.every(w => text.includes(w)) && (!subject.value || p.categories.some(c => c.code === subject.value));
   }).sort((a,b) => sort.value === 'newest' ? b.added.localeCompare(a.added) || a.title.localeCompare(b.title) : a.title.localeCompare(b.title));
   projects.replaceChildren(...filtered.map(card));
-  if (!filtered.length) projects.append(el('div',{className:'empty-state'},el('h3',{},'No matching projects'),el('p',{},'No projects match those filters. Try another subject or clear your search.')));
+  if (!filtered.length) projects.append(el('div',{className:'empty-state'},
+    el('h3',{},archive.length ? 'No matching projects' : 'No projects listed'),
+    el('p',{},archive.length ? 'No projects match those filters. Try another subject or clear your search.' : 'Projects will appear here after review.')));
   count.textContent = `${filtered.length} ${filtered.length === 1 ? 'project' : 'projects'}`;
   reset.hidden = !query && !subject.value && sort.value === 'title';
   if (updateURL) {

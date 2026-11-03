@@ -8,8 +8,6 @@ An open mathematical research project is a public Git repository containing math
 
 ## Pilot scope
 
-The initial archive contains **three public examples**: mathlib, the Stacks Project, and the Liquid Tensor Experiment. They illustrate possible listings. They are not registered MathStoa projects, partnerships, or invitations from their maintainers. Their own repositories govern contributions and credit. Examples are excluded from the announcement feed.
-
 New registrations require a project steward's permission and a human review. Research stage, contribution preferences, and correctness are separate questions: a listing or an announcement does not certify a mathematical claim.
 
 The pilot provides search and subject filters, readable project pages, repository links, and an Atom announcement feed. Submission opens a public GitHub issue; a maintainer reviews it and updates the archive. GitHub supplies the submission account and discussion tools.
