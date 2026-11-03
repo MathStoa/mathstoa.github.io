@@ -104,7 +104,7 @@ class PrivacyNoticeTests(TestCase):
             'There is no "remember this browser" cookie',
             "A sign-in session lasts up to 14 days from your sign-in or the last change to your session",
             "A completed repository authorization is valid for 30 days",
-            "mathStoa runs on Render, with Cloudflare's network in front of it",
+            "mathStoa runs on Render, in its Frankfurt (Germany) region, with Cloudflare's network in front of it",
             "mathStoa's own request log records only the time, method, status and size of each request",
             "mathStoa queries GitHub's API about that public repository",
         ):

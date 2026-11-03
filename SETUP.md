@@ -269,9 +269,14 @@ handling process.
 Unused, expired repository-verification attempts created more than thirty
 days ago are removed by the cleanup. Completed verification evidence is kept with the
 submission history. See `server/repository_verification/README.md` for the
-verification model and its limits. `REPOSITORY_GITHUB_READ_TOKEN` is an optional
-read-only server credential for public API quota; it never proves a submitter's
-own access. `REPOSITORY_VERIFICATION_VALID_DAYS` sets the validity of evidence
+verification model and its limits. Set `REPOSITORY_GITHUB_READ_TOKEN` in
+production. It is a read-only server credential that only raises the GitHub API
+allowance for public reads and never proves a submitter's own access, but the
+recheck made at every submission and approval runs with it or, when it is
+empty, anonymously under GitHub's per-address limit. On a shared host such as
+Render that limit is usually exhausted by other tenants, and submissions then
+fail with "GitHub could not allow this check". A token with no scopes is
+enough. `REPOSITORY_VERIFICATION_VALID_DAYS` sets the validity of evidence
 to 1–30 days (default 30). Repository and owner identities are rechecked before
 submission and approval; continuing individual collaborator permissions require
 a new authorization check after the evidence expires.
