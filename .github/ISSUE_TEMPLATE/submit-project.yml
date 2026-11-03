@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Your repository should contain meaningful mathematical work and link to a public website explaining the project’s aims.
+        Your repository should contain meaningful mathematical work and have a DOI for an archived release ([how to get a DOI for a GitHub repository](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content#issuing-a-persistent-identifier-for-your-repository-with-zenodo)). A public website explaining the project’s aims is optional.
         Please read [CONTRIBUTING.md](https://github.com/MathStoa/mathstoa.github.io/blob/main/CONTRIBUTING.md). This issue and its review are public; do not include private contact details or correspondence. Submission does not publish a listing automatically.
   - type: input
     id: project-title
@@ -21,13 +21,19 @@ body:
     validations:
       required: true
   - type: input
-    id: reading-url
+    id: doi
     attributes:
-      label: Project website
-      description: A publicly accessible website explaining the project’s aims and introducing the material in the repository.
-      placeholder: https://example.org/project/
+      label: DOI
+      description: The DOI of an archived release of the repository. [How to get a DOI for a GitHub repository](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content#issuing-a-persistent-identifier-for-your-repository-with-zenodo).
+      placeholder: 10.5281/zenodo.1234567
     validations:
       required: true
+  - type: input
+    id: reading-url
+    attributes:
+      label: Project website (optional)
+      description: A publicly accessible website explaining the project’s aims and introducing the material in the repository.
+      placeholder: https://example.org/project/
   - type: textarea
     id: abstract
     attributes:
@@ -46,9 +52,11 @@ body:
   - type: textarea
     id: collaborators
     attributes:
-      label: Collaborators (optional)
-      description: List the project’s collaborators, one name per line.
-      placeholder: One name per line
+      label: Contributors
+      description: One contributor per line, including yourself. Give the name and surname, then their ORCID iD. Anyone can [register for an ORCID iD](https://orcid.org/register) free of charge.
+      placeholder: Josiah Carberry, 0000-0002-1825-0097
+    validations:
+      required: true
   - type: checkboxes
     id: confirmation
     attributes:

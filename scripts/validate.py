@@ -12,14 +12,13 @@ from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 ARCHIVE = ROOT / "docs" / "data" / "projects.json"
-KINDS = {"Formalization", "Exposition", "Research", "Mixed"}
-STAGES = {"Exploration", "Partial results", "Claimed solution", "Ongoing", "Reference", "Archived"}
-COLLABORATION = {"Open to contributions", "Specific help wanted", "Currently closed", "See repository"}
 FIELDS = {
-    "id", "title", "summary", "description", "categories", "kind", "stage",
-    "collaboration", "repositoryUrl", "readingUrl", "credits", "added",
-    "example", "highlights", "contributionNote", "licenseNote",
+    "id", "title", "summary", "description", "categories", "repositoryUrl",
+    "credits", "added", "example", "highlights",
 }
+# The project website is optional; listings approved before the DOI requirement have no DOI.
+OPTIONAL_FIELDS = {"doi", "readingUrl"}
+DOI_URL = re.compile(r"https://doi\.org/10\.\d{4,9}(?:\.\d+)*/[-._;()/:A-Za-z0-9]+")
 
 
 class ArchiveError(ValueError):
@@ -77,25 +76,23 @@ def validate_archive(data: object) -> dict:
     ids = set()
     for index, project in enumerate(projects):
         path = f"projects[{index}]"
-        if not isinstance(project, dict) or set(project) != FIELDS:
-            fail(path, f"must contain exactly these fields: {', '.join(sorted(FIELDS))}")
+        if not isinstance(project, dict) or not FIELDS <= set(project) <= FIELDS | OPTIONAL_FIELDS:
+            fail(path, f"must contain these fields: {', '.join(sorted(FIELDS))}, and may also contain {', '.join(sorted(OPTIONAL_FIELDS))}")
         slug = text(project["id"], f"{path}.id", 80)
         if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", slug):
             fail(f"{path}.id", "must be a lowercase URL-safe slug")
         if slug in ids:
             fail(f"{path}.id", f"duplicate ID: {slug}")
         ids.add(slug)
-        for field in ("title", "summary", "description", "contributionNote", "licenseNote"):
+        for field in ("title", "summary", "description"):
             text(project[field], f"{path}.{field}", 200 if field == "title" else 10000)
-        for field, allowed in (("kind", KINDS), ("stage", STAGES), ("collaboration", COLLABORATION)):
-            if not isinstance(project[field], str) or project[field] not in allowed:
-                fail(f"{path}.{field}", f"must be one of {', '.join(sorted(allowed))}")
         if type(project["example"]) is not bool:
             fail(f"{path}.example", "must be true or false, never a string")
-        if project["example"] and project["collaboration"] != "See repository":
-            fail(f"{path}.collaboration", "examples must not assert a collaboration invitation")
         for field in ("repositoryUrl", "readingUrl"):
-            https_url(project[field], f"{path}.{field}")
+            if field in project:
+                https_url(project[field], f"{path}.{field}")
+        if "doi" in project and not DOI_URL.fullmatch(text(project["doi"], f"{path}.doi", 300)):
+            fail(f"{path}.doi", "must be a DOI link such as https://doi.org/10.5281/zenodo.1234567")
         added = text(project["added"], f"{path}.added", 10)
         try:
             if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", added):
@@ -113,12 +110,9 @@ def validate_archive(data: object) -> dict:
             codes.add(code)
             text(category["label"], f"{path}.categories.label", 100)
         for credit in sequence(project["credits"], f"{path}.credits", 100):
-            if not isinstance(credit, dict) or not {"name", "role"}.issubset(credit) or set(credit) - {"name", "role", "orcid", "affiliation"}:
-                fail(f"{path}.credits", "each credit needs name and role, with optional orcid and affiliation")
+            if not isinstance(credit, dict) or "name" not in credit or set(credit) - {"name", "orcid"}:
+                fail(f"{path}.credits", "each credit needs a name, with an optional orcid")
             text(credit["name"], f"{path}.credits.name", 200)
-            text(credit["role"], f"{path}.credits.role", 200)
-            if "affiliation" in credit:
-                text(credit["affiliation"], f"{path}.credits.affiliation", 200)
             if "orcid" in credit:
                 identifier = text(credit["orcid"], f"{path}.credits.orcid", 37)
                 if not re.fullmatch(r"https://orcid\.org/\d{4}-\d{4}-\d{4}-\d{3}[\dX]", identifier):

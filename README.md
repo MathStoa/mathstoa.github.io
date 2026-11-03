@@ -4,11 +4,11 @@ A small, curated archive of living mathematical research: open questions, exposi
 
 [Visit the pilot](https://math-stoa.org/) · [Contribution policy](CONTRIBUTING.md) · [Account service setup](SETUP.md)
 
-An open mathematical research project is a public Git repository containing mathematical work that can continue to develop, linked to a public website explaining its aims. mathStoa is intended for research carried out with AI, including articles written by AI that can be studied, corrected, extended, and used in further research.
+An open mathematical research project is a public Git repository containing mathematical work that can continue to develop, with a DOI for an archived release and, optionally, a public website explaining its aims. mathStoa is intended for research carried out with AI, including articles written by AI that can be studied, corrected, extended, and used in further research.
 
 ## Pilot scope
 
-New registrations require a project steward's permission and a human review. Research stage, contribution preferences, and correctness are separate questions: a listing or an announcement does not certify a mathematical claim.
+New registrations require a project steward's permission and a human review. A listing or an announcement does not certify a mathematical claim.
 
 The public archive provides search and subject filters, readable project pages, repository links, and an Atom announcement feed. This repository also includes a Django account and submission service: email-code sign-in, optional ORCID/GitHub/GitLab/institutional sign-in, private drafts, project editor invitations, and staff review of versioned submissions. It registers public repository links rather than copying repository contents. Submission and approval require verification of repository control; the initial implementation supports public GitHub repositories. GitLab sign-in is available independently, but verified publication from other repository hosts is not yet supported.
 

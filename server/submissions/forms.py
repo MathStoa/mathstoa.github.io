@@ -1,11 +1,16 @@
 import ipaddress
 import re
+from itertools import zip_longest
 from urllib.parse import unquote, urlsplit
 
 from django import forms
 from django.core.exceptions import ValidationError
+from django.utils.html import format_html
 
 from .models import Submission
+
+DOI_GUIDE_URL = "https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content#issuing-a-persistent-identifier-for-your-repository-with-zenodo"
+ORCID_REGISTER_URL = "https://orcid.org/register"
 
 
 def public_https_url(value):
@@ -47,38 +52,104 @@ def normalize_orcid(value):
     return "https://orcid.org/" + value
 
 
-def format_collaborators(collaborators):
-    return "\n".join(" | ".join(author.get(key, "") for key in ("name", "role", "orcid", "affiliation")).rstrip(" |") for author in collaborators)
+def normalize_doi(value):
+    value = value.strip()
+    if not value:
+        return ""
+    doi = re.sub(r"^(?:(?:https?://)?(?:dx\.)?doi\.org/|doi:\s*)", "", value, flags=re.IGNORECASE)
+    # Crossref's recommended pattern: it matches Zenodo and nearly all other DOIs, and is safe in a link.
+    if len(doi) > 200 or not re.fullmatch(r"10\.\d{4,9}(?:\.\d+)*/[-._;()/:A-Za-z0-9]+", doi):
+        raise ValidationError("A DOI must look like 10.5281/zenodo.1234567, or its https://doi.org/ link.")
+    return "https://doi.org/" + doi
+
+
+class ContributorInputs(forms.Widget):
+    """One name and one ORCID input per contributor; submissions/form.html renders the rows."""
+
+    def value_from_datadict(self, data, files, name):
+        getter = getattr(data, "getlist", data.get)
+
+        def values(part):
+            value = getter(f"{name}-{part}")
+            return [value] if isinstance(value, str) else list(value or ())
+
+        return [{"name": person, "orcid": orcid} for person, orcid in zip_longest(values("name"), values("orcid"), fillvalue="")]
+
+    def value_omitted_from_data(self, data, files, name):
+        # Removing every row posts no inputs, which must clear the list rather than keep the old one.
+        return False
+
+
+class ContributorsField(forms.Field):
+    widget = ContributorInputs
+    default_error_messages = {"required": "Add at least one contributor."}
+
+    def to_python(self, rows):
+        contributors = []
+        seen_orcids = set()
+        for number, row in enumerate(rows, 1):
+            name, orcid = str(row["name"]).strip(), str(row["orcid"]).strip()
+            if not name and not orcid:
+                continue
+            if not name:
+                raise ValidationError(f"Contributor {number}: add a name and surname.")
+            if len(name) > 200:
+                raise ValidationError(f"Contributor {number}: the name must be at most 200 characters.")
+            if any(ord(char) < 32 for char in name):
+                raise ValidationError(f"Contributor {number}: please remove invalid control characters.")
+            try:
+                orcid = normalize_orcid(orcid)
+            except ValidationError as error:
+                raise ValidationError(f"Contributor {number}: {error.messages[0]}") from None
+            # The field is only required when submitting for review, so drafts can hold contributors without one.
+            if self.required and not orcid:
+                raise ValidationError(f"Contributor {number}: add their ORCID iD.")
+            if orcid and orcid in seen_orcids:
+                raise ValidationError(f"Contributor {number}: this ORCID is already listed.")
+            if orcid:
+                seen_orcids.add(orcid)
+            contributors.append({"name": name, "orcid": orcid})
+        if len(contributors) > 100:
+            raise ValidationError("Please list at most 100 contributors.")
+        return contributors
 
 
 class SubmissionForm(forms.ModelForm):
-    collaborators_text = forms.CharField(
-        label="Contributors and affiliations", required=False, max_length=30000,
-        widget=forms.Textarea(attrs={"rows": 5}),
-        help_text="One person per line: Name | Role | ORCID (optional) | Affiliation (optional). Include yourself. These details will be public after approval; they do not grant editing access. An entered ORCID is supplied attribution, not an authenticated identity.",
+    collaborators = ContributorsField(
+        label="Contributors", required=False,
+        help_text=format_html('Add everyone who contributed to the project, including yourself, with their ORCID iD. Anyone can <a href="{}" target="_blank" rel="noopener noreferrer">register for an ORCID iD</a> free of charge.', ORCID_REGISTER_URL),
     )
     revision = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
     permission_confirmed = forms.BooleanField(required=False, label="I maintain this project or have permission to submit it and its contributor details.")
     license_confirmed = forms.BooleanField(required=False, label="I have permission to publish this original abstract under CC BY 4.0. The linked project keeps its own licence.")
+    # Everything else is required before a draft can be submitted for review.
+    optional_fields = ("reading_url",)
 
     class Meta:
         model = Submission
-        fields = ["title", "repository_url", "reading_url", "abstract", "category", "kind", "stage", "collaboration", "contribution_note", "license_note", "permission_confirmed", "license_confirmed"]
-        labels = {"repository_url": "Public repository", "reading_url": "Project website", "abstract": "Short abstract", "category": "Main subject", "kind": "Kind of project", "stage": "Research stage", "collaboration": "Contribution preferences", "contribution_note": "Contribution and credit policy", "license_note": "Repository licence or reuse terms"}
-        help_texts = {"title": "Required to save a draft. You can complete the other details before submitting.", "abstract": "80–1,500 characters when submitting for review.", "contribution_note": "Explain how to contribute and how contributions will be credited, or point readers to the project's policy.", "license_note": "Name the repository licence, or explain where readers can find its reuse terms."}
-        widgets = {"abstract": forms.Textarea(attrs={"rows": 5}), "contribution_note": forms.Textarea(attrs={"rows": 3}), "license_note": forms.Textarea(attrs={"rows": 3})}
+        fields = ["title", "repository_url", "doi", "reading_url", "abstract", "category", "collaborators", "permission_confirmed", "license_confirmed"]
+        labels = {"repository_url": "Public repository", "reading_url": "Project website", "abstract": "Short abstract", "category": "Main subject"}
+        help_texts = {
+            "title": "Required to save a draft. You can complete the other details before submitting.",
+            "doi": format_html('The DOI of an archived release of the repository, such as 10.5281/zenodo.1234567. <a href="{}" target="_blank" rel="noopener noreferrer">How to get a DOI for a GitHub repository</a>', DOI_GUIDE_URL),
+            "reading_url": "A public website that explains the project’s aims and introduces the material in the repository.",
+            "abstract": "80–1,500 characters when submitting for review.",
+        }
+        widgets = {"abstract": forms.Textarea(attrs={"rows": 5})}
 
     def __init__(self, *args, for_submission=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.for_submission = for_submission
         self.initial.setdefault("revision", self.instance.revision)
-        self.initial.setdefault("collaborators_text", format_collaborators(self.instance.collaborators))
         if for_submission:
-            for name in ("repository_url", "reading_url", "abstract", "category", "collaborators_text", "contribution_note", "license_note", "permission_confirmed", "license_confirmed"):
-                self.fields[name].required = True
+            for name, field in self.fields.items():
+                field.required = name not in self.optional_fields
 
     def clean_repository_url(self):
         return public_https_url(self.cleaned_data["repository_url"])
+
+    def clean_doi(self):
+        return normalize_doi(self.cleaned_data["doi"])
 
     def clean_reading_url(self):
         return public_https_url(self.cleaned_data["reading_url"])
@@ -96,39 +167,12 @@ class SubmissionForm(forms.ModelForm):
                 self.add_error(field, "Please remove invalid control characters.")
         return cleaned
 
-    def clean_collaborators_text(self):
-        authors = []
-        seen_orcids = set()
-        for number, line in enumerate(self.cleaned_data["collaborators_text"].splitlines(), 1):
-            if not line.strip():
-                continue
-            parts = [part.strip() for part in line.split("|")]
-            if len(parts) > 4 or not parts[0]:
-                raise ValidationError(f"Line {number}: use Name | Role | ORCID | Affiliation.")
-            parts += [""] * (4 - len(parts))
-            name, role, orcid, affiliation = parts
-            if any(len(value) > 200 for value in (name, role, affiliation)):
-                raise ValidationError(f"Line {number}: names, roles and affiliations must each be at most 200 characters.")
-            orcid = normalize_orcid(orcid)
-            if orcid and orcid in seen_orcids:
-                raise ValidationError(f"Line {number}: this ORCID is already listed.")
-            if orcid:
-                seen_orcids.add(orcid)
-            authors.append({"name": name, "role": role or "Contributor", "orcid": orcid, "affiliation": affiliation})
-        if len(authors) > 100:
-            raise ValidationError("Please list at most 100 contributors.")
-        self.parsed_collaborators = authors
-        return self.cleaned_data["collaborators_text"]
-
-    def save(self, commit=True):
-        submission = super().save(commit=False)
-        submission.collaborators = self.parsed_collaborators
-        if commit:
-            submission.save()
-        return submission
-
 
 def review_form(submission):
-    data = {field: getattr(submission, field) for field in SubmissionForm.Meta.fields}
-    data.update(revision=submission.revision, collaborators_text=format_collaborators(submission.collaborators))
+    data = {field: getattr(submission, field) for field in SubmissionForm.Meta.fields if field != "collaborators"}
+    data.update({
+        "revision": submission.revision,
+        "collaborators-name": [person.get("name", "") for person in submission.collaborators],
+        "collaborators-orcid": [person.get("orcid") or "" for person in submission.collaborators],
+    })
     return SubmissionForm(data=data, instance=submission, for_submission=True)

@@ -14,13 +14,11 @@ class ArchiveTests(unittest.TestCase):
             "id": "test-project", "title": "Example project", "summary": "An example summary.",
             "description": "An example project used only by the test suite.",
             "categories": [{"code": "math.LO", "label": "Logic"}],
-            "kind": "Research", "stage": "Exploration", "collaboration": "See repository",
             "repositoryUrl": "https://github.com/example/project",
+            "doi": "https://doi.org/10.5281/zenodo.1234567",
             "readingUrl": "https://example.org/notes",
-            "credits": [{"name": "Example contributors", "role": "Contributors"}],
+            "credits": [{"name": "Example contributors"}],
             "added": "2026-10-31", "example": True, "highlights": ["An example question"],
-            "contributionNote": "This is an example, not an invitation.",
-            "licenseNote": "See the example repository.",
         }]}
 
     def test_repository_archive_is_valid(self):
@@ -54,11 +52,6 @@ class ArchiveTests(unittest.TestCase):
         with self.assertRaisesRegex(ArchiveError, "must be true or false"):
             validate_archive(self.data)
 
-    def test_example_cannot_assert_collaboration_invitation(self):
-        self.data["projects"][0]["collaboration"] = "Open to contributions"
-        with self.assertRaisesRegex(ArchiveError, "must not assert"):
-            validate_archive(self.data)
-
     def test_bad_date_and_path_traversal_slug_are_rejected(self):
         for field, value in (("added", "2026-02-30"), ("id", "../../index")):
             with self.subTest(field=field):
@@ -67,8 +60,8 @@ class ArchiveTests(unittest.TestCase):
                 with self.assertRaises(ArchiveError):
                     validate_archive(data)
 
-    def test_invalid_enums_and_missing_attribution_fail(self):
-        for field, value in (("stage", "Peer reviewed"), ("kind", "Unknown"), ("credits", [])):
+    def test_missing_attribution_and_removed_fields_fail(self):
+        for field, value in (("credits", []), ("stage", "Exploration"), ("licenseNote", "MIT")):
             with self.subTest(field=field):
                 data = deepcopy(self.data)
                 data["projects"][0][field] = value
@@ -109,14 +102,26 @@ class ArchiveTests(unittest.TestCase):
         root = ET.fromstring(render_feed({"version": 1, "projects": []}))
         self.assertEqual(root.findall(f"{{{ATOM}}}entry"), [])
 
-    def test_optional_public_contributor_identifiers_and_affiliations(self):
-        credit = self.data["projects"][0]["credits"][0]
-        credit.update(orcid="https://orcid.org/0000-0002-1825-0097", affiliation="Example University")
+    def test_doi_and_website_are_optional_but_checked(self):
+        project = self.data["projects"][0]
+        del project["doi"], project["readingUrl"]
         validate_archive(self.data)
-        credit["email"] = "private@example.org"
-        with self.assertRaises(ArchiveError):
-            validate_archive(self.data)
-        del credit["email"]
+        for doi in ("10.5281/zenodo.1234567", "https://doi.org/10.5281/<b>", "https://example.org/10.5281/zenodo.1", ""):
+            with self.subTest(doi=doi):
+                project["doi"] = doi
+                with self.assertRaises(ArchiveError):
+                    validate_archive(self.data)
+
+    def test_optional_public_contributor_identifiers(self):
+        credit = self.data["projects"][0]["credits"][0]
+        credit["orcid"] = "https://orcid.org/0000-0002-1825-0097"
+        validate_archive(self.data)
+        for key, value in (("email", "private@example.org"), ("affiliation", "Example University"), ("role", "Author")):
+            with self.subTest(key=key):
+                credit[key] = value
+                with self.assertRaises(ArchiveError):
+                    validate_archive(self.data)
+                del credit[key]
         credit["orcid"] = "https://orcid.org/0000-0002-1825-0098"
         with self.assertRaisesRegex(ArchiveError, "check digit"):
             validate_archive(self.data)

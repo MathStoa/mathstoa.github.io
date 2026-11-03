@@ -11,7 +11,8 @@ If you cannot use the account service, the [GitHub project submission form](http
 A registered project should have:
 
 - A public Git repository with meaningful mathematical content.
-- A publicly accessible project website explaining its aims and introducing the material in the repository.
+- A DOI for an archived release of the repository. GitHub explains [how to get a DOI for a repository with Zenodo](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content#issuing-a-persistent-identifier-for-your-repository-with-zenodo).
+- Optionally, a publicly accessible project website explaining its aims and introducing the material in the repository.
 - A named steward who agrees to the listing and can keep its status current.
 - A short original abstract and relevant subject categories.
 - Clear reuse terms and a visible contribution and credit policy. Public visibility alone does not grant permission to reuse material.
@@ -21,29 +22,21 @@ Only submit a registration if you maintain the project or have a steward's permi
 
 The account service initially verifies public GitHub repositories through a verification file committed to the repository or a separate GitHub authorisation check. Follow the verification instructions shown for your draft. Logging in with GitHub or listing a repository URL alone does not verify repository control. Other hosts cannot be published through this service until their verification methods are supported, even when they are offered as sign-in providers. Verification is required again by the review process; it does not replace the submitter's permission declaration or establish agreement from every collaborator.
 
-List collaborators by their public names, contribution roles, and optional ORCID iDs and affiliations. An institutional postal address is not required. Independent researchers may state that status. Confirm that you are authorised to publish the attribution you supply, and keep personal email addresses and private correspondence out of these public fields. Entering someone else's ORCID iD does not authenticate that person or confirm their agreement.
+List every contributor, including yourself, by name and surname and ORCID iD. Anyone can [register for an ORCID iD](https://orcid.org/register) free of charge. Confirm that you are authorised to publish the attribution you supply, and keep personal email addresses and private correspondence out of these public fields. Entering someone else's ORCID iD does not authenticate that person or confirm their agreement.
 
 The account service lets the project owner invite editors with an invitation link. Share it privately with the intended editor: the signed-in account accepting a valid link gains editing access. Invitations expire after seven days and can be used once. Being credited as a collaborator does not grant access to the submission, and accepting editing access does not automatically confer scholarly authorship.
 
 Use the closest subject codes where available, such as `math.AG` or `math.CO`, and describe an unmatched subject in the submission. These are discovery categories, not an assertion of arXiv endorsement or registration.
 
-The archive uses these independent fields:
-
-| Field | Values |
-| --- | --- |
-| Kind | Research; Exposition; Formalization; Mixed |
-| Stage | Exploration; Partial results; Claimed solution; Ongoing; Reference; Archived |
-| Collaboration | Open to contributions; Specific help wanted; Currently closed; See repository |
-
-Stages and invitations describe the steward's stated position. “Claimed solution” is not a verification badge. Use “See repository” when the archive cannot accurately summarize the project's contribution preferences. An optional release, commit, or archive link helps identify the version being announced; a mutable repository URL is not an archival snapshot.
+The DOI identifies the archived release that a listing announces; a mutable repository URL is not an archival snapshot.
 
 ## Review and corrections
 
-mathStoa maintainers check scope, readable content, public links, permission to register, attribution, and clarity of the requested collaboration. They may ask for revisions or decline an empty, misleading, duplicate, or out-of-scope submission. This is an archive review, not mathematical peer review.
+mathStoa maintainers check scope, readable content, public links and the DOI, permission to register, attribution, and clarity of the requested collaboration. They may ask for revisions or decline an empty, misleading, duplicate, or out-of-scope submission. This is an archive review, not mathematical peer review.
 
 In the account service, submitting a draft creates a fixed revision for staff review. Staff can approve it or request changes. A previously approved revision remains public while an update is being reviewed; editing a draft does not silently replace the published listing. Review decisions are retained with the submitted revision. Legacy submissions retain their decisions in the GitHub issue or pull request.
 
-To correct a listing, report a credit problem, or appeal a decision, open an issue with the project ID and relevant public evidence, or use the private contact route in the service's privacy notice when the request includes private information. Avoid posting private contact details or confidential correspondence. A maintainer should record the resolution and explain material changes. A steward can request removal or a change in collaboration status through the same route.
+To correct a listing, report a credit problem, or appeal a decision, open an issue with the project ID and relevant public evidence, or use the private contact route in the service's privacy notice when the request includes private information. Avoid posting private contact details or confidential correspondence. A maintainer should record the resolution and explain material changes. A steward can request removal or other changes through the same route.
 
 ## Contribution credit
 
@@ -62,7 +55,7 @@ The project steward should state these rules before inviting contributions. math
 
 ### Account-service submissions
 
-1. Review the submitted revision in the Django administration interface at `/admin/`. Confirm repository-control verification and the steward's permission, public repository and website links, original summary, licence and credit information, subject categories, and collaboration preferences.
+1. Review the submitted revision in the Django administration interface at `/admin/`. Confirm repository-control verification and the steward's permission, the public repository link, that the DOI resolves to an archived release of that repository, the website link if one is given, the original summary, contributor attribution, subject categories, and the reuse terms and contribution policy stated in the repository.
 2. Record the review note and use the revision's approval or request-changes action. Review the fixed submitted snapshot, not a later working draft. Approval publishes that revision to the database-backed archive and feed; requesting changes leaves any previously approved version public.
 3. Inspect the resulting public listing and announcement. Illustrative examples remain excluded from announcements. Handle corrections through a new reviewed revision, and retain a clear record of removal or attribution decisions.
 4. Keep backups and run the retention commands described in [SETUP.md](SETUP.md). Drafts and review revisions are not automatically deleted when a session or invitation expires. Handle account and attribution requests according to the published privacy policy.
@@ -79,7 +72,7 @@ Moderation rules:
 
 1. Review the issue and confirm the steward's permission. Keep source links and the review decision in the issue.
 2. Add or update the entry in `docs/data/projects.json`, following the existing structure. Use a stable, unique project ID. Record the actual acceptance date in `added`; keep `example: true` for illustrative entries and use `false` only for accepted registrations.
-3. Confirm that the title, summary, category labels, project credits, contribution note, and license note accurately reflect the source and submission. Do not copy research content into the archive. Place an optional snapshot link in the description or highlights if no dedicated field is available.
+3. Confirm that the title, summary, DOI, category labels, and project credits accurately reflect the source and submission. Record the DOI as an `https://doi.org/` link in `doi`; `readingUrl` is optional. Do not copy research content into the archive.
 4. Run `python3 scripts/validate.py`, `python3 scripts/feed.py`, and `python3 -m unittest discover -s tests -v`.
 5. Preview with `python3 -m http.server 4173 --directory docs`, inspect the listing and links, and include any changed generated feed in the pull request.
 6. Merge the reviewed change into `main` and link the published listing from the submission issue.

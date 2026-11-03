@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block head_title %}{% if submission %}Edit submission{% else %}New submission{% endif %}{% endblock %}
 {% block content %}
   <div class="submission-form-panel">
@@ -8,10 +9,29 @@
     {% if submission.published_revision %}<p class="notice">Your accepted listing stays public while you edit this draft. Changes appear in the archive after a new review.</p>{% endif %}
     <form method="post" action="{% if submission %}{% url 'submissions:edit' pk=submission.pk %}{% else %}{% url 'submissions:create' %}{% endif %}" class="submission-form" novalidate>
       {% csrf_token %}
+      <p class="form-note">All fields are required for review unless marked optional.</p>
       {{ form.non_field_errors }}
       {% for field in form.hidden_fields %}{{ field }}{{ field.errors }}{% endfor %}
       {% for field in form.visible_fields %}
-        {% if field.field.widget.input_type == 'checkbox' %}
+        {% if field.name == "collaborators" %}
+          <fieldset class="contributors-field" aria-describedby="{{ field.auto_id }}_helptext">
+            <legend>{{ field.label }}</legend>
+            <small id="{{ field.auto_id }}_helptext">{{ field.help_text }}</small>
+            {% with rows=field.value %}
+              <div class="contributor-rows" data-contributor-rows>
+                {% for person in rows %}
+                  {% include "submissions/contributor_row.html" with name=person.name orcid=person.orcid number=forloop.counter %}
+                {% empty %}
+                  {% include "submissions/contributor_row.html" with name="" orcid="" number=1 %}
+                {% endfor %}
+              </div>
+              {% if rows %}<noscript>{% include "submissions/contributor_row.html" with name="" orcid="" number=rows|length|add:1 %}</noscript>{% endif %}
+            {% endwith %}
+            {{ field.errors }}
+            <button type="button" class="button button-light" data-add-contributor hidden>Add contributor</button>
+            <template data-contributor-template>{% include "submissions/contributor_row.html" with name="" orcid="" number=0 %}</template>
+          </fieldset>
+        {% elif field.field.widget.input_type == 'checkbox' %}
           <div>
             <label class="checkbox-field" for="{{ field.id_for_label }}">{{ field }}<span>{{ field.label }}</span></label>
             {{ field.errors }}
@@ -19,14 +39,14 @@
           </div>
         {% else %}
           <div class="field">
-            <label for="{{ field.id_for_label }}">{{ field.label }}{% if not field.field.required %} <span>(optional in a draft)</span>{% endif %}</label>
+            <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.name in form.optional_fields %} <span>(optional)</span>{% endif %}</label>
             {{ field }}
             {{ field.errors }}
             {% if field.help_text %}<small id="{{ field.auto_id }}_helptext">{{ field.help_text }}</small>{% endif %}
           </div>
         {% endif %}
       {% endfor %}
-      <p class="private-note">Contributor names, roles, affiliations and ORCID identifiers will be public if this submission is accepted. Adding a contributor here does not give them editing access.</p>
+      <p class="private-note">Contributor names and ORCID iDs will be public if this submission is accepted. An ORCID iD entered here is supplied attribution, not an authenticated identity. Adding a contributor does not give them editing access.</p>
       {% if submission.owner_id == user.pk %}<p class="private-note">Before sending the project for review, <a href="{% url 'verification:overview' submission.pk %}">verify repository access</a>.</p>{% endif %}
       <div class="actions">
         <button class="button" type="submit">Save draft</button>
@@ -35,3 +55,4 @@
     </form>
   </div>
 {% endblock %}
+{% block extra_body %}<script type="module" src="{% static 'contributors.js' %}"></script>{% endblock %}

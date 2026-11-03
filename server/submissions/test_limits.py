@@ -18,11 +18,9 @@ class SubmissionMutationLimitTests(TestCase):
         self.client.force_login(self.owner)
         self.payload = {
             "title": "Research draft", "repository_url": "https://github.com/example/research",
-            "reading_url": "https://example.org/research",
+            "doi": "10.5281/zenodo.1234567", "reading_url": "https://example.org/research",
             "abstract": "These mathematical notes explain the research question, its current partial results, and useful work still to be done.",
-            "category": "math.PR", "kind": "Research", "stage": "Exploration", "collaboration": "See repository",
-            "contribution_note": "See the contribution policy in the repository.", "license_note": "MIT; see repository licence.",
-            "collaborators_text": "Researcher | Author", "permission_confirmed": "on", "license_confirmed": "on", "revision": "1",
+            "category": "math.PR", "collaborators-name": "Researcher", "collaborators-orcid": "0000-0002-1825-0097", "permission_confirmed": "on", "license_confirmed": "on", "revision": "1",
         }
         form = SubmissionForm(self.payload)
         self.assertTrue(form.is_valid(), form.errors)

@@ -19,23 +19,18 @@
         <p class="preserve-lines">{{ submission.abstract|default:"Add an abstract to describe the project." }}</p>
         <dl>
           <dt>Repository</dt><dd>{% if submission.repository_url %}<a href="{{ submission.repository_url }}" rel="noopener noreferrer">{{ submission.repository_url }}</a>{% else %}Not supplied{% endif %}</dd>
-          <dt>Project website</dt><dd>{% if submission.reading_url %}<a href="{{ submission.reading_url }}" rel="noopener noreferrer">{{ submission.reading_url }}</a>{% else %}Not supplied{% endif %}</dd>
+          <dt>DOI</dt><dd>{% if submission.doi %}<a href="{{ submission.doi }}" rel="noopener noreferrer">{{ submission.doi }}</a>{% else %}Not supplied{% endif %}</dd>
+          <dt>Project website</dt><dd>{% if submission.reading_url %}<a href="{{ submission.reading_url }}" rel="noopener noreferrer">{{ submission.reading_url }}</a>{% else %}None (optional){% endif %}</dd>
           <dt>Main subject</dt><dd>{{ submission.get_category_display|default:submission.category|default:"Not supplied" }}</dd>
-          <dt>Kind</dt><dd>{{ submission.kind|default:"Not supplied" }}</dd>
-          <dt>Research stage</dt><dd>{{ submission.stage|default:"Not supplied" }}</dd>
-          <dt>Collaboration</dt><dd>{{ submission.collaboration|default:"Not supplied" }}</dd>
         </dl>
         <h3>Contributors</h3>
         <ul class="contributors">
           {% for person in submission.collaborators %}
-            <li><strong>{{ person.name }}</strong>{% if person.role %} — {{ person.role }}{% endif %}
-              {% if person.affiliation %}<small>{{ person.affiliation }}</small>{% endif %}
-              {% if person.orcid %}<small>ORCID: {{ person.orcid }} · supplied attribution</small>{% endif %}
+            <li><strong>{{ person.name }}</strong>
+              {% if person.orcid %}<small>ORCID: {{ person.orcid }} · supplied attribution</small>{% else %}<small>ORCID iD not supplied yet</small>{% endif %}
             </li>
           {% empty %}<li>No contributors supplied yet.</li>{% endfor %}
         </ul>
-        <h3>Contribution information</h3><p class="preserve-lines">{{ submission.contribution_note|default:"Not supplied" }}</p>
-        <h3>Reuse and licensing</h3><p class="preserve-lines">{{ submission.license_note|default:"Not supplied" }}</p>
       </section>
       <hr class="section-divider">
       <section>

@@ -13,7 +13,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from .forms import SubmissionForm, normalize_orcid
+from .forms import DOI_GUIDE_URL, ORCID_REGISTER_URL, SubmissionForm, normalize_doi, normalize_orcid
 from .models import EditorInvitation, Submission, SubmissionRevision
 
 
@@ -35,11 +35,9 @@ class SubmissionTests(TestCase):
         self.addCleanup(self.verification_patch.stop)
         self.payload = {
             "title": "Probability research notes", "repository_url": "https://github.com/example/research",
+            "doi": "10.5281/zenodo.1234567",
             "reading_url": "https://example.org/research", "abstract": "These research notes explore a mathematical question, explain the current partial results, and describe useful future work.",
-            "category": "math.PR", "kind": "Research", "stage": "Exploration", "collaboration": "Open to contributions",
-            "contribution_note": "Please read CONTRIBUTING.md for review and attribution policies.",
-            "license_note": "Source is MIT; see the repository licence.",
-            "collaborators_text": "Anna | Contributor | 0000-0002-1825-0097 | Example University",
+            "category": "math.PR", "collaborators-name": "Anna", "collaborators-orcid": "0000-0002-1825-0097",
             "permission_confirmed": "on", "license_confirmed": "on", "revision": "1",
         }
 
@@ -78,7 +76,7 @@ class SubmissionTests(TestCase):
         self.assertEqual(submission.revision, 2)
 
     def test_others_cannot_read_or_change_submission_even_if_listed_as_contributor(self):
-        submission = self.create_submission({**self.payload, "collaborators_text": "other | Contributor"})
+        submission = self.create_submission({**self.payload, "collaborators-name": "other", "collaborators-orcid": ""})
         self.client.force_login(self.other)
         self.assertNotContains(self.client.get(reverse("submissions:list")), submission.title)
         for name in ("detail", "edit"):
@@ -97,11 +95,87 @@ class SubmissionTests(TestCase):
         self.assertEqual(submission.title, "First update")
 
     def test_draft_can_be_incomplete_but_cannot_be_submitted(self):
-        minimal = {"title": "Early draft", "revision": "1", "kind": "Research", "stage": "Exploration", "collaboration": "See repository"}
-        submission = self.create_submission(minimal)
+        submission = self.create_submission({"title": "Early draft", "revision": "1"})
         response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1})
         self.assertEqual(response.status_code, 400)
         self.assertFalse(submission.revisions.exists())
+
+    def test_form_marks_only_the_website_optional_and_links_to_the_doi_guide(self):
+        response = self.client.get(reverse("submissions:create"))
+        self.assertContains(response, "Project website <span>(optional)</span>")
+        self.assertContains(response, "(optional)", count=1)
+        self.assertNotContains(response, "optional in a draft")
+        self.assertContains(response, DOI_GUIDE_URL)
+        self.assertContains(response, f'<a href="{ORCID_REGISTER_URL}"')
+        self.assertContains(response, 'name="collaborators-name"')
+        self.assertTrue(SubmissionForm({**self.payload, "reading_url": ""}, for_submission=True).is_valid())
+        for field in ("doi", "repository_url", "abstract", "category", "collaborators"):
+            with self.subTest(field=field):
+                form = SubmissionForm({key: value for key, value in self.payload.items() if not key.startswith(field)}, for_submission=True)
+                self.assertFalse(form.is_valid())
+                self.assertIn(field, form.errors)
+
+    def test_each_contributor_needs_an_orcid_for_review_but_not_for_a_draft(self):
+        rows = {"collaborators-name": ["Anna", "Ben"], "collaborators-orcid": ["0000-0002-1825-0097", ""]}
+        self.assertTrue(SubmissionForm({**self.payload, **rows}).is_valid())
+        form = SubmissionForm({**self.payload, **rows}, for_submission=True)
+        self.assertFalse(form.is_valid())
+        self.assertEqual(form.errors["collaborators"], ["Contributor 2: add their ORCID iD."])
+        submission = self.create_submission({**self.payload, **rows})
+        self.assertContains(self.client.get(reverse("submissions:detail", args=[submission.pk])), "ORCID iD not supplied yet")
+        response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1})
+        self.assertContains(response, "Contributor 2: add their ORCID iD.", status_code=400)
+        self.assertFalse(submission.revisions.exists())
+
+    def test_doi_is_stored_as_a_link_and_shown_on_the_draft(self):
+        for value in ("10.5281/zenodo.1234567", "doi:10.5281/zenodo.1234567", "https://doi.org/10.5281/zenodo.1234567", "http://dx.doi.org/10.5281/zenodo.1234567"):
+            with self.subTest(value=value):
+                self.assertEqual(normalize_doi(value), "https://doi.org/10.5281/zenodo.1234567")
+        for value in ("https://zenodo.org/records/1234567", "10.123/short-prefix", "10.5281/zenodo 1", "https://doi.org/", "10.5281/<script>"):
+            with self.subTest(value=value), self.assertRaises(ValidationError):
+                normalize_doi(value)
+        submission = self.create_submission()
+        self.assertEqual(submission.doi, "https://doi.org/10.5281/zenodo.1234567")
+        self.assertContains(self.client.get(reverse("submissions:detail", args=[submission.pk])), 'href="https://doi.org/10.5281/zenodo.1234567"')
+
+    def test_website_is_optional_for_review_and_publication(self):
+        submission = self.create_submission({**self.payload, "reading_url": ""})
+        self.submit(submission).review(self.staff, approve=True)
+        project = next(p for p in self.client.get("/data/projects.json").json()["projects"] if p["id"] == submission.public_id)
+        self.assertNotIn("readingUrl", project)
+        self.assertEqual(project["doi"], "https://doi.org/10.5281/zenodo.1234567")
+        self.assertEqual(self.client.get("/feed.xml").status_code, 200)
+
+    def test_contributor_rows_keep_order_skip_blanks_and_can_all_be_removed(self):
+        rows = {"collaborators-name": ["Anna", "", "Ben"], "collaborators-orcid": ["https://orcid.org/0000-0002-1825-0097", "", ""]}
+        submission = self.create_submission({**self.payload, **rows})
+        self.assertEqual(submission.collaborators, [{"name": "Anna", "orcid": "https://orcid.org/0000-0002-1825-0097"}, {"name": "Ben", "orcid": ""}])
+        edit = self.client.get(reverse("submissions:edit", args=[submission.pk]))
+        self.assertContains(edit, 'value="Anna"')
+        self.assertContains(edit, 'value="0000-0002-1825-0097"')
+        without_rows = {key: value for key, value in self.payload.items() if not key.startswith("collaborators")}
+        self.assertEqual(self.client.post(reverse("submissions:edit", args=[submission.pk]), without_rows).status_code, 302)
+        submission.refresh_from_db()
+        self.assertEqual(submission.collaborators, [])
+        response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": submission.revision})
+        self.assertContains(response, "Add at least one contributor.", status_code=400)
+
+    def test_revision_submitted_before_the_doi_requirement(self):
+        submission = self.create_submission()
+        snapshot = {key: value for key, value in submission.snapshot().items() if key != "doi"}
+        snapshot.update(kind="Research", stage="Exploration", collaboration="See repository", contribution_note="Old note", license_note="MIT",
+                        collaborators=[{"name": "Anna", "role": "Author", "orcid": "", "affiliation": "Example University"}])
+        revision = SubmissionRevision.objects.create(submission=submission, number=1, snapshot=snapshot, submitted_by=self.owner)
+        with self.assertRaisesRegex(ValidationError, "incomplete or invalid"):
+            revision.review(self.staff, approve=True)
+        # A listing approved before the change still exports, without the removed fields.
+        SubmissionRevision.objects.filter(pk=revision.pk).update(status="approved", reviewed_at=timezone.now())
+        Submission.objects.filter(pk=submission.pk).update(published_revision=revision)
+        project = next(p for p in self.client.get("/data/projects.json").json()["projects"] if p["id"] == submission.public_id)
+        self.assertEqual(project["credits"], [{"name": "Anna"}])
+        for removed in ("doi", "kind", "stage", "collaboration", "contributionNote", "licenseNote"):
+            self.assertNotIn(removed, project)
+        self.assertEqual(self.client.get("/feed.xml").status_code, 200)
 
     def test_permission_and_licence_confirmations_required_before_review(self):
         for field in ("permission_confirmed", "license_confirmed"):
@@ -218,8 +292,9 @@ class SubmissionTests(TestCase):
         for secret in (self.owner.email, self.staff.email, "Private editorial note", "token_hash", "submitted_by", "owner_id"):
             self.assertNotContains(response, secret)
         project = next(p for p in response.json()["projects"] if p["id"] == submission.public_id)
-        self.assertEqual(project["credits"][0]["orcid"], "https://orcid.org/0000-0002-1825-0097")
-        self.assertEqual(project["credits"][0]["affiliation"], "Example University")
+        self.assertEqual(project["credits"], [{"name": "Anna", "orcid": "https://orcid.org/0000-0002-1825-0097"}])
+        self.assertEqual(project["doi"], "https://doi.org/10.5281/zenodo.1234567")
+        self.assertEqual(project["readingUrl"], "https://example.org/research")
         self.assertFalse(project["example"])
 
     def test_existing_example_ids_cannot_be_claimed(self):
@@ -318,14 +393,19 @@ class SubmissionTests(TestCase):
             with self.assertRaises(ValidationError):
                 normalize_orcid(value)
 
-    def test_repeated_orcid_and_oversize_credit_rejected(self):
-        duplicate = "A | Contributor | 0000-0002-1825-0097\nB | Contributor | 0000-0002-1825-0097"
-        for value in (duplicate, "A" * 201, "A | B | C | D | E"):
-            self.assertFalse(SubmissionForm({**self.payload, "collaborators_text": value}).is_valid())
+    def test_repeated_or_invalid_orcid_unnamed_and_oversize_credit_rejected(self):
+        for names, orcids in (
+            (["A", "B"], ["0000-0002-1825-0097", "https://orcid.org/0000-0002-1825-0097"]),
+            (["A"], ["0000-0002-1825-0098"]), (["A" * 201], [""]), ([""], ["0000-0002-1825-0097"]),
+        ):
+            with self.subTest(names=names, orcids=orcids):
+                form = SubmissionForm({**self.payload, "collaborators-name": names, "collaborators-orcid": orcids})
+                self.assertFalse(form.is_valid())
+                self.assertIn("collaborators", form.errors)
 
     def test_control_characters_cannot_break_the_public_feed(self):
-        for field in ("title", "abstract", "collaborators_text", "contribution_note"):
-            form = SubmissionForm({**self.payload, field: self.payload[field] + "\x01"})
+        for key, field in (("title", "title"), ("abstract", "abstract"), ("collaborators-name", "collaborators")):
+            form = SubmissionForm({**self.payload, key: self.payload[key] + "\x01"})
             self.assertFalse(form.is_valid())
             self.assertIn(field, form.errors)
 
@@ -353,9 +433,9 @@ class VerificationBoundaryTests(TestCase):
         self.client.force_login(self.owner)
         self.submission = Submission.objects.create(
             owner=self.owner, title="Verified repository", repository_url="https://github.com/example/research",
+            doi="https://doi.org/10.5281/zenodo.1234567",
             reading_url="https://example.org/research", abstract="A mathematical project with enough explanatory detail to make its research question and current results clear to readers.",
-            category="math.PR", collaborators=[{"name": "Contributor", "role": "Contributor", "orcid": "", "affiliation": ""}],
-            contribution_note="Read the repository's contribution policy.", license_note="MIT; see repository.",
+            category="math.PR", collaborators=[{"name": "Contributor", "orcid": "https://orcid.org/0000-0002-1825-0097"}],
             permission_confirmed=True, license_confirmed=True,
         )
 

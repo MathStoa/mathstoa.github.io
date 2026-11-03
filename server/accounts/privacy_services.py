@@ -160,10 +160,8 @@ def account_export(user):
     projects = []
     accessible = Submission.objects.filter(Q(owner=user) | Q(editors=user)).distinct().order_by("pk")
     for project in accessible:
-        content = {field: getattr(project, field) for field in (
-            "title", "repository_url", "reading_url", "abstract", "category", "kind", "stage",
-            "collaboration", "contribution_note", "license_note",
-        )}
+        content = {field: getattr(project, field) for field in ("title", "repository_url", "doi", "reading_url", "abstract", "category")}
+        # Drafts saved before contributors became name and ORCID only can still hold roles and affiliations.
         content["collaborators"] = [
             {key: person[key] for key in ("name", "role", "orcid", "affiliation") if isinstance(person.get(key), str)}
             for person in project.collaborators if isinstance(person, dict)

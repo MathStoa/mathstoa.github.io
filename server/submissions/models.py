@@ -18,9 +18,8 @@ CATEGORIES = [
     ("math.NT", "Number theory"), ("math.PR", "Probability"),
     ("math.GM", "General mathematics"),
 ]
-KINDS = [(x, x) for x in ("Research", "Exposition", "Formalization", "Mixed")]
-STAGES = [(x, x) for x in ("Exploration", "Partial results", "Claimed solution", "Ongoing", "Reference", "Archived")]
-COLLABORATION = [(x, x) for x in ("Open to contributions", "Specific help wanted", "Currently closed", "See repository")]
+# Submitted revisions freeze these fields. Older snapshots may hold fields that have since been removed.
+SNAPSHOT_FIELDS = ("title", "repository_url", "doi", "reading_url", "abstract", "category", "collaborators")
 
 
 class Submission(models.Model):
@@ -29,15 +28,11 @@ class Submission(models.Model):
     editors = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="editable_submissions")
     title = models.CharField(max_length=120)
     repository_url = models.URLField(max_length=500, blank=True)
+    doi = models.CharField("DOI", max_length=300, blank=True)
     reading_url = models.URLField(max_length=500, blank=True)
     abstract = models.TextField(max_length=1500, blank=True)
     category = models.CharField(max_length=20, choices=CATEGORIES, blank=True)
     collaborators = models.JSONField(default=list, blank=True)
-    kind = models.CharField(max_length=30, choices=KINDS, default="Research")
-    stage = models.CharField(max_length=30, choices=STAGES, default="Exploration")
-    collaboration = models.CharField(max_length=40, choices=COLLABORATION, default="See repository")
-    contribution_note = models.TextField(max_length=1500, blank=True)
-    license_note = models.TextField(max_length=1000, blank=True)
     permission_confirmed = models.BooleanField(default=False)
     license_confirmed = models.BooleanField(default=False)
     revision = models.PositiveIntegerField(default=1)
@@ -68,10 +63,7 @@ class Submission(models.Model):
         return user.is_authenticated and (self.owner_id == user.pk or self.editors.filter(pk=user.pk).exists())
 
     def snapshot(self):
-        return {name: getattr(self, name) for name in (
-            "title", "repository_url", "reading_url", "abstract", "category", "collaborators",
-            "kind", "stage", "collaboration", "contribution_note", "license_note",
-        )}
+        return {name: getattr(self, name) for name in SNAPSHOT_FIELDS}
 
 
 class SubmissionRevision(models.Model):
@@ -118,7 +110,8 @@ class SubmissionRevision(models.Model):
                 require_verified(submission, actor=reviewer)
                 # Validate the frozen material, never the author's potentially newer draft.
                 from .forms import review_form
-                candidate = Submission(**revision.snapshot, permission_confirmed=True, license_confirmed=True)
+                frozen = {name: revision.snapshot[name] for name in SNAPSHOT_FIELDS if name in revision.snapshot}
+                candidate = Submission(**frozen, permission_confirmed=True, license_confirmed=True)
                 form = review_form(candidate)
                 if not form.is_valid():
                     raise ValidationError("The submitted revision is incomplete or invalid and cannot be published.")
@@ -145,15 +138,16 @@ class SubmissionRevision(models.Model):
             "id": self.submission.public_id, "title": data["title"],
             "summary": data["abstract"], "description": data["abstract"],
             "categories": [{"code": data["category"], "label": dict(CATEGORIES)[data["category"]]}],
-            "kind": data["kind"], "stage": data["stage"], "collaboration": data["collaboration"],
-            "repositoryUrl": data["repository_url"], "readingUrl": data["reading_url"],
+            "repositoryUrl": data["repository_url"],
+            # The website is optional, and revisions submitted before the DOI requirement have no DOI.
+            **{key: data[name] for key, name in (("doi", "doi"), ("readingUrl", "reading_url")) if data.get(name)},
             "credits": [
-                {"name": author["name"], "role": author["role"], **{key: author[key] for key in ("orcid", "affiliation") if author.get(key)}}
+                {"name": author["name"], **({"orcid": author["orcid"]} if author.get("orcid") else {})}
                 for author in data["collaborators"]
             ],
             "added": (first.reviewed_at if first else self.reviewed_at or timezone.now()).date().isoformat(),
-            "example": False, "highlights": ["Follow the project website for the research and its latest version."],
-            "contributionNote": data["contribution_note"], "licenseNote": data["license_note"],
+            "example": False,
+            "highlights": [f"Follow the {'project website' if data.get('reading_url') else 'repository'} for the research and its latest version."],
         }
 
 

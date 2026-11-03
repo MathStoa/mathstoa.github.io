@@ -1,0 +1,14 @@
+<fieldset class="contributor-row">
+  <legend>Contributor {{ number }}</legend>
+  <div class="field-row">
+    <div class="field">
+      <label for="contributor-{{ number }}-name">Name and surname</label>
+      <input type="text" id="contributor-{{ number }}-name" name="{{ field.html_name }}-name" value="{{ name }}" maxlength="200" autocomplete="off" data-part="name">
+    </div>
+    <div class="field">
+      <label for="contributor-{{ number }}-orcid">ORCID iD</label>
+      <input type="text" id="contributor-{{ number }}-orcid" name="{{ field.html_name }}-orcid" value="{{ orcid|cut:'https://orcid.org/' }}" maxlength="37" placeholder="0000-0002-1825-0097" autocomplete="off" spellcheck="false" data-part="orcid">
+    </div>
+  </div>
+  <button type="button" class="text-button" aria-label="Remove contributor {{ number }}" data-remove-contributor hidden>Remove</button>
+</fieldset>
