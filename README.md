@@ -1,10 +1,10 @@
-# MathStoa · MathΣτοά
+# mathStoa · MathΣτοά
 
 A small, curated archive of living mathematical research: open questions, expository projects, formalizations, and research notes that live in public Git repositories.
 
 [Visit the pilot](https://math-stoa.org/) · [Contribution policy](CONTRIBUTING.md) · [Account service setup](SETUP.md)
 
-An open mathematical research project is a public Git repository containing mathematical work that can continue to develop, linked to a public website explaining its aims. MathStoa is intended for research carried out with AI, including articles written by AI that can be studied, corrected, extended, and used in further research.
+An open mathematical research project is a public Git repository containing mathematical work that can continue to develop, linked to a public website explaining its aims. mathStoa is intended for research carried out with AI, including articles written by AI that can be studied, corrected, extended, and used in further research.
 
 ## Pilot scope
 
@@ -61,8 +61,8 @@ Account contact details, sign-in identifiers, and session records are private. P
 
 ## Credit and reuse
 
-Project credit belongs to the people and groups responsible for the work. An archive listing does not make MathStoa a contributor to the research. Each project sets its own contribution and credit policy; see [our contribution policy](CONTRIBUTING.md) for the requirements for listings.
+Project credit belongs to the people and groups responsible for the work. An archive listing does not make mathStoa a contributor to the research. Each project sets its own contribution and credit policy; see [our contribution policy](CONTRIBUTING.md) for the requirements for listings.
 
-The site code is available under the [MIT License](LICENSE). Original archive summaries contributed to MathStoa are available under [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/): credit MathStoa, retain any supplied contributor attribution, and link to the source record and license. Mention changes when adapting a summary.
+The site code is available under the [MIT License](LICENSE). Original archive summaries contributed to mathStoa are available under [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/): credit mathStoa, retain any supplied contributor attribution, and link to the source record and license. Mention changes when adapting a summary.
 
-External repositories, linked documents, quoted material, and other third-party content retain their own rights and licenses. Listing them does not change those terms. MathStoa is an independent pilot and is not affiliated with arXiv.
+External repositories, linked documents, quoted material, and other third-party content retain their own rights and licenses. Listing them does not change those terms. mathStoa is an independent pilot and is not affiliated with arXiv.

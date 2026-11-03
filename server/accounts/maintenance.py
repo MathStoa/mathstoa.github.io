@@ -24,7 +24,7 @@ def transient_cleanup_lock():
         return
     # Keep the lock separate from connections used or closed by cleanup helpers.
     connection = default_connection.copy(alias="mathstoa_transient_cleanup_lock")
-    lock_id = 0x4D53544F41504301  # Stable namespace dedicated to MathStoa cleanup.
+    lock_id = 0x4D53544F41504301  # Stable namespace dedicated to mathStoa cleanup.
     try:
         with connection.cursor() as cursor:
             cursor.execute("SELECT pg_try_advisory_lock(%s)", [lock_id])

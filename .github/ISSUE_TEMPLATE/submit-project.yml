@@ -1,5 +1,5 @@
 name: Submit a mathematical project
-description: Propose a public project for a reviewed MathStoa listing.
+description: Propose a public project for a reviewed mathStoa listing.
 title: "[Project] "
 body:
   - type: markdown

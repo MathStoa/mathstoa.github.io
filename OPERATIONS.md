@@ -1,6 +1,6 @@
 # Ongoing maintenance routine
 
-Proposal for running the MathStoa account service on Render, written against
+Proposal for running the mathStoa account service on Render, written against
 commit `5e1842a`; accept it or amend the cadences and thresholds. Where SETUP.md
 gives Docker Compose commands, use the web service's **Shell** tab (working
 directory `/app`) or `psql` with the database's external connection string.

@@ -1,6 +1,6 @@
-# Contributing to MathStoa
+# Contributing to mathStoa
 
-MathStoa lists living mathematical projects hosted in public Git repositories. Exposition, partial arguments, experiments, and formalizations are welcome; a completed article is not required.
+mathStoa lists living mathematical projects hosted in public Git repositories. Exposition, partial arguments, experiments, and formalizations are welcome; a completed article is not required.
 
 ## Submit a project
 
@@ -39,7 +39,7 @@ Stages and invitations describe the steward's stated position. “Claimed soluti
 
 ## Review and corrections
 
-MathStoa maintainers check scope, readable content, public links, permission to register, attribution, and clarity of the requested collaboration. They may ask for revisions or decline an empty, misleading, duplicate, or out-of-scope submission. This is an archive review, not mathematical peer review.
+mathStoa maintainers check scope, readable content, public links, permission to register, attribution, and clarity of the requested collaboration. They may ask for revisions or decline an empty, misleading, duplicate, or out-of-scope submission. This is an archive review, not mathematical peer review.
 
 In the account service, submitting a draft creates a fixed revision for staff review. Staff can approve it or request changes. A previously approved revision remains public while an update is being reviewed; editing a draft does not silently replace the published listing. Review decisions are retained with the submitted revision. Legacy submissions retain their decisions in the GitHub issue or pull request.
 
@@ -56,7 +56,7 @@ Keep these roles separate:
 
 A typo correction deserves acknowledgment without automatically implying authorship of a resulting paper. A short decisive observation can merit substantial credit. Do not use commit counts or lines changed as an authorship threshold. Git history supports a contribution record but cannot decide intellectual credit on its own.
 
-The project steward should state these rules before inviting contributions. MathStoa requires transparent policies and handles the accuracy of its own listings; project participants remain responsible for their research's authorship decisions. Contributions to this archive do not imply contributions to the listed research.
+The project steward should state these rules before inviting contributions. mathStoa requires transparent policies and handles the accuracy of its own listings; project participants remain responsible for their research's authorship decisions. Contributions to this archive do not imply contributions to the listed research.
 
 ## Maintainer workflow
 

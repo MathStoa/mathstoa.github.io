@@ -14,7 +14,7 @@
   <section class="account-section">
     <h2>Request access, a correction or account closure</h2>
     {% if privacy_contact %}
-      <p>Download a verified request file below, then attach it to an email you send to <a href="mailto:{{ privacy_contact }}">{{ privacy_contact }}</a>. MathStoa does not send the email or store the request in your account.</p>
+      <p>Download a verified request file below, then attach it to an email you send to <a href="mailto:{{ privacy_contact }}">{{ privacy_contact }}</a>. mathStoa does not send the email or store the request in your account.</p>
       <p>The file confirms your exact request for seven days. Send it unchanged. If it expires or you change a sign-in method or authenticator, create a new file.</p>
       <form method="post" action="{% url 'account_privacy_request' %}">
         {% csrf_token %}{{ form.as_p }}

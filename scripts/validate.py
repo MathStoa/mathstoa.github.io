@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the portable MathStoan archive without third-party dependencies."""
+"""Validate the portable mathStoa archive without third-party dependencies."""
 from __future__ import annotations
 
 import argparse

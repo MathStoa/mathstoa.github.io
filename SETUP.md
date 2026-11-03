@@ -1,4 +1,4 @@
-# Running MathStoa accounts and submissions
+# Running mathStoa accounts and submissions
 
 The Django application serves the public site, sign-in, and project submissions
 from the same origin. It registers links to public repositories; it does not
@@ -89,7 +89,7 @@ a contact address.
 ## Register sign-in providers
 
 Register a separate application with each provider you want to enable. The
-credentials below must be issued to MathStoa by that provider; this repository
+credentials below must be issued to mathStoa by that provider; this repository
 does not include them. Leave unconfigured provider credentials empty.
 
 | Provider | Environment variables | Production callback URL |
@@ -114,7 +114,7 @@ choice; obtain the exact value from the identity administrator. The configured
 provider ID is `institution`. This button does
 not automatically admit accounts from every university. Access through eduGAIN
 usually needs a suitable federation arrangement or broker that exposes OpenID
-Connect to MathStoa; it is not enabled simply by adding an eduGAIN URL.
+Connect to mathStoa; it is not enabled simply by adding an eduGAIN URL.
 
 If the institution's authorization endpoint has a different origin from its
 discovery URL, set `INSTITUTION_AUTHORIZATION_ORIGIN` to that exact HTTPS origin
@@ -128,7 +128,7 @@ and [django-allauth OpenID Connect](https://docs.allauth.org/en/latest/socialacc
 
 ## Verify control of a submitted repository
 
-Sign-in identifies a MathStoa account; it does not prove that the account can
+Sign-in identifies a mathStoa account; it does not prove that the account can
 manage the repository named in a submission. Before submission and approval,
 the service requires repository-control verification. The initial verification
 implementation supports public GitHub repositories, using a verification file
@@ -199,12 +199,12 @@ does not store requests. Users send attachments themselves to the existing priva
 contact. Test that mailbox handoff and operator verification before opening
 public registration.
 
-MathStoa retains stable sign-in identifiers, account details, session data,
+mathStoa retains stable sign-in identifiers, account details, session data,
 private contact email where supplied, and submission/review records. Public
 collaborator names, affiliations, roles, and ORCID iDs remain personal data.
 Provider profile payloads are stripped rather than retained in
 `SocialAccount.extra_data`; OAuth access and refresh tokens are not stored.
-MathStoa does not receive the provider's account password. An authenticated
+mathStoa does not receive the provider's account password. An authenticated
 provider account does not prove authorship, current employment, or permission to
 publish another person's details.
 

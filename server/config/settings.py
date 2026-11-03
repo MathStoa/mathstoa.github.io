@@ -1,4 +1,4 @@
-"""Same-origin MathStoa application. Provider credentials come from the host."""
+"""Same-origin mathStoa application. Provider credentials come from the host."""
 import os
 import json
 import re
@@ -140,7 +140,7 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = flag("EMAIL_USE_TLS", True)
 EMAIL_USE_SSL = flag("EMAIL_USE_SSL")
 EMAIL_TIMEOUT = 15
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "MathStoa <noreply@localhost>" if DEBUG else "")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "mathStoa <noreply@localhost>" if DEBUG else "")
 if EMAIL_USE_TLS and EMAIL_USE_SSL:
     raise ImproperlyConfigured("Choose either EMAIL_USE_TLS or EMAIL_USE_SSL, not both.")
 if not DEBUG and EMAIL_LOGIN_ENABLED and (not EMAIL_HOST or not DEFAULT_FROM_EMAIL):
@@ -157,7 +157,7 @@ MFA_SUPPORTED_TYPES = ["totp", "recovery_codes"]
 MFA_ALLOW_UNVERIFIED_EMAIL = False
 MFA_REAUTHENTICATION_REQUIRED = True
 MFA_RECOVERY_CODES_SHOW_ONCE = True
-MFA_TOTP_ISSUER = "Math Stoa"
+MFA_TOTP_ISSUER = "mathStoa"
 MFA_TRUST_ENABLED = False
 ACCOUNT_LOGIN_BY_CODE_TRUST_ENABLED = False
 STAFF_MFA_MAX_AGE = 15 * 60
@@ -189,7 +189,7 @@ ACCOUNT_RATE_LIMITS = {
     "privacy_verify": "30/5m/user",
 }
 ACCOUNT_LOGOUT_ON_GET = False
-ACCOUNT_EMAIL_SUBJECT_PREFIX = "[MathStoa] "
+ACCOUNT_EMAIL_SUBJECT_PREFIX = "[mathStoa] "
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http" if DEBUG else "https"
 SOCIALACCOUNT_ADAPTER = "accounts.adapters.MinimalSocialAccountAdapter"
 SOCIALACCOUNT_FORMS = {"disconnect": "accounts.forms.PasswordlessDisconnectForm"}

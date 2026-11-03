@@ -100,6 +100,11 @@ class VerificationServicesTests(TestCase):
                     check_file(attempt, self.user, client=self.api)
         self.assertFalse(RepositoryVerification.objects.exists())
 
+    def test_file_with_previous_name_spelling_still_verifies(self):
+        attempt, token = self.issue()
+        self.file_evidence(attempt, token, authorization="I authorize this Math Stoa account to submit this repository for review.")
+        self.assertEqual(check_file(attempt, self.user, client=self.api).role, "endorsement")
+
     def test_malformed_file_rejected(self):
         attempt, _ = self.issue()
         for content in ("not-json", "[]", "null"):

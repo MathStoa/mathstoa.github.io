@@ -4,7 +4,7 @@
 <section class="account-panel submission-form-panel">
   <p><a href="{% url 'submissions:detail' submission.pk %}">Back to {{ submission.title }}</a></p>
   <h1>Verify repository authorization</h1>
-  <p>Confirm that this repository authorizes your MathStoa submission. Choose either method below.</p>
+  <p>Confirm that this repository authorizes your mathStoa submission. Choose either method below.</p>
   <p><strong>Repository:</strong> {{ submission.repository_url|default:"Add a repository URL to your draft first." }}</p>
   {% if orcid %}<p><strong>Your connected ORCID:</strong> {{ orcid }}</p>{% endif %}
   {% if verified %}
@@ -22,7 +22,7 @@
       <button type="submit" {% if not github_available or not submission.repository_url %}disabled{% endif %}>Verify with GitHub</button>
     </form>
     {% if not github_available %}<p class="helptext">GitHub verification is awaiting configuration. The verification file option is available below.</p>{% endif %}
-    <p class="privacy-note">MathStoa records the GitHub account identifier and the result of this check. It does not retain the authorization token or gain permission to edit your repository. To use GitHub for future sign-ins, connect it separately in <a href="{% url 'socialaccount_connections' %}">Account settings</a>.</p>
+    <p class="privacy-note">mathStoa records the GitHub account identifier and the result of this check. It does not retain the authorization token or gain permission to edit your repository. To use GitHub for future sign-ins, connect it separately in <a href="{% url 'socialaccount_connections' %}">Account settings</a>.</p>
   </section>
 
   <section class="account-section" aria-labelledby="file-verification">

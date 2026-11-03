@@ -4,7 +4,7 @@
   <div class="account-panel">
     <h1>You are invited to edit a project</h1>
     <h2>{{ submission.title|default:"Untitled draft" }}</h2>
-    <p>Accepting gives your current MathStoa account permission to edit this submission and send revisions for review. It does not add your name to the public contributor list.</p>
+    <p>Accepting gives your current mathStoa account permission to edit this submission and send revisions for review. It does not add your name to the public contributor list.</p>
     <p class="private-note">This invitation expires {{ invitation.expires_at|date:"j F Y, H:i" }} and can be accepted once.</p>
     <form method="post">
       {% csrf_token %}

@@ -20,7 +20,9 @@ from .github import GitHubClient, GitHubError
 from .models import RepositoryVerification, VerificationAttempt
 
 
-AUTHORIZATION = "I authorize this Math Stoa account to submit this repository for review."
+AUTHORIZATION = "I authorize this mathStoa account to submit this repository for review."
+# Files generated while the name was spelt "Math Stoa" stay valid until their attempt expires.
+ACCEPTED_AUTHORIZATIONS = (AUTHORIZATION, "I authorize this Math Stoa account to submit this repository for review.")
 
 
 class VerificationError(ValidationError):
@@ -148,7 +150,8 @@ def check_file(attempt, user, client=None):
         document = json.loads(evidence.content)
     except (ValueError, TypeError):
         raise VerificationError("The verification file is not valid JSON. Copy the complete file shown here.") from None
-    if not isinstance(document, dict) or any(document.get(k) != v for k, v in _document_fields(attempt).items()):
+    if (not isinstance(document, dict) or document.get("authorization") not in ACCEPTED_AUTHORIZATIONS
+            or any(document.get(k) != v for k, v in _document_fields(attempt).items() if k != "authorization")):
         raise VerificationError("The file does not authorize this submission and account. Copy the current verification file.")
     token = document.get("token")
     if not isinstance(token, str) or len(token) > 200 or not secrets.compare_digest(_digest(token), attempt.token_hash):
@@ -176,7 +179,7 @@ def check_github(attempt, user, raw_nonce, access_token, expected_github_uid=Non
     if expected_github_uid is None or str(evidence.github_user_id) != str(expected_github_uid):
         raise VerificationError("The authenticated GitHub identity did not match. Try connecting again.")
     if SocialAccount.objects.filter(provider="github", uid=str(evidence.github_user_id)).exclude(user=user).exists():
-        raise VerificationError("This GitHub account is connected to another Math Stoa account.")
+        raise VerificationError("This GitHub account is connected to another mathStoa account.")
     current = _api(client.resolve_repository, attempt.repository_url)
     _same_repository(attempt, current)
     return _complete(attempt, user, current, github_user_id=evidence.github_user_id,
