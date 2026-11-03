@@ -1,4 +1,4 @@
-# mathStoa · MathΣτοά
+# mathStoa · mathΣτοά
 
 A small, curated archive of living mathematical research: open questions, expository projects, formalizations, and research notes that live in public Git repositories.
 
