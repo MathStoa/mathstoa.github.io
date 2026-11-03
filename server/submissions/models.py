@@ -18,6 +18,8 @@ CATEGORIES = [
     ("math.NT", "Number theory"), ("math.PR", "Probability"),
     ("cs.LO", "Lean formalisation"), ("math.GM", "General mathematics"),
 ]
+# A project names one main subject and, if it spans several areas, up to this many further subjects.
+MAX_SECONDARY_CATEGORIES = 3
 
 
 def display_name(name):
@@ -27,7 +29,7 @@ def display_name(name):
 
 
 # Submitted revisions freeze these fields. Older snapshots may hold fields that have since been removed.
-SNAPSHOT_FIELDS = ("title", "repository_url", "doi", "reading_url", "abstract", "category", "collaborators")
+SNAPSHOT_FIELDS = ("title", "repository_url", "doi", "reading_url", "abstract", "category", "secondary_categories", "collaborators")
 
 
 class Submission(models.Model):
@@ -40,6 +42,8 @@ class Submission(models.Model):
     reading_url = models.URLField(max_length=500, blank=True)
     abstract = models.TextField(max_length=1500, blank=True)
     category = models.CharField(max_length=20, choices=CATEGORIES, blank=True)
+    # Further subject codes from CATEGORIES; SubmissionForm keeps them valid and distinct from the main subject.
+    secondary_categories = models.JSONField(default=list, blank=True)
     collaborators = models.JSONField(default=list, blank=True)
     permission_confirmed = models.BooleanField(default=False)
     license_confirmed = models.BooleanField(default=False)
@@ -66,6 +70,11 @@ class Submission(models.Model):
             return "Published" if self.published_revision.number == self.revision else "Published; draft changes"
         latest = self.revisions.filter(number=self.revision).first()
         return "Changes requested" if latest and latest.status == "rejected" else "Draft"
+
+    @property
+    def secondary_category_labels(self):
+        labels = dict(CATEGORIES)
+        return [labels.get(code, code) for code in self.secondary_categories]
 
     def can_edit(self, user):
         return user.is_authenticated and (self.owner_id == user.pk or self.editors.filter(pk=user.pk).exists())
@@ -142,10 +151,13 @@ class SubmissionRevision(models.Model):
         """Explicit allowlist: never serialize owners, emails, permissions or review notes."""
         data = self.snapshot
         first = self.submission.revisions.filter(status="approved").order_by("reviewed_at").first()
+        labels = dict(CATEGORIES)
+        # The main subject comes first. Revisions frozen before further subjects existed have none.
+        codes = dict.fromkeys([data["category"], *data.get("secondary_categories", [])])
         return {
             "id": self.submission.public_id, "title": data["title"],
             "summary": data["abstract"], "description": data["abstract"],
-            "categories": [{"code": data["category"], "label": dict(CATEGORIES)[data["category"]]}],
+            "categories": [{"code": code, "label": labels[code]} for code in codes],
             "repositoryUrl": data["repository_url"],
             # The DOI and website are optional.
             **{key: data[name] for key, name in (("doi", "doi"), ("readingUrl", "reading_url")) if data.get(name)},

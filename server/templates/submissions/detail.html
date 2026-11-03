@@ -22,6 +22,7 @@
           <dt>DOI</dt><dd>{% if submission.doi %}<a href="{{ submission.doi }}" rel="noopener noreferrer">{{ submission.doi }}</a>{% else %}None (optional){% endif %}</dd>
           <dt>Project website</dt><dd>{% if submission.reading_url %}<a href="{{ submission.reading_url }}" rel="noopener noreferrer">{{ submission.reading_url }}</a>{% else %}None (optional){% endif %}</dd>
           <dt>Main subject</dt><dd>{{ submission.get_category_display|default:submission.category|default:"Not supplied" }}</dd>
+          <dt>Further subjects</dt><dd>{{ submission.secondary_category_labels|join:", "|default:"None (optional)" }}</dd>
         </dl>
         <h3>Contributors</h3>
         <ul class="contributors">

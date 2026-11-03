@@ -1,11 +1,17 @@
 import {element as el, REPOSITORY, safeURL} from './common.js';
 const form=document.querySelector('#submission-form');
 const result=document.querySelector('#submission-result');
+const subjectBoxes=[...form.querySelectorAll('input[name="secondary"]')];
 form.addEventListener('input',()=>{result.hidden=true;});
 form.addEventListener('submit',event=>{
   event.preventDefault();
+  for(const box of subjectBoxes)box.setCustomValidity('');
   if(!form.reportValidity())return;
-  const fields=Object.fromEntries(new FormData(form));
+  const data=new FormData(form);
+  const fields=Object.fromEntries(data);
+  // The main subject is listed once, however it was ticked.
+  const secondary=data.getAll('secondary').filter(subject=>subject!==fields.category);
+  if(secondary.length>3){const box=subjectBoxes.find(box=>box.checked);box.setCustomValidity('Please tick at most 3 further subjects.');box.reportValidity();return;}
   for(const name of ['repository','reading']) {
     const field=form.elements.namedItem(name);
     field.setCustomValidity('');
@@ -14,7 +20,7 @@ form.addEventListener('submit',event=>{
   const doi=form.elements.namedItem('doi');
   doi.setCustomValidity('');
   if(fields.doi.trim() && !/^(?:(?:https?:\/\/)?(?:dx\.)?doi\.org\/|doi:\s*)?10\.\d{4,9}(?:\.\d+)*\/[-._;()\/:a-z0-9]+$/i.test(fields.doi.trim())) {doi.setCustomValidity('Please enter a DOI such as 10.5281/zenodo.1234567, or its https://doi.org/ link.');doi.reportValidity();return;}
-  const lines=[['Project title',fields.title],['Public repository',fields.repository],['DOI',fields.doi.trim()||'Not provided'],['Project website',fields.reading.trim()||'Not provided'],['Short abstract',fields.abstract],['Main subject',fields.category],['Contributors',fields.collaborators]];
+  const lines=[['Project title',fields.title],['Public repository',fields.repository],['DOI',fields.doi.trim()||'Not provided'],['Project website',fields.reading.trim()||'Not provided'],['Short abstract',fields.abstract],['Main subject',fields.category],['Further subjects',secondary.join(', ')||'None'],['Contributors',fields.collaborators]];
   const body=lines.map(([label,value])=>'### '+label+'\n\n'+String(value).trim()).join('\n\n')+'\n\n### Submission confirmation\n\n- [x] I maintain this project or have permission to submit it, have read the submission guidelines, and have the right to publish its abstract under CC BY 4.0.\n- [x] I understand that listing is not peer review.\n';
   const url=new URL(REPOSITORY+'/issues/new');
   url.searchParams.set('title','[Project] '+fields.title.trim());
@@ -36,3 +42,4 @@ form.addEventListener('submit',event=>{
   result.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'nearest'});
 });
 for (const name of ['repository','doi','reading']) form.elements.namedItem(name).addEventListener('input',event=>event.target.setCustomValidity(''));
+for (const box of subjectBoxes) box.addEventListener('input',()=>{for(const other of subjectBoxes)other.setCustomValidity('');});

@@ -8,7 +8,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.utils.html import format_html
 
-from .models import Submission
+from .models import CATEGORIES, MAX_SECONDARY_CATEGORIES, Submission
 
 DOI_GUIDE_URL = "https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content#issuing-a-persistent-identifier-for-your-repository-with-zenodo"
 ORCID_REGISTER_URL = "https://orcid.org/register"
@@ -134,14 +134,19 @@ class SubmissionForm(forms.ModelForm):
         label="Contributors", required=False,
         help_text=format_html('Add everyone who contributed to the project, including yourself, with their ORCID iD and institutional email. Write each name as first names, a comma, then the surname. Anyone can <a href="{}" target="_blank" rel="noopener noreferrer">register for an ORCID iD</a> free of charge. Email addresses are never published; each contributor receives a confirmation when the project is submitted for review.', ORCID_REGISTER_URL),
     )
+    secondary_categories = forms.MultipleChoiceField(
+        label="Further subjects", required=False, choices=CATEGORIES,
+        widget=forms.CheckboxSelectMultiple,
+        help_text=f"If the project spans several areas, tick up to {MAX_SECONDARY_CATEGORIES} more.",
+    )
     revision = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
     permission_confirmed = forms.BooleanField(required=False, label="I maintain this project or have permission to submit it and its contributor details, and have the right to publish its abstract under CC BY 4.0.")
     # Everything else is required before a draft can be submitted for review.
-    optional_fields = ("doi", "reading_url")
+    optional_fields = ("doi", "reading_url", "secondary_categories")
 
     class Meta:
         model = Submission
-        fields = ["title", "repository_url", "doi", "reading_url", "abstract", "category", "collaborators", "permission_confirmed"]
+        fields = ["title", "repository_url", "doi", "reading_url", "abstract", "category", "secondary_categories", "collaborators", "permission_confirmed"]
         labels = {"repository_url": "Public repository", "reading_url": "Project website", "abstract": "Short abstract", "category": "Main subject"}
         help_texts = {
             "doi": format_html('If you have one, the DOI of an archived release of the repository, such as 10.5281/zenodo.1234567. <a href="{}" target="_blank" rel="noopener noreferrer">How to get a DOI for a GitHub repository</a>', DOI_GUIDE_URL),
@@ -172,6 +177,13 @@ class SubmissionForm(forms.ModelForm):
 
     def clean_reading_url(self):
         return public_https_url(self.cleaned_data["reading_url"])
+
+    def clean_secondary_categories(self):
+        # Fields clean in Meta.fields order, so the main subject is already known; it is listed once.
+        codes = [code for code in self.cleaned_data["secondary_categories"] if code != self.cleaned_data.get("category")]
+        if len(codes) > MAX_SECONDARY_CATEGORIES:
+            raise ValidationError(f"Please tick at most {MAX_SECONDARY_CATEGORIES} further subjects.")
+        return codes
 
     def clean_abstract(self):
         abstract = self.cleaned_data["abstract"]

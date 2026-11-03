@@ -61,6 +61,25 @@ body:
         - math.GM — General mathematics
     validations:
       required: true
+  - type: dropdown
+    id: secondary-subjects
+    attributes:
+      label: Further subjects (optional)
+      description: If the project spans several areas, choose up to three more.
+      multiple: true
+      options:
+        - math.AG — Algebraic geometry
+        - math.AP — Analysis of PDEs
+        - math.AT — Algebraic topology
+        - math.CO — Combinatorics
+        - math.DG — Differential geometry
+        - math.DS — Dynamical systems
+        - math.FA — Functional analysis
+        - math.LO — Logic and foundations
+        - math.NT — Number theory
+        - math.PR — Probability
+        - cs.LO — Lean formalisation
+        - math.GM — General mathematics
   - type: textarea
     id: collaborators
     attributes:

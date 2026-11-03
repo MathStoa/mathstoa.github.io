@@ -130,7 +130,8 @@ class SubmissionTests(TestCase):
         response = self.client.get(reverse("submissions:create"))
         self.assertContains(response, "DOI <span>(optional)</span>")
         self.assertContains(response, "Project website <span>(optional)</span>")
-        self.assertContains(response, "(optional)", count=2)
+        self.assertContains(response, "Further subjects <span>(optional)</span>")
+        self.assertContains(response, "(optional)", count=3)
         self.assertContains(response, 'placeholder="Induced subgraphs of hypercubes and a proof of the Sensitivity Conjecture"')
         self.assertNotContains(response, "Required to save a draft")
         self.assertNotContains(response, "optional in a draft")
@@ -181,6 +182,38 @@ class SubmissionTests(TestCase):
         self.submit(submission).review(self.staff, approve=True)
         project = next(p for p in self.client.get("/data/projects.json").json()["projects"] if p["id"] == submission.public_id)
         self.assertEqual(project["categories"], [{"code": "cs.LO", "label": "Lean formalisation"}])
+
+    def test_further_subjects_are_optional_and_publish_after_the_main_subject(self):
+        self.assertContains(self.client.get(reverse("submissions:create")), 'name="secondary_categories" value="math.AP"')
+        plain = self.create_submission()
+        self.assertEqual(plain.secondary_categories, [])
+        self.assertContains(self.client.get(reverse("submissions:detail", args=[plain.pk])), "<dt>Further subjects</dt><dd>None (optional)</dd>")
+        # The main subject is listed once, however the author ticks it.
+        submission = self.create_submission({**self.payload, "secondary_categories": ["math.AP", "math.PR", "math.FA"]})
+        self.assertEqual(submission.secondary_categories, ["math.AP", "math.FA"])
+        self.assertContains(self.client.get(reverse("submissions:detail", args=[submission.pk])), "<dt>Further subjects</dt><dd>Analysis of PDEs, Functional analysis</dd>")
+        self.assertContains(self.client.get(reverse("submissions:edit", args=[submission.pk])), 'value="math.AP" id="id_secondary_categories_1" checked')
+        self.submit(submission).review(self.staff, approve=True)
+        project = next(p for p in self.client.get("/data/projects.json").json()["projects"] if p["id"] == submission.public_id)
+        self.assertEqual(project["categories"], [{"code": "math.PR", "label": "Probability"}, {"code": "math.AP", "label": "Analysis of PDEs"}, {"code": "math.FA", "label": "Functional analysis"}])
+        self.assertContains(self.client.get("/feed.xml"), 'term="math.FA"')
+
+    def test_at_most_three_further_subjects_from_the_known_list(self):
+        form = SubmissionForm({**self.payload, "secondary_categories": ["math.AG", "math.AP", "math.AT", "math.CO"]})
+        self.assertEqual(form.errors["secondary_categories"], ["Please tick at most 3 further subjects."])
+        self.assertTrue(SubmissionForm({**self.payload, "secondary_categories": ["math.AG", "math.AP", "math.AT", "math.PR"]}).is_valid())
+        self.assertIn("secondary_categories", SubmissionForm({**self.payload, "secondary_categories": ["math.XX"]}).errors)
+        self.assertTrue(SubmissionForm({**self.payload, "secondary_categories": []}, for_submission=True).is_valid())
+
+    def test_revisions_frozen_before_further_subjects_existed_still_publish(self):
+        submission = self.create_submission({**self.payload, "secondary_categories": ["math.AP"]})
+        revision = self.submit(submission)
+        # QuerySet.update bypasses the immutability guard: emulate a snapshot taken before the field existed.
+        SubmissionRevision.objects.filter(pk=revision.pk).update(snapshot={key: value for key, value in revision.snapshot.items() if key != "secondary_categories"})
+        revision.refresh_from_db()
+        revision.review(self.staff, approve=True)
+        project = next(p for p in self.client.get("/data/projects.json").json()["projects"] if p["id"] == submission.public_id)
+        self.assertEqual(project["categories"], [{"code": "math.PR", "label": "Probability"}])
 
     def test_website_is_optional_for_review_and_publication(self):
         submission = self.create_submission({**self.payload, "reading_url": ""})

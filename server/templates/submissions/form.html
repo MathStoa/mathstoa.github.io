@@ -31,6 +31,13 @@
             <button type="button" class="button button-light" data-add-contributor hidden>Add contributor</button>
             <template data-contributor-template>{% include "submissions/contributor_row.html" with name="" orcid="" email="" number=0 %}</template>
           </fieldset>
+        {% elif field.name == "secondary_categories" %}
+          <fieldset class="subjects-field" aria-describedby="{{ field.auto_id }}_helptext">
+            <legend>{{ field.label }} <span>(optional)</span></legend>
+            <small id="{{ field.auto_id }}_helptext">{{ field.help_text }}</small>
+            {{ field }}
+            {{ field.errors }}
+          </fieldset>
         {% elif field.field.widget.input_type == 'checkbox' %}
           <div>
             <label class="checkbox-field" for="{{ field.id_for_label }}">{{ field }}<span>{{ field.label }}</span></label>
