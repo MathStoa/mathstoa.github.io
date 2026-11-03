@@ -27,13 +27,29 @@ if not DEBUG and (len(SECRET_KEY) < 50 or SECRET_KEY.startswith("local-developme
     raise ImproperlyConfigured("Production needs a random DJANGO_SECRET_KEY of at least 50 characters.")
 
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1" if DEBUG else "").split(",") if h.strip()]
-PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "http://localhost:8000" if DEBUG else "https://math-stoa.org").rstrip("/")
+# Render assigns the service hostname only when it creates the service. Trust
+# that exact platform-supplied host, never every tenant on onrender.com.
+render_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "").lower()
+render_origin = ""
+if render_hostname:
+    if not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.onrender\.com", render_hostname):
+        raise ImproperlyConfigured("RENDER_EXTERNAL_HOSTNAME must be an exact onrender.com service hostname.")
+    render_origin = f"https://{render_hostname}"
+    if render_hostname not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(render_hostname)
+render_external_url = os.environ.get("RENDER_EXTERNAL_URL", "")
+if render_external_url and (not render_origin or render_external_url not in {render_origin, render_origin + "/"}):
+    raise ImproperlyConfigured("RENDER_EXTERNAL_URL must match the HTTPS origin of RENDER_EXTERNAL_HOSTNAME.")
+default_public_url = render_external_url or render_origin or ("http://localhost:8000" if DEBUG else "https://math-stoa.org")
+PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", default_public_url).rstrip("/")
 public_url = urlsplit(PUBLIC_BASE_URL)
 if public_url.username or public_url.password or public_url.query or public_url.fragment or public_url.path:
     raise ImproperlyConfigured("PUBLIC_BASE_URL must be the site's origin, without a path or credentials.")
 if not DEBUG and (public_url.scheme != "https" or not ALLOWED_HOSTS or "*" in ALLOWED_HOSTS):
     raise ImproperlyConfigured("Production requires HTTPS PUBLIC_BASE_URL and explicit DJANGO_ALLOWED_HOSTS.")
 CSRF_TRUSTED_ORIGINS = [u.strip() for u in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", PUBLIC_BASE_URL).split(",") if u.strip()]
+if render_origin and render_origin not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append(render_origin)
 PUBLIC_CONTACT_EMAIL = os.environ.get("PUBLIC_CONTACT_EMAIL", "")
 
 INSTALLED_APPS = [
