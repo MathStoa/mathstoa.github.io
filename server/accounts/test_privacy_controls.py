@@ -93,6 +93,38 @@ class RegistrationControlsTests(TestCase):
         self.assertEqual(int(self.client.session["_auth_user_id"]), user.pk)
 
 
+class PrivacyNoticeTests(TestCase):
+    def test_notice_states_cookies_hosting_repository_checks_and_expiry(self):
+        response = self.client.get("/privacy/")
+        self.assertEqual(response.status_code, 200)
+        for sentence in (
+            "an internal account name generated at random",
+            "where offered, an institutional sign-in",
+            "MathStoa sets only the cookies needed to run the service",
+            'There is no "remember this browser" cookie',
+            "A sign-in session lasts up to 14 days from your sign-in or the last change to your session",
+            "A completed repository authorization is valid for 30 days",
+            "MathStoa runs on Render, with Cloudflare's network in front of it",
+            "MathStoa's own request log records only the time, method, status and size of each request",
+            "MathStoa queries GitHub's API about that public repository",
+        ):
+            self.assertContains(response, sentence)
+        self.assertNotContains(response, "Sign-in sessions use cookies")
+        self.assertNotContains(response, "Our hosting services also process")
+
+    def test_email_collection_wording_follows_email_login_setting(self):
+        offered = "If you choose email sign-in or add an email address to your account"
+        not_offered = "Email sign-in is not currently offered, and MathStoa does not collect an email address"
+        with override_settings(EMAIL_LOGIN_ENABLED=False):
+            response = self.client.get("/privacy/")
+            self.assertContains(response, not_offered)
+            self.assertNotContains(response, offered)
+        with override_settings(EMAIL_LOGIN_ENABLED=True):
+            response = self.client.get("/privacy/")
+            self.assertContains(response, offered)
+            self.assertNotContains(response, not_offered)
+
+
 class PrivateCacheKeyTests(SimpleTestCase):
     def test_key_hides_identifiers_and_preserves_namespace_boundaries(self):
         raw = "allauth:rl:login:ip:198.51.100.7:author@example.org"
