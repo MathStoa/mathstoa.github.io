@@ -21,6 +21,7 @@ Dashboard names as of November 2026. Owner of every row: the operator.
 | Quarterly | MFA and recovery codes | `/accounts/2fa/` (recent MFA required); Render, GitHub, ORCID, GitLab, Porkbun and mailbox account settings | Regenerate at three or fewer unused codes; store offline (STAFF_SECURITY.md); confirm the authenticator app is backed up; once a year sign in with one code, then regenerate. MFA on for every platform account, with recovery codes in the password manager; Render team and GitHub collaborators are only the operator. | Fewer than three codes, codes kept only on the authenticator device, a rejected code, an account without MFA, or an unknown member. |
 | Quarterly | Certificate and domain | Render → web service → **Settings → Custom Domains**; Porkbun | Render renews certificates automatically once the domain is verified: check it shows verified and `openssl s_client -connect math-stoa.org:443 -servername math-stoa.org </dev/null` reports expiry over 30 days away. Porkbun: auto-renew and registrar lock on, DNS unchanged. | Browser warning, "pending" domain, expiry under 30 days, renewal under 60 days away, unexpected DNS record. |
 | Quarterly; secrets yearly | Provider applications | ORCID developer tools; GitHub → Developer settings → OAuth Apps; GitLab → User Settings → Applications; Render → **Environment** | Callbacks match SETUP.md's production table; `python server/manage.py check_login_setup` prints them; sign in once with each provider. Yearly: new client secret (GitHub allows two active secrets), update Render, redeploy, test sign-in, delete the old one; same for `REPOSITORY_GITHUB_READ_TOKEN`. | Provider error, callback still on `onrender.com`, secret older than 12 months, or a rotation not rolled back within the hour. |
+| Yearly, and whenever processing changes | Privacy records | RECORD_OF_PROCESSING.md; `server/templates/privacy.html`; breach register | Activities, processors, transfer safeguards and the legitimate interests assessment still match the code and providers; update the notice's "Last updated" date with any change; both controllers agree. | A new provider, field or use not in the record, or a notice older than the code it describes. |
 | Six-monthly, and after a major upgrade, PostgreSQL version change, key rotation or plan/region change | Restoration re-test | Separate Render database and web service | Restore a Render backup or an off-platform dump into an isolated database and service with the same `DJANGO_SECRET_KEY`; `migrate --check`; sign in to `/admin/` with MFA (proves MFA data decrypts); delete the copy. | Restore fails, MFA cannot decrypt, copy left running. |
 
 ## Additional encrypted off-platform backup
@@ -76,6 +77,22 @@ Actions variant until a second operator needs automation.
    assess UK GDPR notification: the ICO within 72 hours of becoming aware where
    individuals are at risk; the individuals without undue delay where the
    risk is high.
+
+**Breach handling.** A personal data breach is any accidental or unlawful
+loss, alteration, disclosure of or access to personal data, including an
+availability loss such as a failed restore. Whoever notices one tells the
+other controller at once (RECORD_OF_PROCESSING.md). Tommaso Rosati decides,
+within 72 hours of either controller becoming aware, whether it is likely to
+risk people's rights and freedoms; if so, report it to the ICO
+(ico.org.uk/for-organisations/report-a-breach, or 0303 123 1113), and if the
+risk is high, tell the people affected without undue delay. Record **every**
+breach, reported or not, in the breach register: a restricted spreadsheet
+kept with the privacy correspondence record, never in this public
+repository. Columns: date and time noticed; date and time it happened, if
+known; what happened; data and approximate number of people affected; likely
+consequences; containment and remedial steps; ICO decision, with reasons and
+reference; whether the people affected were told, when and how; who handled
+it; date closed. Review the register at each quarterly check, even if empty.
 
 **Provider outage (ORCID, GitHub or GitLab).** Sign-in with that provider fails;
 accounts with another connected method still work, and submission and approval

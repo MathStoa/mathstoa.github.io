@@ -4,6 +4,14 @@
   <article class="prose privacy-page">
     <h1>Privacy and your <span class="brand">math<span lang="el">Στοά</span></span> account</h1>
     <p class="lede"><span class="brand">math<span lang="el">Στοά</span></span> keeps a small amount of account information so contributors can submit projects and return to edit them.</p>
+    <p class="muted">Last updated 3 November 2026.</p>
+    <section>
+      <h2 id="controllers">Who is responsible for your information</h2>
+      <p><span class="brand">math<span lang="el">Στοά</span></span> is run by Tommaso Rosati and Simon Gabriel in a personal capacity, not on behalf of a university or employer. We decide together how personal information is used on the site, so we are joint controllers under the UK and EU General Data Protection Regulation. We have agreed that Tommaso Rosati is the first point of contact for privacy requests, complaints and security incidents, but you can raise a request with either of us and we will both act on it.</p>
+      {% if privacy_contact %}
+        <p>Contact us at <a href="mailto:{{ privacy_contact }}">{{ privacy_contact }}</a>.</p>
+      {% endif %}
+    </section>
     <section>
       <h2>Sign-in and private account information</h2>
       <p>We keep the identifier supplied by your sign-in provider, its connection to your <span class="brand">math<span lang="el">Στοά</span></span> account, an internal account name generated at random (which the owners of projects you edit and staff may see), account creation and sign-in dates, and a record of which submissions your account may edit. We discard the provider's profile payload and do not retain its OAuth access or refresh tokens. When you sign in with ORCID, GitHub, GitLab or, where offered, an institutional sign-in, your password stays with that provider.</p>
@@ -33,6 +41,26 @@
       <p>Publicly available information about a person is still personal information. Account information and access records are kept separate from the public archive.</p>
     </section>
     <section>
+      <h2 id="named">If someone else named you in a project</h2>
+      <p>A submitter can list you as a contributor. We then receive your name and, if they give it, your ORCID iD from that submitter, not from you. They appear on the project's public listing once it is accepted, and in its earlier revisions, which only the project's owner, its editors and we can see. We use them to credit the project's contributors accurately, on the legal basis of legitimate interests described below. We keep them as long as the project's records are kept.</p>
+      <p>We have no contact details for listed contributors, so we usually cannot tell you directly that you were named. You have the same rights as account holders, including the right to object. Write to us to have your name or ORCID iD corrected or removed from a project; you do not need an account.</p>
+    </section>
+    <section>
+      <h2>Submissions through GitHub</h2>
+      <p>Projects can also be proposed through a public issue in the <span class="brand">math<span lang="el">Στοά</span></span> GitHub repository. Everything in such an issue and its review discussion is public on GitHub and handled under GitHub's own terms and privacy statement. We use it only to review the proposal, and we can remove or edit a comment there on request.</p>
+    </section>
+    <section>
+      <h2 id="legal-basis">Why we use your information and on what legal basis</h2>
+      <ul>
+        <li><strong>Your account, sign-in, authenticator, drafts and editing access:</strong> to provide the service you sign up for (contract).</li>
+        <li><strong>Security, abuse prevention, session and request records:</strong> our legitimate interest in keeping the service and its accounts secure.</li>
+        <li><strong>Repository authorization evidence, submitted revisions and review records:</strong> our legitimate interest, and that of the people credited, in publishing only projects whose submitters may list them, and in keeping a reliable record of what was reviewed and why.</li>
+        <li><strong>Public listings, including contributor names and ORCID iDs:</strong> the legitimate interest of contributors and readers in accurate, lasting scholarly attribution.</li>
+        <li><strong>Privacy requests and security incident records:</strong> to meet our legal obligations.</li>
+      </ul>
+      <p>We have weighed these legitimate interests against your privacy; the information involved is limited to what scholarly credit and account security need, and is the kind contributors expect to see public. We do not use your information for marketing, sell it, or make decisions about you by automated means. You do not have to give us any information, but without signing in you cannot submit or edit a project.</p>
+    </section>
+    <section>
       <h2 id="retention">Expiry and retention</h2>
       <p>A sign-in session lasts up to 14 days from your sign-in or the last change to your session, unless you sign out.{% if email_login_enabled %} Email sign-in and verification codes expire after three minutes.{% endif %} Editor invitations expire after seven days. Repository verification challenges expire after ten minutes for GitHub authorization or 24 hours for a verification file. A completed repository authorization is valid for 30 days and is cancelled early if the repository, its owner or your connected ORCID changes; the record of the check is kept as described under Repository authorization. Expiry stops these credentials from being used; it does not by itself erase every stored record.</p>
       <p>The maintenance cleanup removes expired sessions and database-cache entries, invitations that expired, were used or were revoked more than 30 days ago, and expired verification attempts created more than 30 days ago that have no completed proof. The standard deployment runs this cleanup at startup and hourly, retrying failed runs. Outages can delay removal.</p>
@@ -41,19 +69,33 @@
       {% endif %}
       <p>Drafts that have never been submitted are removed after 90 days without a saved edit, editor-access change, invitation activity or repository-verification activity. Active invitations or verification work can delay removal. Opening a page alone does not restart this period. When such an unused draft is removed, its expired verification evidence and related private access records are also removed.</p>
       <p>Accounts with no submissions, editing responsibilities or retained review/verification records are removed after 12 months (365 days) without a successful sign-in, measured from account creation if there has been no sign-in. Staff accounts and accounts with administrative roles or other retained records are excluded. We do not send reminder emails before automatic removal.</p>
-      <p>Published project records remain. Submitted revisions, including rejected and pending submissions, their verification evidence, and review and staff action records have no automatic deletion period. Account closure and changes to public scholarly attribution require separate handling; contact us to request access, correction or deletion.</p>
+      <p>Submitted revisions, including rejected and pending submissions, their verification evidence, and review and staff action records have no automatic deletion period. We keep them while the project is listed or under review, because they show who submitted the listing, who was authorised to and what was approved. We keep a project that was never accepted until its owner or someone named in it asks us to remove it. Account closure and changes to public scholarly attribution require separate handling; contact us to request access, correction or deletion.</p>
       <p><span class="brand">math<span lang="el">Στοά</span></span> runs on Render, in its Frankfurt (Germany) region, with Cloudflare's network in front of it. They handle your connection and keep their own operational logs and backups, which can include your IP address and the full address of each page you request (including sign-in callback and invitation links), under their own retention settings. <span class="brand">math<span lang="el">Στοά</span></span>'s own request log records only the time, method, status and size of each request. A deleted database record may remain in a backup until that backup expires.</p>
       <p>To verify a repository, and again each time a submission is sent for review or approved, <span class="brand">math<span lang="el">Στοά</span></span> queries GitHub's API about that public repository. If you verify through GitHub, your temporary GitHub authorization is used once to confirm your account and permission level and is not stored.</p>
     </section>
     <section>
-      <h2>Questions and corrections</h2>
+      <h2 id="transfers">Who else handles your information and international transfers</h2>
+      <p>Render hosts the site and its database and acts on our instructions. Render is a United States company: your information is stored in Frankfurt, but Render and its sub-processors, which include Cloudflare, Amazon Web Services and Google Cloud, can access it from the United States. Render is certified under the EU–US Data Privacy Framework and its UK Extension, which the UK and the EU recognise as giving adequate protection. Simon Gabriel lives in the United States and reviews submissions and administers the site from there.</p>
+      <p>Your sign-in provider (ORCID, GitHub or GitLab) and GitHub, when we check a repository, act under their own privacy policies; most of them are also based in the United States. Email you send to our contact address passes through our domain's email forwarding service and is kept in our own mailboxes. We share nothing else with anyone, except where the law requires it.</p>
+    </section>
+    <section>
+      <h2 id="rights">Your rights</h2>
+      <p>You can ask us for a copy of your information, to correct it, to delete it, to restrict how we use it while a question about it is settled, and to receive the information you gave us for your account in a reusable format (the account data download does this). These rights have legal limits; if we cannot do all you ask, we will say why. We respond within one month, or tell you within that month if a complex request needs up to two more.</p>
+    </section>
+    <section>
+      <h2 id="object">Your right to object</h2>
+      <p><strong>Where we rely on legitimate interests, you can object at any time, on grounds relating to your situation, to our use of your information, including its appearance in a public listing.</strong> We will then stop, unless we have compelling legitimate grounds that override your interests, rights and freedoms, or need the information to establish, exercise or defend legal claims.</p>
+    </section>
+    <section>
+      <h2>Questions, requests and complaints</h2>
       <p>If you have an account, open <a href="{% url 'account_privacy' %}">Your data and privacy requests</a> to download your account data or create a verified access, correction or closure request. These actions require a recent sign-in and your authenticator when enabled. Downloads are generated without saving a server-side export file.</p>
       <p>A verified request file contains your request, a confirmation linked to your account, and an optional reply address that is not added to your account. You send the file yourself to the privacy contact; <span class="brand">math<span lang="el">Στοά</span></span> does not send an email or save the request as an account record. The confirmation lasts seven days and stops being valid after relevant account-security changes. Requests received in the contact mailbox are handled as private correspondence; account closure and deletion remain reviewed actions.</p>
       {% if privacy_contact %}
-        <p>For questions about your information, corrections or account deletion requests, contact <a href="mailto:{{ privacy_contact }}">{{ privacy_contact }}</a>. Publication records and private account information may need different treatment when an account is closed.</p>
+        <p>For questions about your information, objections, corrections or deletion requests, including requests from people without an account, contact <a href="mailto:{{ privacy_contact }}">{{ privacy_contact }}</a>. Publication records and private account information may need different treatment when an account is closed.</p>
       {% else %}
         <p>Public registration remains closed until a contact address is provided for privacy and account requests.</p>
       {% endif %}
+      <p>If you are unhappy with how we have used your information, please tell us first so we can try to put it right. You can also complain to the UK Information Commissioner's Office (<a href="https://ico.org.uk/make-a-complaint/">ico.org.uk/make-a-complaint</a>, 0303 123 1113) or, if you live in the European Union, to the data protection authority where you live or work.</p>
     </section>
   </article>
 {% endblock %}

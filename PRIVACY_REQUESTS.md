@@ -77,6 +77,49 @@ route without granting access to another person's private submissions.
   Do not silently transfer a project or remove collaborators' work. Agree any
   replacement steward and their repository authority separately.
 
+- For an objection (Article 21) to a use based on legitimate interests,
+  including a public listing, stop that use unless there are compelling
+  legitimate grounds that override the person's interests, rights and
+  freedoms, or the data is needed for legal claims. Record the reasons for
+  either outcome. An objection by a named contributor normally means removing
+  them from the project (below). There is no direct-marketing processing.
+- For restriction (Article 18), for example while the accuracy of a listing or
+  an objection is being settled: keep the data but stop using it beyond
+  storage. For a pending revision, do not review it; for a published listing,
+  remove the person's details with `erase_submission --remove-contributor` or
+  erase the submission, as agreed. Tell the requester before lifting a
+  restriction.
+- Portability (Article 20) covers data given for the account: the
+  self-service account data download is the answer.
+
+## People named by someone else, and removing submissions
+
+Contributors listed in a project need no account. Verify that the requester is
+the named person through a separately reviewed route (for example a message
+from the email address shown on their ORCID record, or from a repository or
+institutional page that clearly belongs to them) before acting.
+
+`erase_submission` handles both submission-level erasure and contributor
+removal. It prints an inventory and changes nothing unless `--execute` is
+given. Run it in Render → web service → **Shell**:
+
+    python server/manage.py erase_submission <submission id or project-<hex>>
+    python server/manage.py erase_submission <id> --execute
+    python server/manage.py erase_submission <id> --remove-contributor "<name or ORCID>" --execute
+
+Whole erasure deletes the submission, every revision, invitations,
+verification attempts and evidence, and blanks the description of matching
+admin log entries; accounts are left alone (close them separately, below).
+Contributor removal edits the draft and every revision snapshot in place
+(the only sanctioned exception to revision immutability) and updates a
+published listing immediately without a new review; it refuses to leave a
+revision with no contributors. If the command warns that the project is also
+in `docs/data/projects.json`, edit and commit that file too. Copy the
+command's final line, which holds no title or names, into the erasure record.
+A public verification file in the project's repository, and GitHub issue
+discussions, are outside the database: ask the requester to remove the file,
+and edit or delete issue comments on GitHub.
+
 ## Execute and verify closure
 
 Before closure, explain the proposed handling of retained records and project

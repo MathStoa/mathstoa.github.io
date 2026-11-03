@@ -100,21 +100,43 @@ class PrivacyNoticeTests(TestCase):
         for sentence in (
             "an internal account name generated at random",
             "where offered, an institutional sign-in",
-            "math<span lang=\"el\">Στοά</span> sets only the cookies needed to run the service",
+            "math<span lang=\"el\">Στοά</span></span> sets only the cookies needed to run the service",
             'There is no "remember this browser" cookie',
             "A sign-in session lasts up to 14 days from your sign-in or the last change to your session",
             "A completed repository authorization is valid for 30 days",
-            "math<span lang=\"el\">Στοά</span> runs on Render, in its Frankfurt (Germany) region, with Cloudflare's network in front of it",
-            "math<span lang=\"el\">Στοά</span>'s own request log records only the time, method, status and size of each request",
-            "math<span lang=\"el\">Στοά</span> queries GitHub's API about that public repository",
+            "math<span lang=\"el\">Στοά</span></span> runs on Render, in its Frankfurt (Germany) region, with Cloudflare's network in front of it",
+            "math<span lang=\"el\">Στοά</span></span>'s own request log records only the time, method, status and size of each request",
+            "math<span lang=\"el\">Στοά</span></span> queries GitHub's API about that public repository",
         ):
             self.assertContains(response, sentence)
         self.assertNotContains(response, "Sign-in sessions use cookies")
         self.assertNotContains(response, "Our hosting services also process")
 
+    @override_settings(PUBLIC_CONTACT_EMAIL="privacy@example.invalid")
+    def test_notice_gives_controllers_bases_transfers_rights_and_complaint_route(self):
+        response = self.client.get("/privacy/")
+        for sentence in (
+            "Last updated",
+            "run by Tommaso Rosati and Simon Gabriel in a personal capacity",
+            "so we are joint controllers",
+            'id="named"',
+            'id="legal-basis"',
+            "to provide the service you sign up for (contract)",
+            "Render is a United States company",
+            "Data Privacy Framework and its UK Extension",
+            "to restrict how we use it",
+            "in a reusable format",
+            'id="object"',
+            "you can object at any time",
+            "https://ico.org.uk/make-a-complaint/",
+            "including requests from people without an account",
+        ):
+            self.assertContains(response, sentence)
+        self.assertContains(response, "mailto:privacy@example.invalid", count=2)
+
     def test_email_collection_wording_follows_email_login_setting(self):
         offered = "If you choose email sign-in or add an email address to your account"
-        not_offered = "Email sign-in is not currently offered, and math<span lang=\"el\">Στοά</span> does not collect an email address"
+        not_offered = "Email sign-in is not currently offered, and <span class=\"brand\">math<span lang=\"el\">Στοά</span></span> does not collect an email address"
         with override_settings(EMAIL_LOGIN_ENABLED=False):
             response = self.client.get("/privacy/")
             self.assertContains(response, not_offered)
