@@ -100,50 +100,53 @@ class PrivacyNoticeTests(TestCase):
         for sentence in (
             "an internal account name generated at random",
             "where offered, an institutional sign-in",
-            "math<span lang=\"el\">Στοά</span></span> sets only the cookies needed to run the service",
+            "only those needed to run the service",
             'There is no "remember this browser" cookie',
-            "A sign-in session lasts up to 14 days from your sign-in or the last change to your session",
-            "A completed repository authorization is valid for 30 days",
-            "math<span lang=\"el\">Στοά</span></span> runs on Render, in its Frankfurt (Germany) region, with Cloudflare's network in front of it",
-            "math<span lang=\"el\">Στοά</span></span>'s own request log records only the time, method, status and size of each request",
-            "math<span lang=\"el\">Στοά</span></span> queries GitHub's API about that public repository",
+            "Sign-in sessions last up to 14 days",
+            "a completed authorization is valid for 30 days",
+            "Render hosts the site and database in Frankfurt on our instructions, with Cloudflare's network in front",
+            "Our own request log keeps only the time, method, status and size of each request",
+            "we query GitHub about that public repository",
+            'id="retention"',
         ):
             self.assertContains(response, sentence)
-        self.assertNotContains(response, "Sign-in sessions use cookies")
-        self.assertNotContains(response, "Our hosting services also process")
 
     @override_settings(PUBLIC_CONTACT_EMAIL="privacy@example.invalid")
     def test_notice_gives_controllers_bases_transfers_rights_and_complaint_route(self):
         response = self.client.get("/privacy/")
         for sentence in (
             "Last updated",
-            "run by Tommaso Rosati and Simon Gabriel in a personal capacity",
-            "so we are joint controllers",
+            'id="summary"',
+            "is run by Tommaso Rosati and Simon Gabriel in a personal capacity",
+            "We are joint controllers",
             'id="named"',
-            'id="legal-basis"',
             "to provide the service you sign up for (contract)",
-            "Render is a United States company",
+            "in our legitimate interest",
+            "to meet our legal obligations",
+            "Render is a US company",
             "Data Privacy Framework and its UK Extension",
-            "to restrict how we use it",
+            "restrict its use",
             "in a reusable format",
             'id="object"',
-            "you can object at any time",
+            "You can object at any time",
             "https://ico.org.uk/make-a-complaint/",
-            "including requests from people without an account",
+            "Anyone, with or without an account",
         ):
             self.assertContains(response, sentence)
         self.assertContains(response, "mailto:privacy@example.invalid", count=2)
 
     def test_email_collection_wording_follows_email_login_setting(self):
-        offered = "If you choose email sign-in or add an email address to your account"
-        not_offered = "Email sign-in is not currently offered, and <span class=\"brand\">math<span lang=\"el\">Στοά</span></span> does not collect an email address"
+        offered = "If you sign in with email or add an email address"
+        not_offered = "We do not collect your email address."
         with override_settings(EMAIL_LOGIN_ENABLED=False):
             response = self.client.get("/privacy/")
             self.assertContains(response, not_offered)
             self.assertNotContains(response, offered)
+            self.assertNotContains(response, "Unverified email signups")
         with override_settings(EMAIL_LOGIN_ENABLED=True):
             response = self.client.get("/privacy/")
             self.assertContains(response, offered)
+            self.assertContains(response, "Unverified email signups are deleted after 7 days")
             self.assertNotContains(response, not_offered)
 
 
