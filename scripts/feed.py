@@ -35,7 +35,7 @@ def render_feed(data: dict) -> str:
         reverse=True,
     )
     feed = ET.Element(f"{{{ATOM}}}feed")
-    element(feed, "title", "mathStoa announcements")
+    element(feed, "title", "mathΣτοά announcements")
     element(feed, "subtitle", "Approved mathematical project listings. Editorial examples are excluded.")
     element(feed, "id", FEED_ID)
     element(feed, "link", href=f"{SITE_URL}feed.xml", rel="self", type="application/atom+xml")
@@ -43,7 +43,7 @@ def render_feed(data: dict) -> str:
     latest = projects[0]["added"] if projects else LAUNCH_DATE
     element(feed, "updated", f"{latest}T00:00:00Z")
     author = element(feed, "author")
-    element(author, "name", "mathStoa editors")
+    element(author, "name", "mathΣτοά editors")
     for project in projects:
         entry = element(feed, "entry")
         link = f"{SITE_URL}project.html?id={project['id']}"

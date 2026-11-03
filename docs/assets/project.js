@@ -13,10 +13,10 @@ try {
   const id = new URLSearchParams(location.search).get('id');
   const project = (await loadArchive()).find(p=>p.id===id);
   if (!project) {
-    document.title='Project not found — mathStoa';
+    document.title='Project not found — mathΣτοά';
     container.replaceChildren(el('h1',{},'Project not found'),el('p',{className:'lede'},'This project is not in the archive. Check the link or browse the current entries.'),el('a',{href:'index.html#archive',className:'button'},'Explore the archive'));
   } else {
-    document.title=project.title+' — mathStoa';
+    document.title=project.title+' — mathΣτοά';
     const intro=el('header',{className:'project-intro'},el('h1',{},project.title),el('p',{className:'lede'},project.summary),tagList(project.categories));
     if(project.example) intro.append(el('p',{className:'notice project-example-note'},'This entry illustrates the archive and was not submitted by the project’s maintainers. Consult the original project for current status and participation.'));
     const article=el('article',{className:'prose'},section('About the project',el('p',{},project.description)),section('Contents',el('ul',{},project.highlights.map(t=>el('li',{},t)))),section('Contribution information',el('p',{},project.contributionNote)),section('Attribution',...project.credits.map(creditLine)),section('Reuse & licensing',el('p',{},project.licenseNote)));

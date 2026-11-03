@@ -3,14 +3,14 @@
 {% block content %}
   <h1>Sign in with an email code</h1>
   {% if email_login_enabled %}
-    <p>Enter the email address linked to your mathStoa account. Open the email and enter the code here to sign in.</p>
+    <p>Enter the email address linked to your math<span lang="el">Στοά</span> account. Open the email and enter the code here to sign in.</p>
     <form method="post" action="{{ request_login_code_url }}" class="account-form">
       {% csrf_token %}
       {{ form.as_p }}
       {{ redirect_field }}
       <button type="submit" class="button">Send sign-in code</button>
     </form>
-    {% if registration_open %}<p class="privacy-note">New to mathStoa? <a href="{% url 'account_signup' %}">Create an account with email</a>.</p>{% else %}<p class="notice">New account registration is currently closed. This form is for existing accounts.</p>{% endif %}
+    {% if registration_open %}<p class="privacy-note">New to math<span lang="el">Στοά</span>? <a href="{% url 'account_signup' %}">Create an account with email</a>.</p>{% else %}<p class="notice">New account registration is currently closed. This form is for existing accounts.</p>{% endif %}
   {% else %}
     <p>Email sign-in is not currently available.</p>
   {% endif %}

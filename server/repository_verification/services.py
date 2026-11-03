@@ -179,7 +179,7 @@ def check_github(attempt, user, raw_nonce, access_token, expected_github_uid=Non
     if expected_github_uid is None or str(evidence.github_user_id) != str(expected_github_uid):
         raise VerificationError("The authenticated GitHub identity did not match. Try connecting again.")
     if SocialAccount.objects.filter(provider="github", uid=str(evidence.github_user_id)).exclude(user=user).exists():
-        raise VerificationError("This GitHub account is connected to another mathStoa account.")
+        raise VerificationError("This GitHub account is connected to another mathΣτοά account.")
     current = _api(client.resolve_repository, attempt.repository_url)
     _same_repository(attempt, current)
     return _complete(attempt, user, current, github_user_id=evidence.github_user_id,

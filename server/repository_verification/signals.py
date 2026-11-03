@@ -96,7 +96,7 @@ def verify_github_callback(sender, request, sociallogin, **kwargs):
         target = redirect("verification:overview", pk=attempt.submission_id)
         github_uid = str(sociallogin.account.uid)
         if SocialAccount.objects.filter(provider="github", uid=github_uid).exclude(user=request.user).exists():
-            raise ValidationError("This GitHub account is connected to another mathStoa account. Use that account or verify with a file.")
+            raise ValidationError("This GitHub account is connected to another mathΣτοά account. Use that account or verify with a file.")
         token = sociallogin.token
         if token is None or not token.token:
             raise ValidationError("GitHub did not return an authorization credential. Please try again.")
