@@ -16,7 +16,7 @@
           {% with connected=choice.0.instance %}
             <label class="connection-row" for="account-{{ connected.pk }}">
               <input id="account-{{ connected.pk }}" type="radio" name="account" value="{{ connected.pk }}" required>
-              <span><strong>{% if connected.provider == 'orcid' %}ORCID{% else %}{{ connected.get_provider.name }}{% endif %}</strong><br><span class="muted">{{ connected.get_provider_account }}</span></span>
+              <span><strong>{% if connected.provider == 'orcid' %}ORCID{% else %}{{ connected.get_provider.name }}{% endif %}</strong><br><span class="muted">{% if connected.provider == 'orcid' %}ORCID iD{% else %}Account ID{% endif %}: {{ connected.uid }}</span></span>
             </label>
           {% endwith %}
         {% endfor %}
