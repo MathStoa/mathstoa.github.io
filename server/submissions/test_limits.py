@@ -20,7 +20,7 @@ class SubmissionMutationLimitTests(TestCase):
             "title": "Research draft", "repository_url": "https://github.com/example/research",
             "doi": "10.5281/zenodo.1234567", "reading_url": "https://example.org/research",
             "abstract": "These mathematical notes explain the research question, its current partial results, and useful work still to be done.",
-            "category": "math.PR", "collaborators-name": "Researcher", "collaborators-orcid": "0000-0002-1825-0097", "collaborators-email": "researcher@university.example", "permission_confirmed": "on", "license_confirmed": "on", "revision": "1",
+            "category": "math.PR", "collaborators-name": "Researcher", "collaborators-orcid": "0000-0002-1825-0097", "collaborators-email": "researcher@university.example", "permission_confirmed": "on", "revision": "1",
         }
         form = SubmissionForm(self.payload)
         self.assertTrue(form.is_valid(), form.errors)

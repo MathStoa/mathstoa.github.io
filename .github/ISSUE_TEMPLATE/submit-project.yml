@@ -74,9 +74,7 @@ body:
     attributes:
       label: Submission confirmation
       options:
-        - label: I maintain this project or have permission to submit it, and have read the submission guidelines.
-          required: true
-        - label: I have the right to contribute the original summary under CC BY 4.0. Linked project material retains its existing rights and licenses.
+        - label: I maintain this project or have permission to submit it, have read the submission guidelines, and have the right to publish its abstract under CC BY 4.0.
           required: true
         - label: I understand that acceptance is an archive review, not mathematical peer review or an endorsement of correctness.
           required: true

@@ -130,14 +130,13 @@ class SubmissionForm(forms.ModelForm):
         help_text=format_html('Add everyone who contributed to the project, including yourself, with their ORCID iD and institutional email. Anyone can <a href="{}" target="_blank" rel="noopener noreferrer">register for an ORCID iD</a> free of charge. Email addresses are never published; each contributor receives a confirmation when the project is submitted for review.', ORCID_REGISTER_URL),
     )
     revision = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
-    permission_confirmed = forms.BooleanField(required=False, label="I maintain this project or have permission to submit it and its contributor details.")
-    license_confirmed = forms.BooleanField(required=False, label="I have permission to publish this original abstract under CC BY 4.0. The linked project keeps its own licence.")
+    permission_confirmed = forms.BooleanField(required=False, label="I maintain this project or have permission to submit it and its contributor details, and have the right to publish its abstract under CC BY 4.0.")
     # Everything else is required before a draft can be submitted for review.
     optional_fields = ("doi", "reading_url")
 
     class Meta:
         model = Submission
-        fields = ["title", "repository_url", "doi", "reading_url", "abstract", "category", "collaborators", "permission_confirmed", "license_confirmed"]
+        fields = ["title", "repository_url", "doi", "reading_url", "abstract", "category", "collaborators", "permission_confirmed"]
         labels = {"repository_url": "Public repository", "reading_url": "Project website", "abstract": "Short abstract", "category": "Main subject"}
         help_texts = {
             "doi": format_html('If you have one, the DOI of an archived release of the repository, such as 10.5281/zenodo.1234567. <a href="{}" target="_blank" rel="noopener noreferrer">How to get a DOI for a GitHub repository</a>', DOI_GUIDE_URL),
@@ -174,6 +173,8 @@ class SubmissionForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
+        # The one confirmation also grants the abstract licence; the model keeps both flags.
+        self.instance.license_confirmed = bool(cleaned.get("permission_confirmed"))
         for field, value in list(cleaned.items()):
             if isinstance(value, str) and any(ord(char) < 32 and char not in "\n\r\t" for char in value):
                 self.add_error(field, "Please remove invalid control characters.")

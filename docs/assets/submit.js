@@ -15,7 +15,7 @@ form.addEventListener('submit',event=>{
   doi.setCustomValidity('');
   if(fields.doi.trim() && !/^(?:(?:https?:\/\/)?(?:dx\.)?doi\.org\/|doi:\s*)?10\.\d{4,9}(?:\.\d+)*\/[-._;()\/:a-z0-9]+$/i.test(fields.doi.trim())) {doi.setCustomValidity('Please enter a DOI such as 10.5281/zenodo.1234567, or its https://doi.org/ link.');doi.reportValidity();return;}
   const lines=[['Project title',fields.title],['Public repository',fields.repository],['DOI',fields.doi.trim()||'Not provided'],['Project website',fields.reading.trim()||'Not provided'],['Short abstract',fields.abstract],['Main subject',fields.category],['Contributors',fields.collaborators]];
-  const body=lines.map(([label,value])=>'### '+label+'\n\n'+String(value).trim()).join('\n\n')+'\n\n### Submission confirmation\n\n- [x] I maintain this project or have permission to submit it.\n- [x] I have read the submission guidelines and understand that listing is not peer review.\n- [x] I have permission to share this original abstract under CC BY 4.0. The linked project keeps its own licence.\n';
+  const body=lines.map(([label,value])=>'### '+label+'\n\n'+String(value).trim()).join('\n\n')+'\n\n### Submission confirmation\n\n- [x] I maintain this project or have permission to submit it, have read the submission guidelines, and have the right to publish its abstract under CC BY 4.0.\n- [x] I understand that listing is not peer review.\n';
   const url=new URL(REPOSITORY+'/issues/new');
   url.searchParams.set('title','[Project] '+fields.title.trim());
   url.searchParams.set('body',body);

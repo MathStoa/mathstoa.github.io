@@ -38,7 +38,7 @@ class SubmissionTests(TestCase):
             "doi": "10.5281/zenodo.1234567",
             "reading_url": "https://example.org/research", "abstract": "These research notes explore a mathematical question, explain the current partial results, and describe useful future work.",
             "category": "math.PR", "collaborators-name": "Anna", "collaborators-orcid": "0000-0002-1825-0097", "collaborators-email": "anna@university.example",
-            "permission_confirmed": "on", "license_confirmed": "on", "revision": "1",
+            "permission_confirmed": "on", "revision": "1",
         }
 
     def create_submission(self, payload=None):
@@ -209,14 +209,14 @@ class SubmissionTests(TestCase):
             self.assertNotIn(removed, project)
         self.assertEqual(self.client.get("/feed.xml").status_code, 200)
 
-    def test_permission_and_licence_confirmations_required_before_review(self):
-        for field in ("permission_confirmed", "license_confirmed"):
-            with self.subTest(field=field):
-                payload = {key: value for key, value in self.payload.items() if key != field}
-                submission = self.create_submission(payload)
-                response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1})
-                self.assertEqual(response.status_code, 400)
-                self.assertFalse(submission.revisions.exists())
+    def test_permission_confirmation_required_before_review_and_grants_licence(self):
+        payload = {key: value for key, value in self.payload.items() if key != "permission_confirmed"}
+        submission = self.create_submission(payload)
+        self.assertFalse(submission.license_confirmed)
+        response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1})
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(submission.revisions.exists())
+        self.assertTrue(self.create_submission().license_confirmed)
 
     def test_stale_submit_does_not_submit_unseen_draft(self):
         submission = self.create_submission()
