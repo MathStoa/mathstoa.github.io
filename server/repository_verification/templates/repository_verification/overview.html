@@ -8,10 +8,10 @@
   <p><strong>Repository:</strong> {{ submission.repository_url|default:"Add a repository URL to your draft first." }}</p>
   {% if orcid %}<p><strong>Your connected ORCID:</strong> {{ orcid }}</p>{% endif %}
   {% if verified %}
-    <p class="notice" role="status"><strong>Repository authorization verified.</strong> You can submit this project for review.</p>
+    <p class="notice" role="status"><strong>Repository authorization verified.</strong> You can submit this project.</p>
     <p><a class="button" href="{% url 'submissions:detail' submission.pk %}">Return to submission</a></p>
   {% else %}
-    <p class="notice">Verification is required before submitting this project for review. You can continue editing your draft.</p>
+    <p class="notice">Verification is required before submitting this project. You can continue editing your draft.</p>
   {% endif %}
 
   <section class="account-section" aria-labelledby="github-verification">

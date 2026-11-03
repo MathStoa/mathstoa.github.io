@@ -51,6 +51,28 @@ class SubmissionTests(TestCase):
         self.assertEqual(response.status_code, 302)
         return submission.revisions.get(number=submission.revision)
 
+    def test_draft_page_offers_submission_then_states_the_outcome_without_mentioning_review(self):
+        submission = self.create_submission()
+        url = reverse("submissions:detail", args=[submission.pk])
+        pages = [self.client.get(url)]
+        self.assertContains(pages[0], "Submit saved draft")
+        self.submit(submission)
+        pages.append(self.client.get(url))
+        self.assertContains(pages[1], "The repository details have been submitted and will undergo moderation before being made public.", count=1)
+        self.assertNotContains(pages[1], "Submit saved draft")
+        self.assertNotContains(pages[1], "Repository access is verified")
+        submission.revisions.get().review(self.staff, approve=False, note="Please expand the abstract.")
+        pages.append(self.client.get(url))
+        self.assertContains(pages[2], "Changes were requested for this version.")
+        self.assertNotContains(pages[2], "Submit saved draft")
+        self.client.post(reverse("submissions:edit", args=[submission.pk]), self.payload)
+        pages.append(self.client.get(url))
+        self.assertContains(pages[3], "Submit saved draft")
+        for page in pages:
+            text = page.content.decode().lower()
+            self.assertNotIn("review", text)
+            self.assertNotIn("editorial", text)
+
     def test_review_needs_first_names_and_surname_separated_by_a_comma(self):
         for name in ("Anna Example", "Anna, ", ", Example", "Anna, Maria, Example"):
             with self.subTest(name=name):

@@ -104,7 +104,8 @@ def verify_github_callback(sender, request, sociallogin, **kwargs):
             attempt, request.user, data.get("nonce", ""), token.token,
             expected_github_uid=github_uid,
         )
-        messages.success(request, "Repository authorization verified through GitHub. You can now submit this project for review.")
+        messages.success(request, "Repository authorization verified through GitHub. You can now submit this project.")
+        target = redirect("submissions:detail", pk=attempt.submission_id)
     except (ValidationError, GitHubError, ValueError) as error:
         text = " ".join(error.messages) if isinstance(error, ValidationError) else (
             str(error) if isinstance(error, GitHubError) else "This verification request is invalid. Please start again."

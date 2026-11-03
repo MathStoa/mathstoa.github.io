@@ -36,32 +36,40 @@
       </section>
       <hr class="section-divider">
       <section>
-        <h2>Submit this version for review</h2>
-        <p><span class="brand">math<span lang="el">Στοά</span></span> staff check scope, clarity and attribution before a listing appears in the archive. A listing is not mathematical peer review.</p>
-        {% if repository_verified %}
-          <p id="verification-status" class="verification-status">Repository access is verified.{% if can_manage %} <a href="{% url 'verification:overview' submission.pk %}">View verification</a>.{% endif %}</p>
-        {% elif can_manage %}
-          <p id="verification-status" class="notice">Please <a href="{% url 'verification:overview' submission.pk %}">verify repository access</a> before submitting this project for review.</p>
+        {% if current_revision.status == "pending" %}
+          <p class="verification-status" role="status">The repository details have been submitted and will undergo moderation before being made public.</p>
+        {% elif current_revision.status == "approved" %}
+          <p class="verification-status">This version is public in the archive. Edit and save a new draft to submit changes.</p>
+        {% elif current_revision %}
+          <p class="notice">Changes were requested for this version. Edit and save a new draft, then submit it again.</p>
         {% else %}
-          <p id="verification-status" class="notice">The project owner needs to verify repository access before this draft can be submitted for review. You can continue editing and saving it.</p>
+          <h2>Submit this version</h2>
+          <p><span class="brand">math<span lang="el">Στοά</span></span> staff check scope, clarity and attribution before a listing is made public. A listing is an introduction, not a mathematical endorsement.</p>
+          {% if repository_verified %}
+            <p id="verification-status" class="verification-status">Repository access is verified.{% if can_manage %} <a href="{% url 'verification:overview' submission.pk %}">View verification</a>.{% endif %}</p>
+          {% elif can_manage %}
+            <p id="verification-status" class="notice">Please <a href="{% url 'verification:overview' submission.pk %}">verify repository access</a> before submitting this project.</p>
+          {% else %}
+            <p id="verification-status" class="notice">The project owner needs to verify repository access before this draft can be submitted. You can continue editing and saving it.</p>
+          {% endif %}
+          <form method="post" action="{% url 'submissions:submit' pk=submission.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="revision" value="{{ submission.revision }}">
+            <button type="submit" class="button" aria-describedby="verification-status"{% if not repository_verified %} disabled{% endif %}>Submit saved draft</button>
+          </form>
+          <p class="private-note">The saved version is sent for moderation. Later edits stay in your draft until you submit them again.</p>
         {% endif %}
-        <form method="post" action="{% url 'submissions:submit' pk=submission.pk %}">
-          {% csrf_token %}
-          <input type="hidden" name="revision" value="{{ submission.revision }}">
-          <button type="submit" class="button" aria-describedby="verification-status"{% if not repository_verified %} disabled{% endif %}>Submit saved draft for review</button>
-        </form>
-        <p class="private-note">The saved version is sent for review. Later edits stay in your draft until you submit them again.</p>
       </section>
       <hr class="section-divider">
       <section>
-        <h2>Review history</h2>
+        <h2>Submission history</h2>
         <ul class="revision-list">
           {% for revision in revisions %}
             <li><strong>Revision {{ revision.number }}</strong> <span class="status">{{ revision.get_status_display|default:revision.status }}</span>
               <p>Submitted {{ revision.created_at|date:"j F Y, H:i" }}</p>
               {% if revision.review_note %}<p class="preserve-lines">{{ revision.review_note }}</p>{% endif %}
             </li>
-          {% empty %}<li>No versions have been submitted for review yet.</li>{% endfor %}
+          {% empty %}<li>No versions have been submitted yet.</li>{% endfor %}
         </ul>
       </section>
     </article>

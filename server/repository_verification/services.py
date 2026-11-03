@@ -20,9 +20,13 @@ from .github import GitHubClient, GitHubError
 from .models import RepositoryVerification, VerificationAttempt
 
 
-AUTHORIZATION = "I authorize this mathStoa account to submit this repository for review."
-# Files generated while the name was spelt "Math Stoa" stay valid until their attempt expires.
-ACCEPTED_AUTHORIZATIONS = (AUTHORIZATION, "I authorize this Math Stoa account to submit this repository for review.")
+AUTHORIZATION = "I authorize this mathStoa account to submit this repository."
+# Files generated with earlier wordings stay valid until their attempt expires.
+ACCEPTED_AUTHORIZATIONS = (
+    AUTHORIZATION,
+    "I authorize this mathStoa account to submit this repository for review.",
+    "I authorize this Math Stoa account to submit this repository for review.",
+)
 
 
 class VerificationError(ValidationError):

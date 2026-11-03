@@ -139,6 +139,7 @@ class VerificationUITests(TestCase):
         attempt = self.attempt()
         key = self.store_document(attempt)
         response = self.client.post(self.url("verify_file"), follow=True)
+        self.assertRedirects(response, reverse("submissions:detail", args=[self.submission.pk]))
         self.assertContains(response, "Repository authorization verified.")
         self.assertNotIn(key, self.client.session)
         check.assert_called_once_with(attempt, self.owner)
@@ -176,7 +177,7 @@ class VerificationUITests(TestCase):
         with self.assertRaises(ImmediateHttpResponse) as response:
             verify_github_callback(None, self.callback_request(), self.callback(attempt))
         check.assert_called_once_with(attempt, self.owner, "raw-nonce", "private-oauth-token", expected_github_uid="789")
-        self.assertEqual(response.exception.response["Location"], self.url())
+        self.assertEqual(response.exception.response["Location"], reverse("submissions:detail", args=[self.submission.pk]))
         self.assertFalse(SocialToken.objects.exists())
         self.assertFalse(SocialAccount.objects.filter(provider="github").exists())
 
@@ -209,6 +210,7 @@ class VerificationUITests(TestCase):
         self.assertIn("expired", text)
         self.assertNotIn("private-oauth-token", text)
         self.assertNotIn("private-oauth-token", response.exception.response["Location"])
+        self.assertEqual(response.exception.response["Location"], self.url())
 
     def test_changing_repository_away_and_back_cannot_restore_proof(self):
         attempt = self.attempt()
@@ -341,7 +343,7 @@ class VerificationUITests(TestCase):
             callback_params = {"state": query["state"][0], "code": "provider-code"}
             finish = self.client.get(callback_url, callback_params)
             self.assertEqual(finish.status_code, 302)
-            self.assertEqual(finish["Location"], self.url())
+            self.assertEqual(finish["Location"], reverse("submissions:detail", args=[self.submission.pk]))
             proof = RepositoryVerification.objects.get(submission=self.submission)
             self.assertEqual(proof.user, self.owner)
             self.assertEqual(proof.orcid, orcid.uid)

@@ -1,6 +1,6 @@
-"""Notices sent when a revision is submitted for review.
+"""Notices sent when a revision is submitted for moderation.
 
-Moderators get one notice naming the project and linking to the review page.
+Moderators get one notice naming the project and linking to its administration page.
 Each listed contributor gets a separate confirmation at their private email,
 which also tells them how to object to being listed. Neither carries anything
 about the submitter's account. A missing mailbox or SMTP setting disables
@@ -43,12 +43,12 @@ def notify_moderators(revision):
     link = base + reverse("admin:submissions_submissionrevision_change", args=[revision.pk])
     queue = base + reverse("admin:submissions_submissionrevision_changelist") + "?status__exact=pending"
     when = timezone.localtime(revision.created_at or timezone.now()).strftime("%d %B %Y, %H:%M %Z")
-    subject = f"{settings.ACCOUNT_EMAIL_SUBJECT_PREFIX}Submission awaiting review: {title}"
+    subject = f"{settings.ACCOUNT_EMAIL_SUBJECT_PREFIX}Submission awaiting moderation: {title}"
     body = (
-        f'Revision {revision.number} of "{title}" was submitted for editorial review on {when}.\n\n'
-        f"Review it: {link}\n"
+        f'Revision {revision.number} of "{title}" was submitted for moderation on {when}.\n\n'
+        f"Open it: {link}\n"
         f"Pending queue: {queue}\n\n"
-        "Decide in the administration interface and record a review note: the submitter "
+        "Decide in the administration interface and record a note: the submitter "
         "reads the outcome on their draft page. This notice names no account.\n"
     )
     try:
@@ -76,7 +76,7 @@ def notify_contributors(revision):
     for person in people:
         body = (
             f"Dear {person['name']},\n\n"
-            f'On {when}, the project "{title}" was submitted for review to math-stoa ({base}), '
+            f'On {when}, the project "{title}" was submitted to math-stoa ({base}), '
             "an archive of open mathematical research projects. You are listed as a contributor, together with:\n\n"
             f"{names}\n\n"
             "If the project is accepted, its listing will show each contributor's name and ORCID iD. "

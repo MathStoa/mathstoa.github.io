@@ -6,10 +6,10 @@
     <a class="back-link" href="{% if submission %}{% url 'submissions:detail' pk=submission.pk %}{% else %}{% url 'submissions:list' %}{% endif %}">← {% if submission %}Back to submission{% else %}My submissions{% endif %}</a>
     <h1>{% if submission %}Edit your submission{% else %}Submit a project{% endif %}</h1>
     <p class="lede">Introduce the mathematical work and link to its public repository.</p>
-    {% if submission.published_revision %}<p class="notice">Your accepted listing stays public while you edit this draft. Changes appear in the archive after a new review.</p>{% endif %}
+    {% if submission.published_revision %}<p class="notice">Your accepted listing stays public while you edit this draft. Changes appear in the archive after moderation.</p>{% endif %}
     <form method="post" action="{% if submission %}{% url 'submissions:edit' pk=submission.pk %}{% else %}{% url 'submissions:create' %}{% endif %}" class="submission-form" novalidate>
       {% csrf_token %}
-      <p class="form-note">All fields are required for review unless marked optional.</p>
+      <p class="form-note">All fields are required for submission unless marked optional.</p>
       {{ form.non_field_errors }}
       {% for field in form.hidden_fields %}{{ field }}{{ field.errors }}{% endfor %}
       {% for field in form.visible_fields %}
@@ -54,7 +54,7 @@
         {% endif %}
       {% endfor %}
       <p class="private-note">Contributor names and ORCID iDs will be public if this submission is accepted. Email addresses stay private: the project's owner, editors and <span class="brand">math<span lang="el">Στοά</span></span> staff can see them, and they are used to confirm the submission to each contributor. An ORCID iD entered here is supplied attribution, not an authenticated identity. Adding a contributor does not give them editing access.</p>
-      {% if submission.owner_id == user.pk %}<p class="private-note">Before sending the project for review, <a href="{% url 'verification:overview' submission.pk %}">verify repository access</a>.</p>{% endif %}
+      {% if submission.owner_id == user.pk %}<p class="private-note">Before submitting the project, <a href="{% url 'verification:overview' submission.pk %}">verify repository access</a>.</p>{% endif %}
       <div class="actions">
         <button class="button" type="submit">Save draft</button>
         <a href="{% if submission %}{% url 'submissions:detail' pk=submission.pk %}{% else %}{% url 'submissions:list' %}{% endif %}">Cancel</a>

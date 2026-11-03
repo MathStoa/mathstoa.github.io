@@ -27,7 +27,7 @@ form.addEventListener('submit',event=>{
   url.searchParams.set('body',body);
   const longDraft = url.href.length > 7000;
   if (longDraft) url.searchParams.delete('body');
-  result.replaceChildren(el('h3',{},'Submission draft'),el('p',{},'Nothing has been submitted yet. Open the draft on GitHub, review it, and choose “Submit new issue”. A GitHub account is required.'),el('a',{className:'button',href:url.href,target:'_blank',rel:'noopener noreferrer'},'Review draft on GitHub'));
+  result.replaceChildren(el('h3',{},'Submission draft'),el('p',{},'Nothing has been submitted yet. Open the draft on GitHub, check it, and choose “Submit new issue”. A GitHub account is required.'),el('a',{className:'button',href:url.href,target:'_blank',rel:'noopener noreferrer'},'Review draft on GitHub'));
   if (longDraft) {
     const draft = el('textarea',{id:'draft-text',rows:'12',readOnly:'', 'aria-label':'Submission text to copy'},body);
     const note = el('p',{},'This draft is too long to include in a link. Copy the text below and paste it into the issue body on GitHub.');

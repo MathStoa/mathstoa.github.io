@@ -42,7 +42,7 @@ def create(request):
         submission = form.save(commit=False)
         submission.owner = request.user
         submission.save()
-        messages.success(request, "Draft saved. Complete the details, then submit it for review.")
+        messages.success(request, "Draft saved. Complete the details, then submit it for moderation.")
         return redirect("submissions:detail", pk=submission.pk)
     return render(request, "submissions/form.html", {"form": form})
 
@@ -52,7 +52,12 @@ def detail(request, pk):
     from repository_verification.services import has_current_verification
     submission = get_object_or_404(accessible(request.user).select_related("published_revision"), pk=pk)
     owner = submission.owner_id == request.user.pk
-    context = {"submission": submission, "revisions": submission.revisions.all(), "can_manage": owner, "editors": submission.editors.all(), "repository_verified": has_current_verification(submission)}
+    context = {
+        "submission": submission, "revisions": submission.revisions.all(), "can_manage": owner, "editors": submission.editors.all(),
+        "repository_verified": has_current_verification(submission),
+        # Once this draft revision has been submitted, the page states the outcome instead of offering submission.
+        "current_revision": submission.revisions.filter(number=submission.revision).first(),
+    }
     if owner:
         context.update(invitations=submission.invitations.filter(expires_at__gt=timezone.now(), revoked_at__isnull=True, accepted_at__isnull=True), created_invitation_url=request.session.pop(f"created_invitation_url:{submission.pk}", None))
     return render(request, "submissions/detail.html", context)
@@ -76,7 +81,7 @@ def edit(request, pk):
             submission = form.save(commit=False)
             submission.revision += 1
             submission.save()
-            messages.success(request, "Draft changes saved. Published details stay unchanged until this revision is reviewed.")
+            messages.success(request, "Draft changes saved. Published details stay unchanged until this revision is approved.")
             return redirect("submissions:detail", pk=submission.pk)
     return render(request, "submissions/form.html", {"form": form, "submission": submission})
 
@@ -89,7 +94,7 @@ def submit(request, pk):
         if not submission.can_edit(request.user):
             raise Http404
         if request.POST.get("revision") != str(submission.revision):
-            messages.error(request, "The draft changed. Please review the current details and submit again.")
+            messages.error(request, "The draft changed. Please check the current details and submit again.")
             return redirect("submissions:detail", pk=pk)
         existing = submission.revisions.filter(number=submission.revision).first()
         if existing:
@@ -103,7 +108,7 @@ def submit(request, pk):
             return limited
         form = review_form(submission)
         if not form.is_valid():
-            messages.error(request, "Please complete the highlighted details before submitting for review.")
+            messages.error(request, "Please complete the highlighted details before submitting.")
             return render(request, "submissions/form.html", {"form": form, "submission": submission}, status=400)
         from repository_verification.services import require_verified
         try:
@@ -115,11 +120,7 @@ def submit(request, pk):
         if created:
             transaction.on_commit(lambda: notify_moderators(revision))
             transaction.on_commit(lambda: notify_contributors(revision))
-            confirmation = ("Submitted for editorial review. The decision and any note from the reviewers will appear "
-                            "on this page, usually within a week. You can continue editing a new draft.")
-            if settings.PUBLIC_CONTACT_EMAIL:
-                confirmation += f" Questions: {settings.PUBLIC_CONTACT_EMAIL}"
-            messages.success(request, confirmation)
+            # The draft page itself states that the details were submitted; no message repeats it.
         elif revision.status == "rejected":
             messages.info(request, "Please edit and save a new draft before resubmitting.")
         else:

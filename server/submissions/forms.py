@@ -132,7 +132,7 @@ class ContributorsField(forms.Field):
 class SubmissionForm(forms.ModelForm):
     collaborators = ContributorsField(
         label="Contributors", required=False,
-        help_text=format_html('Add everyone who contributed to the project, including yourself, with their ORCID iD and institutional email. Write each name as first names, a comma, then the surname. Anyone can <a href="{}" target="_blank" rel="noopener noreferrer">register for an ORCID iD</a> free of charge. Email addresses are never published; each contributor receives a confirmation when the project is submitted for review.', ORCID_REGISTER_URL),
+        help_text=format_html('Add everyone who contributed to the project, including yourself, with their ORCID iD and institutional email. Write each name as first names, a comma, then the surname. Anyone can <a href="{}" target="_blank" rel="noopener noreferrer">register for an ORCID iD</a> free of charge. Email addresses are never published; each contributor receives a confirmation when the project is submitted.', ORCID_REGISTER_URL),
     )
     secondary_categories = forms.MultipleChoiceField(
         label="Further subjects", required=False, choices=CATEGORIES,
@@ -151,7 +151,7 @@ class SubmissionForm(forms.ModelForm):
         help_texts = {
             "doi": format_html('If you have one, the DOI of an archived release of the repository, such as 10.5281/zenodo.1234567. <a href="{}" target="_blank" rel="noopener noreferrer">How to get a DOI for a GitHub repository</a>', DOI_GUIDE_URL),
             "reading_url": "A public website that explains the project’s aims and introduces the material in the repository.",
-            "abstract": "80–1,500 characters when submitting for review.",
+            "abstract": "80–1,500 characters when submitting.",
         }
         widgets = {
             "title": forms.TextInput(attrs={"placeholder": "Induced subgraphs of hypercubes and a proof of the Sensitivity Conjecture"}),

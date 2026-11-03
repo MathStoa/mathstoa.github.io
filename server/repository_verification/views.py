@@ -135,7 +135,8 @@ def verify_file(request, pk):
         )
         check_file(attempt, request.user)
         request.session.pop(key, None)
-        messages.success(request, "Repository authorization verified. You can now submit this project for review.")
+        messages.success(request, "Repository authorization verified. You can now submit this project.")
+        return redirect("submissions:detail", pk=submission.pk)
     except (ValidationError, GitHubError) as error:
         _error(request, error)
     return redirect("verification:overview", pk=submission.pk)

@@ -65,7 +65,7 @@ class Submission(models.Model):
     @property
     def status(self):
         if self.revisions.filter(number=self.revision, status="pending").exists():
-            return "Awaiting review"
+            return "Awaiting moderation"
         if self.published_revision_id:
             return "Published" if self.published_revision.number == self.revision else "Published; draft changes"
         latest = self.revisions.filter(number=self.revision).first()

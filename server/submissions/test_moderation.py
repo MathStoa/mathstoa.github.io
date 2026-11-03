@@ -159,13 +159,13 @@ class SubmitNoticeTests(TestCase):
     @override_settings(**NOTIFY, PUBLIC_CONTACT_EMAIL="contact@example.invalid")
     def test_submitting_a_revision_emails_the_moderation_mailbox(self):
         response = self.submit()
-        self.assertContains(response, "usually within a week")
-        self.assertContains(response, "contact@example.invalid")
+        self.assertContains(response, "The repository details have been submitted and will undergo moderation before being made public.", count=1)
+        self.assertNotContains(response, "Submit saved draft")
         revision = self.submission.revisions.get()
         self.assertEqual(len(mail.outbox), 1)
         message = mail.outbox[0]
         self.assertEqual(message.to, ["reviewers@example.invalid"])
-        self.assertEqual(message.subject, f"{settings.ACCOUNT_EMAIL_SUBJECT_PREFIX}Submission awaiting review: Notice test project")
+        self.assertEqual(message.subject, f"{settings.ACCOUNT_EMAIL_SUBJECT_PREFIX}Submission awaiting moderation: Notice test project")
         self.assertIn(reverse("admin:submissions_submissionrevision_change", args=[revision.pk]), message.body)
         self.assertIn("status__exact=pending", message.body)
         for private in ("notice-owner", str(self.submission.pk), self.submission.pk.hex):
