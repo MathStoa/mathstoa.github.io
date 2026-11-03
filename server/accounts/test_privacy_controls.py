@@ -104,9 +104,9 @@ class PrivacyNoticeTests(TestCase):
             'There is no "remember this browser" cookie',
             "Sign-in sessions last up to 14 days",
             "a completed authorization is valid for 30 days",
-            "Render hosts the site and database in Frankfurt on our instructions, with Cloudflare's network in front",
-            "Our own request log keeps only the time, method, status and size of each request",
-            "we query GitHub about that public repository",
+            "Render hosts the website and database in Frankfurt on the controllers' instructions, with Cloudflare's network in front",
+            "The website's own request log keeps only the time, method, status and size of each request",
+            "the website queries GitHub about that public repository",
             'id="retention"',
         ):
             self.assertContains(response, sentence)
@@ -118,11 +118,11 @@ class PrivacyNoticeTests(TestCase):
             "Last updated",
             'id="summary"',
             "is run by Tommaso Rosati and Simon Gabriel in a personal capacity",
-            "We are joint controllers",
+            "They are joint controllers",
             'id="named"',
-            "in performance of our contract with you",
-            "in our legitimate interest",
-            "to meet our legal obligations",
+            "in performance of the controllers' contract with you",
+            "in the controllers' legitimate interest",
+            "to meet the controllers' legal obligations",
             "Render is a United States company",
             "Data Privacy Framework and its UK Extension",
             "restrict its use",
@@ -137,7 +137,7 @@ class PrivacyNoticeTests(TestCase):
 
     def test_email_collection_wording_follows_email_login_setting(self):
         offered = "If you sign in with email or add an email address"
-        not_offered = "We do not collect your email address."
+        not_offered = "do not collect your email address."
         with override_settings(EMAIL_LOGIN_ENABLED=False):
             response = self.client.get("/privacy/")
             self.assertContains(response, not_offered)
