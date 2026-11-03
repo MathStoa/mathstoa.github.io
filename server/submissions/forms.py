@@ -149,10 +149,10 @@ class SubmissionForm(forms.ModelForm):
             "abstract": "80–1,500 characters when submitting for review.",
         }
         widgets = {
-            "title": forms.TextInput(attrs={"placeholder": "Formalising the Sensitivity Conjecture in Lean"}),
-            "repository_url": forms.URLInput(attrs={"placeholder": "https://github.com/owner/sensitivity-lean"}),
+            "title": forms.TextInput(attrs={"placeholder": "Induced subgraphs of hypercubes and a proof of the Sensitivity Conjecture"}),
+            "repository_url": forms.URLInput(attrs={"placeholder": "https://github.com/owner/sensitivity-conjecture"}),
             "doi": forms.TextInput(attrs={"placeholder": "10.5281/zenodo.1234567"}),
-            "reading_url": forms.URLInput(attrs={"placeholder": "https://owner.github.io/sensitivity-lean/"}),
+            "reading_url": forms.URLInput(attrs={"placeholder": "https://owner.github.io/sensitivity-conjecture/"}),
             "abstract": forms.Textarea(attrs={"rows": 5}),
         }
 

@@ -131,7 +131,7 @@ class SubmissionTests(TestCase):
         self.assertContains(response, "DOI <span>(optional)</span>")
         self.assertContains(response, "Project website <span>(optional)</span>")
         self.assertContains(response, "(optional)", count=2)
-        self.assertContains(response, 'placeholder="Formalising the Sensitivity Conjecture in Lean"')
+        self.assertContains(response, 'placeholder="Induced subgraphs of hypercubes and a proof of the Sensitivity Conjecture"')
         self.assertNotContains(response, "Required to save a draft")
         self.assertNotContains(response, "optional in a draft")
         self.assertContains(response, DOI_GUIDE_URL)
