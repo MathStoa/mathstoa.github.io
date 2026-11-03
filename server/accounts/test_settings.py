@@ -97,3 +97,47 @@ class RenderSettingsTests(SimpleTestCase):
         for value in ('"not-a-list"', '["short"]', '[null]', '{"key":"value"}', 'malformed'):
             with self.subTest(value=value), self.assertRaises(ImproperlyConfigured):
                 self.load_settings(DJANGO_ALLOWED_HOSTS="math-stoa.org", DJANGO_SECRET_KEY_FALLBACKS=value)
+
+    def test_production_email_signin_rejects_unencrypted_smtp(self):
+        with self.assertRaisesMessage(ImproperlyConfigured, "SMTP encryption"):
+            self.load_settings(
+                DJANGO_ALLOWED_HOSTS="math-stoa.org", EMAIL_LOGIN_ENABLED="true",
+                EMAIL_HOST="smtp.example.org", DEFAULT_FROM_EMAIL="signin@example.org",
+                EMAIL_USE_TLS="false", EMAIL_USE_SSL="false",
+            )
+
+    def test_production_email_signin_accepts_each_encrypted_smtp_mode(self):
+        for use_tls, use_ssl, port in (("true", "false", "587"), ("false", "true", "465")):
+            with self.subTest(use_tls=use_tls, use_ssl=use_ssl):
+                configured = self.load_settings(
+                    DJANGO_ALLOWED_HOSTS="math-stoa.org", EMAIL_LOGIN_ENABLED="true",
+                    EMAIL_HOST="smtp.example.org", DEFAULT_FROM_EMAIL="signin@example.org",
+                    EMAIL_USE_TLS=use_tls, EMAIL_USE_SSL=use_ssl, EMAIL_PORT=port,
+                )
+                self.assertTrue(configured["EMAIL_LOGIN_ENABLED"])
+                self.assertEqual(configured["EMAIL_USE_TLS"], use_tls == "true")
+                self.assertEqual(configured["EMAIL_USE_SSL"], use_ssl == "true")
+
+    def test_production_email_signin_still_rejects_conflicting_smtp_modes(self):
+        with self.assertRaisesMessage(ImproperlyConfigured, "not both"):
+            self.load_settings(
+                DJANGO_ALLOWED_HOSTS="math-stoa.org", EMAIL_LOGIN_ENABLED="true",
+                EMAIL_HOST="smtp.example.org", DEFAULT_FROM_EMAIL="signin@example.org",
+                EMAIL_USE_TLS="true", EMAIL_USE_SSL="true",
+            )
+
+    def test_development_console_email_does_not_require_smtp_encryption(self):
+        configured = self.load_settings(
+            DJANGO_DEBUG="1", EMAIL_LOGIN_ENABLED="true",
+            EMAIL_USE_TLS="false", EMAIL_USE_SSL="false",
+        )
+        self.assertEqual(configured["EMAIL_BACKEND"], "django.core.mail.backends.console.EmailBackend")
+        self.assertTrue(configured["EMAIL_LOGIN_ENABLED"])
+
+    def test_disabled_production_email_does_not_require_smtp_configuration(self):
+        configured = self.load_settings(
+            DJANGO_ALLOWED_HOSTS="math-stoa.org", EMAIL_LOGIN_ENABLED="false",
+            EMAIL_USE_TLS="false", EMAIL_USE_SSL="false",
+        )
+        self.assertFalse(configured["EMAIL_LOGIN_ENABLED"])
+        self.assertEqual(configured["EMAIL_HOST"], "")

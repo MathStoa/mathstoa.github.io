@@ -70,7 +70,8 @@ service with `EMAIL_HOST`, `EMAIL_PORT`,
 `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, and `DEFAULT_FROM_EMAIL`. Set the sender
 address to one your mail service authorizes. Use either STARTTLS
 (`EMAIL_USE_TLS=true`, usually port 587) or implicit TLS (`EMAIL_USE_SSL=true`,
-usually port 465), according to that service. Do not enable both. Verify actual
+usually port 465), according to that service. Production email sign-in requires
+one of these encrypted modes; do not enable both. Verify actual
 delivery to an external mailbox before launch. Set `EMAIL_LOGIN_ENABLED=false`
 only if a working alternative sign-in provider is configured. The production
 template leaves email sign-in disabled until you configure it; leaving both
