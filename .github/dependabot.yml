@@ -7,6 +7,10 @@ updates:
     groups:
       python:
         patterns: ["*"]
+    ignore:
+      # Stay on the Django 5.2 LTS until the move to the next LTS is planned.
+      - dependency-name: django
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
