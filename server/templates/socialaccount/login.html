@@ -3,9 +3,9 @@
 {% block content %}
   <h1>{% if process == "connect" %}Connect{% else %}Sign in{% endif %} with {{ provider.name }}</h1>
   {% if process == "connect" %}
-    <p>Connect this sign-in method to your existing math<span lang="el">Στοά</span> account.</p>
+    <p>Connect this sign-in method to your existing <span class="brand">math<span lang="el">Στοά</span></span> account.</p>
   {% elif registration_open %}
-    <p>Your first sign-in creates a math<span lang="el">Στοά</span> account.</p>
+    <p>Your first sign-in creates a <span class="brand">math<span lang="el">Στοά</span></span> account.</p>
     {% include "account/retention_notice.html" %}
   {% else %}
     <p>New account registration is currently closed. Existing accounts can still sign in.</p>
