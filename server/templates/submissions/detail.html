@@ -12,9 +12,6 @@
       <a class="button button-delete" href="{% url 'submissions:delete' pk=submission.pk %}">Delete</a>
     </div>
   </div>
-  {% if submission.published_revision %}
-    <p class="notice">An accepted version is public. Your current submission is shown below. <a href="/project.html?id={{ submission.public_id|urlencode }}">View the published listing</a>.</p>
-  {% endif %}
   <div class="submission-detail">
     <article class="submission-details">
       <section>
