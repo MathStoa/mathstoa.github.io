@@ -133,7 +133,7 @@ a:hover, a:focus-visible,
 }
 
 /* Align the About introduction and sections within one reading column. */
-.about-main { max-width: 830px; }
+.about-main .page-intro { max-width: 760px; }
 
 /* Keep the About introduction, paragraphs and lists at one reading size. */
 .about-main .lede, .about-main .prose p, .about-main .prose li {
