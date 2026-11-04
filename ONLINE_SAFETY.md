@@ -4,7 +4,7 @@ Prepared: 4 November 2026. Scope: the mathStoa archive, account/submission servi
 
 ## Service and scope
 
-The code stores private project drafts, freezes submitted revisions, and requires staff approval before publishing an abstract, attribution and links. Approval exposes the user's submitted text; editing a draft does not replace the public version. The archive and feed distribute approved records. There are no on-site comments, direct messages, media uploads, payments or personalised recommendations in the reviewed implementation. External repositories and websites can change after approval. GitHub hosts a separate legacy submission/discussion route.
+The code stores private project drafts, freezes submitted revisions, and requires staff approval before publishing an abstract, attribution and links. Approval exposes the user's submitted text; editing a draft does not replace the public version. The archive distributes approved records. There are no on-site comments, direct messages, media uploads, payments or personalised recommendations in the reviewed implementation. External repositories and websites can change after approval. GitHub hosts a separate legacy submission/discussion route.
 
 The named operators are Tommaso Rosati and Simon Gabriel, acting personally. Confirm their operating locations, the service's UK connection, and the first date the relevant functionality was available to UK users. The README records deployment of the account service on 3 November 2026; that is evidence to check, not a determination of the legal start date.
 
@@ -49,7 +49,7 @@ Operational requirements under this procedure:
 1. Before approval, read all public text and attribution, check project scope and permitted links, and record the decision. Avoid opening suspected abusive material unnecessarily; escalate uncertainty.
 2. Review reports through [the complaint procedure](COMPLAINTS.md). Check external destinations again when a report or suspicious change is identified. Record what was checked without retaining unnecessary sensitive material.
 3. Remove access to known illegal material swiftly. A request for changes to a new revision does **not** remove an earlier published revision. Use the withdrawal procedure in `COMPLAINTS.md`; do not erase evidence merely to hide a listing.
-4. Keep a private record of the accountable operator, moderation cover, reports, decisions, response times and relevant control failures. Test that the public archive, project page and feed reflect a withdrawal.
+4. Keep a private record of the accountable operator, moderation cover, reports, decisions, response times and relevant control failures. Test that the public archive and project page reflect a withdrawal.
 5. Reassess before significant feature changes and after a serious incident, changed audience or new evidence. Adding comments, messaging, automatic publication, uploads or broader search requires fresh review.
 
 ## Children's access assessment

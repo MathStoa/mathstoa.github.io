@@ -288,7 +288,7 @@ a new authorization check after the evidence expires.
 
 Staff moderate fixed submitted revisions in `/admin/`, using the approval or
 request-changes action. Approved revisions are merged with the existing static
-archive for the public project data and announcement feed. Editing a draft or
+archive for the public project data. Editing a draft or
 requesting changes to an update leaves the previously approved revision public.
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the moderation workflow.
 
@@ -355,7 +355,6 @@ database and should not be part of a routine update.
 
 ```sh
 python3 scripts/validate.py
-python3 scripts/feed.py
 python3 -m unittest discover -s tests -v
 python server/manage.py test accounts submissions repository_verification --settings=config.test_settings
 ```

@@ -211,7 +211,6 @@ class LoginTests(TestCase):
         for path in ("/settings.py", "/.env", "/assets/../../server/config/settings.py"):
             self.assertEqual(self.client.get(path).status_code, 404)
         self.assertEqual(self.client.get("/").status_code, 200)
-        self.assertEqual(self.client.get("/feed.xml").status_code, 200)
 
 
 

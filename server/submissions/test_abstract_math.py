@@ -32,7 +32,7 @@ class AbstractMathTests(TestCase):
         form.is_valid()
         self.assertEqual(form.cleaned_data['abstract'], self.source)
 
-    def test_snapshot_public_json_and_feed_retain_plaintext_source(self):
+    def test_snapshot_and_public_json_retain_plaintext_source(self):
         revision = SubmissionRevision.objects.create(submission=self.submission, number=1, snapshot={**self.submission.snapshot(), "publication_declaration": accepted_declaration()}, submitted_by=self.user, status='approved', reviewed_at=timezone.now())
         self.submission.published_revision = revision
         self.submission.save()
@@ -40,10 +40,6 @@ class AbstractMathTests(TestCase):
         self.assertEqual(revision.public_project()['summary'], self.source)
         projects = self.client.get(reverse('archive_json')).json()['projects']
         self.assertEqual(next(p for p in projects if p['id'] == self.submission.public_id)['summary'], self.source)
-        response = self.client.get(reverse('archive_feed'))
-        self.assertContains(response, '$x^2$')
-        self.assertNotContains(response, '<img src=x')
-        self.assertNotContains(response, '<math')
 
     def test_moderators_preview_exact_revision_and_escape_html(self):
         revision = SubmissionRevision(submission=self.submission, snapshot={'abstract': self.source})

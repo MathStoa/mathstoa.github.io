@@ -96,7 +96,6 @@ class SubmissionTests(TestCase):
         self.assertContains(self.client.get(reverse("submissions:edit", args=[submission.pk])), 'value="anna@university.example"')
         self.submit(submission).review(self.staff, approve=True)
         self.assertNotContains(self.client.get("/data/projects.json"), "anna@university.example")
-        self.assertNotContains(self.client.get("/feed.xml"), "anna@university.example")
 
     def test_anonymous_users_must_sign_in(self):
         self.client.logout()
@@ -194,7 +193,6 @@ class SubmissionTests(TestCase):
         self.submit(submission).review(self.staff, approve=True)
         project = next(p for p in self.client.get("/data/projects.json").json()["projects"] if p["id"] == submission.public_id)
         self.assertNotIn("doi", project)
-        self.assertEqual(self.client.get("/feed.xml").status_code, 200)
 
     def test_lean_formalisation_is_a_subject_that_publishes(self):
         self.assertContains(self.client.get(reverse("submissions:create")), '<option value="cs.LO">Lean formalisation</option>')
@@ -216,7 +214,6 @@ class SubmissionTests(TestCase):
         self.submit(submission).review(self.staff, approve=True)
         project = next(p for p in self.client.get("/data/projects.json").json()["projects"] if p["id"] == submission.public_id)
         self.assertEqual(project["categories"], [{"code": "math.PR", "label": "Probability"}, {"code": "math.AP", "label": "Analysis of PDEs"}, {"code": "math.FA", "label": "Functional analysis"}])
-        self.assertContains(self.client.get("/feed.xml"), 'term="math.FA"')
 
     def test_at_most_three_further_subjects_from_the_known_list(self):
         form = SubmissionForm({**self.payload, "secondary_categories": ["math.AG", "math.AP", "math.AT", "math.CO"]})
@@ -241,7 +238,6 @@ class SubmissionTests(TestCase):
         project = next(p for p in self.client.get("/data/projects.json").json()["projects"] if p["id"] == submission.public_id)
         self.assertNotIn("readingUrl", project)
         self.assertEqual(project["doi"], "https://doi.org/10.5281/zenodo.1234567")
-        self.assertEqual(self.client.get("/feed.xml").status_code, 200)
 
     def test_contributor_rows_keep_order_skip_blanks_and_can_all_be_removed(self):
         rows = {"collaborators-name": ["Anna", "", "Ben"], "collaborators-orcid": ["https://orcid.org/0000-0002-1825-0097", "", ""]}
@@ -272,7 +268,6 @@ class SubmissionTests(TestCase):
         self.assertEqual(project["credits"], [{"name": "Anna"}])
         for removed in ("doi", "kind", "stage", "collaboration", "contributionNote", "licenseNote"):
             self.assertNotIn(removed, project)
-        self.assertEqual(self.client.get("/feed.xml").status_code, 200)
 
     def test_permission_confirmation_required_before_review_and_grants_licence(self):
         payload = {key: value for key, value in self.payload.items() if key != "permission_confirmed"}
@@ -444,7 +439,7 @@ class SubmissionTests(TestCase):
                 self.assertFalse(form.is_valid())
                 self.assertIn("collaborators", form.errors)
 
-    def test_control_characters_cannot_break_the_public_feed(self):
+    def test_control_characters_cannot_break_the_public_archive(self):
         for key, field in (("title", "title"), ("abstract", "abstract"), ("collaborators-name", "collaborators")):
             form = SubmissionForm({**self.payload, key: self.payload[key] + "\x01"})
             self.assertFalse(form.is_valid())
@@ -495,9 +490,6 @@ class VerificationBoundaryTests(TestCase):
             first = self.submission.revisions.get(number=1)
             first.review(self.staff, approve=True)
             self.assertContains(self.client.get("/data/projects.json"), "Verified repository")
-            feed = self.client.get("/feed.xml")
-            self.assertEqual(feed.status_code, 200)
-            self.assertContains(feed, "Verified repository")
             self.submission.refresh_from_db()
             self.submission.revision = 2
             self.submission.title = "Unreviewed changes"

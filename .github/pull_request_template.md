@@ -11,7 +11,6 @@ Describe what readers will see and link to the submission or correction issue, i
 ## Validation
 
 - [ ] `python3 scripts/validate.py`
-- [ ] `python3 scripts/feed.py` and any generated changes included
 - [ ] `python3 -m unittest discover -s tests -v`
 - [ ] Previewed the affected pages and links locally
 

@@ -41,7 +41,7 @@ class Command(BaseCommand):
             submission.published_revision = None
             submission.save(update_fields=["published_revision"])
         self.stdout.write(f"Unpublished submission {submission.pk} at {timezone.now().isoformat()}; previous_published_revision_id={previous_id}. Private records retained.")
-        self.stdout.write("Record the operator, reason and this metadata in the restricted complaint record. Check archive/feed caches and any legacy static entry. Republish only through a new submitted revision and normal moderation.")
+        self.stdout.write("Record the operator, reason and this metadata in the restricted complaint record. Check archive caches and any legacy static entry. Republish only through a new submitted revision and normal moderation.")
 
     def warn_static_archive(self, submission):
         try:

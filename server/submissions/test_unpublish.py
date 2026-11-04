@@ -69,7 +69,6 @@ class UnpublishSubmissionTests(TestCase):
         self.assertEqual(list(RepositoryVerification.objects.values()), before_verifications)
         self.assertTrue(get_user_model().objects.filter(pk=self.owner.pk).exists())
         self.assertNotContains(self.client.get(reverse("archive_json")), self.submission.title)
-        self.assertNotContains(self.client.get(reverse("archive_feed")), self.submission.title)
 
     def test_stale_expected_revision_is_refused(self):
         with self.assertRaisesMessage(CommandError, "does not match"):

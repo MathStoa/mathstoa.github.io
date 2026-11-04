@@ -18,7 +18,7 @@ A registered project should have:
 - Clear reuse terms and a visible contribution and credit policy. Public visibility alone does not grant permission to reuse material.
 - An accurate statement of whether contributions are welcome and, where possible, specific useful tasks.
 
-Only submit a registration if you maintain the project or have a steward's permission. You may suggest a public project for consideration without that permission, but clearly mark the suggestion as unaffiliated in a general issue; it cannot become a registered project on that basis. The pilot's public examples are expressly labelled and excluded from announcements.
+Only submit a registration if you maintain the project or have a steward's permission. You may suggest a public project for consideration without that permission, but clearly mark the suggestion as unaffiliated in a general issue; it cannot become a registered project on that basis. The pilot's public examples are expressly labelled.
 
 The account service initially verifies public GitHub repositories through a verification file committed to the repository or a separate GitHub authorisation check. Follow the verification instructions shown for your draft. Logging in with GitHub or listing a repository URL alone does not verify repository control. Other hosts cannot be published through this service until their verification methods are supported, even when they are offered as sign-in providers. Verification is required again during moderation; it does not replace the submitter's permission declaration or establish agreement from every collaborator.
 
@@ -32,9 +32,9 @@ The DOI identifies the archived release that a listing announces; a mutable repo
 
 ## Mathematics in abstracts
 
-Abstracts remain plain text in drafts, submitted revisions, archive JSON, exports and feeds. Use `$x^2$` for inline mathematics and `$$\sum_{n=1}^{\infty} n^{-2} = \pi^2/6$$` for a centered display. Display math may span multiple lines; inline math stays on one line. Use `\$` for a literal dollar sign. Unmatched delimiters and invalid or unsupported LaTeX remain readable as source. The native MathML renderer uses a conservative MathML Core subset: font variants such as `\mathbf`, `\mathcal` and `\mathbb`, enclosures such as `\cancel` and `\boxed`, transformations such as `\reflectbox` and `\mathreflectbox` (including macro aliases), offset commands such as `\raisebox`, generalized fractions (`\genfrac`, including aliases and nested uses), and commands needing inline styles remain raw source rather than silently losing notation. Oversized formulas scroll within their available space. HTML and Markdown are displayed as text.
+Abstracts remain plain text in drafts, submitted revisions, archive JSON and exports. Use `$x^2$` for inline mathematics and `$$\sum_{n=1}^{\infty} n^{-2} = \pi^2/6$$` for a centered display. Display math may span multiple lines; inline math stays on one line. Use `\$` for a literal dollar sign. Unmatched delimiters and invalid or unsupported LaTeX remain readable as source. The native MathML renderer uses a conservative MathML Core subset: font variants such as `\mathbf`, `\mathcal` and `\mathbb`, enclosures such as `\cancel` and `\boxed`, transformations such as `\reflectbox` and `\mathreflectbox` (including macro aliases), offset commands such as `\raisebox`, generalized fractions (`\genfrac`, including aliases and nested uses), and commands needing inline styles remain raw source rather than silently losing notation. Oversized formulas scroll within their available space. HTML and Markdown are displayed as text.
 
-The account and legacy web forms provide an abstract preview. Project pages, saved drafts and moderation previews use the same self-hosted KaTeX renderer. Native MathML provides browser layout and assistive-technology semantics without third-party requests or inline styles; use a current browser with MathML support. Without JavaScript, saved drafts still show their source text. The JSON and Atom feed deliberately retain the original source.
+The account and legacy web forms provide an abstract preview. Project pages, saved drafts and moderation previews use the same self-hosted KaTeX renderer. Native MathML provides browser layout and assistive-technology semantics without third-party requests or inline styles; use a current browser with MathML support. Without JavaScript, saved drafts still show their source text. The JSON export deliberately retains the original source.
 
 For renderer changes, run `python -m pip install -r browser_tests/requirements.txt`, `python -m playwright install chromium`, and `python -m unittest discover -s browser_tests -v` in addition to the backend and archive checks. Run `python scripts/audit_vendor.py --online` to verify vendor hashes and check advisories; the dependency workflow also runs this weekly. These browser tests enforce the same local-only script/style CSP and check malicious input, malformed math, preview/source separation, archive filters, mobile width and the no-JavaScript saved-source fallback.
 
@@ -66,8 +66,8 @@ The project steward should state these rules before inviting contributions. math
 ### Account-service submissions
 
 1. Open the submitted revision in the Django administration interface at `/admin/`. Confirm repository-control verification and the steward's permission, the public repository link, that any DOI resolves to an archived release of that repository, the website link if one is given, the original summary, contributor attribution, subject categories, and the reuse terms and contribution policy stated in the repository.
-2. Record the moderation note and use the revision's approval or request-changes action. Judge the fixed submitted snapshot, not a later working draft. Approval publishes that revision to the database-backed archive and feed; requesting changes leaves any previously approved version public.
-3. Inspect the resulting public listing and announcement. Illustrative examples remain excluded from announcements. Handle corrections through a new moderated revision, and retain a clear record of removal or attribution decisions.
+2. Record the moderation note and use the revision's approval or request-changes action. Judge the fixed submitted snapshot, not a later working draft. Approval publishes that revision to the database-backed archive; requesting changes leaves any previously approved version public.
+3. Inspect the resulting public listing. Handle corrections through a new moderated revision, and retain a clear record of removal or attribution decisions.
 4. Keep backups and run the retention commands described in [SETUP.md](SETUP.md). Drafts and submitted revisions are not automatically deleted when a session expires. Handle account and attribution requests according to the published privacy policy.
 
 Moderation rules:
@@ -83,11 +83,9 @@ Moderation rules:
 1. Read the issue and confirm the steward's permission. Keep source links and the moderation decision in the issue.
 2. Add or update the entry in `docs/data/projects.json`, following the existing structure. Use a stable, unique project ID. Record the actual acceptance date in `added`; keep `example: true` for illustrative entries and use `false` only for accepted registrations.
 3. Confirm that the title, summary, DOI, category labels, and project credits accurately reflect the source and submission. Record any DOI as an `https://doi.org/` link in `doi`; `doi` and `readingUrl` are optional. Do not copy research content into the archive.
-4. Run `python3 scripts/validate.py`, `python3 scripts/feed.py`, and `python3 -m unittest discover -s tests -v`.
-5. Preview with `python3 -m http.server 4173 --directory docs`, inspect the listing and links, and include any changed generated feed in the pull request.
+4. Run `python3 scripts/validate.py` and `python3 -m unittest discover -s tests -v`.
+5. Preview with `python3 -m http.server 4173 --directory docs` and inspect the listing and links.
 6. Merge the change into `main` and link the published listing from the submission issue.
-
-Ordinary repository commits do not create archive announcements. The initial feed announces accepted registrations, excluding examples; a richer release-announcement policy can be added when the pilot needs it.
 
 ## License for contributions
 

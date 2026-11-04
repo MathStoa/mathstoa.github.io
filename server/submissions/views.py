@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -139,12 +139,5 @@ def public_archive():
 
 def archive_json(request):
     response = JsonResponse(public_archive())
-    response["Cache-Control"] = "public, max-age=60"
-    return response
-
-
-def archive_feed(request):
-    from scripts.feed import render_feed
-    response = HttpResponse(render_feed(public_archive()), content_type="application/atom+xml; charset=utf-8")
     response["Cache-Control"] = "public, max-age=60"
     return response

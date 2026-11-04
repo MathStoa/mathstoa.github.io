@@ -2,7 +2,7 @@ from django.contrib import admin
 from allauth.account.decorators import secure_admin_login
 from django.urls import include, path
 from accounts import orcid, privacy_views, views
-from submissions.views import archive_json, archive_feed
+from submissions.views import archive_json
 
 admin.site.login = secure_admin_login(admin.site.login)
 
@@ -21,7 +21,6 @@ urlpatterns = [
     path("health/", views.health, name="health"),
     path("submit.html", views.old_submit),
     path("data/projects.json", archive_json, name="archive_json"),
-    path("feed.xml", archive_feed, name="archive_feed"),
     path("assets/<path:path>", views.site_asset),
     path("", views.public_page, name="home"),
     path("<str:page>", views.public_page),

@@ -1,12 +1,9 @@
-"""Publication checks for imported metadata and the announcements feed."""
+"""Publication checks for imported archive metadata."""
 from copy import deepcopy
 import ast
 from pathlib import Path
 import unittest
-from unittest.mock import patch
-import xml.etree.ElementTree as ET
 
-from scripts.feed import ATOM, render_feed
 from scripts.validate import ArchiveError, load_archive, validate_archive
 
 
@@ -37,11 +34,6 @@ class ArchiveTests(unittest.TestCase):
                 self.assertIn(declarations["DECLARATION"], text)
                 self.assertIn("Declaration version " + declarations["DECLARATION_VERSION"], text)
                 self.assertIn("https://creativecommons.org/licenses/by/4.0/", text)
-
-    def test_examples_do_not_announce_participation(self):
-        root = ET.fromstring(render_feed(self.data))
-        self.assertEqual(root.findall(f"{{{ATOM}}}entry"), [])
-        self.assertIsNotNone(root.find(f"{{{ATOM}}}updated"))
 
     def test_duplicate_ids_cannot_create_ambiguous_project_links(self):
         self.data["projects"].append(deepcopy(self.data["projects"][0]))
@@ -82,32 +74,6 @@ class ArchiveTests(unittest.TestCase):
                 with self.assertRaises(ArchiveError):
                     validate_archive(data)
 
-    def test_feed_publishes_only_approved_records_and_escapes_text(self):
-        project = self.data["projects"][0]
-        project["example"] = False
-        project["title"] = 'A <script>alert("test")</script> & B'
-        project["summary"] = "a < b & b > c"
-        project["summaryLicense"] = "https://creativecommons.org/licenses/by/4.0/"
-        project["summaryAttribution"] = ["Ada Example", "Ben Example"]
-        xml = render_feed(self.data)
-        root = ET.fromstring(xml)
-        entries = root.findall(f"{{{ATOM}}}entry")
-        self.assertEqual(len(entries), 1)
-        self.assertEqual(entries[0].find(f"{{{ATOM}}}title").text, project["title"])
-        self.assertNotIn("<script>", xml)
-        self.assertIn("project.html?id=test-project", xml)
-        self.assertEqual(entries[0].find(f"{{{ATOM}}}summary").text, project["summary"])
-        self.assertEqual([author.find(f"{{{ATOM}}}name").text for author in entries[0].findall(f"{{{ATOM}}}author")], project["summaryAttribution"])
-        self.assertIn("CC BY 4.0", entries[0].find(f"{{{ATOM}}}rights").text)
-        self.assertEqual(entries[0].find(f"{{{ATOM}}}link[@rel='license']").attrib["href"], project["summaryLicense"])
-
-    def test_legacy_feed_does_not_invent_licence_or_republish_unrecorded_abstract(self):
-        self.data["projects"][0]["example"] = False
-        xml = render_feed(self.data)
-        entry = ET.fromstring(xml).find(f"{{{ATOM}}}entry")
-        self.assertNotIn(self.data["projects"][0]["summary"], xml)
-        self.assertIsNone(entry.find(f"{{{ATOM}}}link[@rel='license']"))
-
     def test_abstract_licence_requires_attribution_and_cannot_cover_external_work(self):
         project = self.data["projects"][0]
         project["summaryLicense"] = "https://creativecommons.org/licenses/by/4.0/"
@@ -118,27 +84,6 @@ class ArchiveTests(unittest.TestCase):
         project["summaryLicense"] = "https://example.org/unverified-license"
         with self.assertRaises(ArchiveError):
             validate_archive(self.data)
-
-    def test_feed_retains_identity_when_its_host_changes(self):
-        self.data["projects"][0]["example"] = False
-        root = ET.fromstring(render_feed(self.data))
-        self.assertEqual(root.find(f"{{{ATOM}}}id").text, "https://rosati-tom.github.io/mathstoa/")
-        links = {link.attrib["rel"]: link.attrib["href"] for link in root.findall(f"{{{ATOM}}}link")}
-        self.assertEqual(links["self"], "https://math-stoa.org/feed.xml")
-        self.assertEqual(links["alternate"], "https://math-stoa.org/")
-        entry = root.find(f"{{{ATOM}}}entry")
-        self.assertEqual(entry.find(f"{{{ATOM}}}link").attrib["href"], "https://math-stoa.org/project.html?id=test-project")
-        with patch("scripts.feed.SITE_URL", "https://research.example.org/mathstoa/"):
-            moved = ET.fromstring(render_feed(self.data))
-        self.assertEqual(moved.find(f"{{{ATOM}}}id").text, root.find(f"{{{ATOM}}}id").text)
-        moved_links = {link.attrib["rel"]: link.attrib["href"] for link in moved.findall(f"{{{ATOM}}}link")}
-        self.assertEqual(moved_links["self"], "https://research.example.org/mathstoa/feed.xml")
-        moved_entry = moved.find(f"{{{ATOM}}}entry")
-        self.assertEqual(moved_entry.find(f"{{{ATOM}}}link").attrib["href"], "https://research.example.org/mathstoa/project.html?id=test-project")
-
-    def test_empty_archive_has_valid_empty_feed(self):
-        root = ET.fromstring(render_feed({"version": 1, "projects": []}))
-        self.assertEqual(root.findall(f"{{{ATOM}}}entry"), [])
 
     def test_doi_and_website_are_optional_but_checked(self):
         project = self.data["projects"][0]

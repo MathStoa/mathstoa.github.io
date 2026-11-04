@@ -94,7 +94,7 @@ was not. It is not a statement that the service is secure.
 2. Live sign-in re-test with ORCID, GitHub and GitLab at the final domain and
    callbacks.
 3. Live author test: draft, both verification methods, submission, approval,
-   public listing and feed.
+   public listing.
 4. Privacy mailbox test: a request file from `/accounts/privacy/` sent to
    `PUBLIC_CONTACT_EMAIL` and verified at `/admin/privacy-requests/verify/`.
 5. Recovery-code sign-in test.
