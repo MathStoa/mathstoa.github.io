@@ -136,9 +136,9 @@ class SubmissionNotificationTests(TestCase):
             self.assertIn("Any previously published version remains unchanged in the meantime.", message.body)
         for messages in (created, updated):
             for message in messages:
-                self.assertIn(MAIL_SETTINGS["PUBLIC_BASE_URL"] + reverse("submissions:list"), message.body)
+                self.assertNotIn(MAIL_SETTINGS["PUBLIC_BASE_URL"] + reverse("submissions:list"), message.body)
                 self.assertIn("You’re receiving this confirmation because you’re listed as a contributor.", message.body)
-                self.assertIn("The owner can review the submission through My submissions:", message.body)
+                self.assertNotIn("My submissions", message.body)
                 self.assertIn("If you should not be listed, or your details are incorrect, please reply to this email.", message.body)
                 self.assertTrue(message.body.endswith("The math-stoa team\n"))
                 self.assertEqual(message.from_email, MAIL_SETTINGS["DEFAULT_FROM_EMAIL"])
@@ -150,6 +150,66 @@ class SubmissionNotificationTests(TestCase):
                 self.assertNotIn(self.owner.username, message.body)
         self.client.force_login(self.other)
         self.assertEqual(self.client.get(reverse("submissions:detail", args=[submission.pk])).status_code, 404)
+
+    def test_owner_receipts_use_verified_alias_and_link_directly_to_edit(self):
+        EmailAddress.objects.create(user=self.owner, email="owner@example.invalid", primary=True, verified=True)
+        EmailAddress.objects.create(user=self.owner, email="ANNA@UNIVERSITY.EXAMPLE", primary=False, verified=True)
+        submission = self.create()
+        self.edit(submission, title="Updated research notes")
+        self.assertEqual(process_notification_queue()["sent"], 4)
+        owner_messages = [message for message in mail.outbox if message.to == ["anna@university.example"]]
+        self.assertEqual(len(owner_messages), 2)
+        edit_path = reverse("submissions:edit", args=[submission.pk])
+        for message in owner_messages:
+            self.assertTrue(message.body.startswith("Dear Anna Example,\n\n"))
+            self.assertIn("You can modify your submission here:\n" + MAIL_SETTINGS["PUBLIC_BASE_URL"] + edit_path, message.body)
+            self.assertNotIn("listed as a contributor", message.body)
+            self.assertNotIn("If you should not be listed", message.body)
+            self.assertNotIn("My submissions", message.body)
+            self.assertEqual(message.cc + message.bcc, [])
+            self.assertEqual(message.reply_to, [MAIL_SETTINGS["PUBLIC_CONTACT_EMAIL"]])
+        self.assertIn(f"Your submission for “{self.payload['title']}” has been created on mathStoa.", owner_messages[0].body)
+        self.assertIn("Your changes to the submission for “Updated research notes” have been saved as revision 2.", owner_messages[1].body)
+        self.assertIn("Changes must be moderated and approved before appearing publicly.", owner_messages[1].body)
+        self.assertIn("Any previously published version remains unchanged in the meantime.", owner_messages[1].body)
+        for message in mail.outbox:
+            if message.to == ["ben@university.example"]:
+                self.assertIn("listed as a contributor", message.body)
+                self.assertNotIn(str(submission.pk), message.body)
+        self.assertEqual(self.client.get(edit_path).status_code, 200)
+        self.client.force_login(self.other)
+        self.assertEqual(self.client.get(edit_path).status_code, 404)
+        self.client.logout()
+        self.assertRedirects(self.client.get(edit_path), reverse("account_login") + "?next=" + edit_path, fetch_redirect_response=False)
+
+    def test_duplicate_owner_contacts_receive_one_owner_receipt(self):
+        EmailAddress.objects.create(user=self.owner, email="anna@university.example", primary=True, verified=True)
+        submission = self.create(**{"collaborators-email": ["ANNA@UNIVERSITY.EXAMPLE", "anna@university.example"]})
+        self.assertEqual(NotificationDelivery.objects.filter(revision__submission=submission).count(), 1)
+        self.assertEqual(process_notification_queue()["sent"], 1)
+        self.assertIn("You can modify your submission here:", mail.outbox[0].body)
+        self.assertNotIn("listed as a contributor", mail.outbox[0].body)
+
+    def test_unverified_owner_email_and_other_accounts_do_not_get_owner_copy(self):
+        self.owner.email = "anna@university.example"
+        self.owner.save(update_fields=["email"])
+        EmailAddress.objects.create(user=self.owner, email=self.owner.email, primary=True, verified=False)
+        EmailAddress.objects.create(user=self.other, email="ben@university.example", primary=True, verified=True)
+        submission = self.create()
+        self.assertEqual(process_notification_queue()["sent"], 2)
+        for message in mail.outbox:
+            self.assertIn("listed as a contributor", message.body)
+            self.assertNotIn("You can modify", message.body)
+            self.assertNotIn(str(submission.pk), message.body)
+
+    def test_owner_email_is_rechecked_before_sending_queued_receipt(self):
+        contact = EmailAddress.objects.create(user=self.owner, email="anna@university.example", primary=True, verified=True)
+        submission = self.create()
+        contact.delete()
+        self.assertEqual(process_notification_queue()["sent"], 2)
+        for message in mail.outbox:
+            self.assertIn("listed as a contributor", message.body)
+            self.assertNotIn(str(submission.pk), message.body)
 
     def test_all_confirmation_greetings_format_the_stored_name_separator(self):
         names = {"collaborators-name": ["Tommaso Cornelis, Rosati", "Ben, Example"]}

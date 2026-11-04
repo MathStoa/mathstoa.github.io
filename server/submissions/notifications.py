@@ -8,6 +8,7 @@ import logging
 from datetime import timedelta
 from time import monotonic
 
+from allauth.account.models import EmailAddress
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage
@@ -171,24 +172,35 @@ def _message(job, person):
     title = " ".join(str(revision.snapshot.get("title") or "Untitled submission").split())[:120]
     base = settings.PUBLIC_BASE_URL.rstrip("/")
     if job.kind in {"created", "updated"}:
+        # Personalize an existing recipient only; account addresses never add
+        # recipients or grant access to a submission. Recheck at delivery time.
+        is_owner = EmailAddress.objects.filter(
+            user_id=revision.submission.owner_id, email__iexact=person["email"], verified=True,
+        ).exists()
         if job.kind == "created":
             subject = f"{settings.ACCOUNT_EMAIL_SUBJECT_PREFIX.rstrip()}: Submitted — {title}"
-            introduction = f'A submission for “{title}” has been created on mathStoa. '
+            introduction = f'{"Your submission" if is_owner else "A submission"} for “{title}” has been created on mathStoa.'
             moderation = ""
         else:
             subject = f"{settings.ACCOUNT_EMAIL_SUBJECT_PREFIX.rstrip()}: Revision — {title}"
-            introduction = f'Changes to the submission for “{title}” have been saved as revision {revision.number}. '
+            introduction = f'{"Your changes" if is_owner else "Changes"} to the submission for “{title}” have been saved as revision {revision.number}.'
             moderation = (
                 "Changes must be moderated and approved before appearing publicly. "
                 "Any previously published version remains unchanged in the meantime.\n\n"
             )
+        if is_owner:
+            next_steps = (
+                "You can modify your submission here:\n"
+                f"{base}{reverse('submissions:edit', kwargs={'pk': revision.submission_id})}\n\n"
+            )
+        else:
+            introduction += " You’re receiving this confirmation because you’re listed as a contributor."
+            next_steps = "If you should not be listed, or your details are incorrect, please reply to this email.\n\n"
         body = (
             f"Dear {display_name(person['name'])},\n\n"
-            f"{introduction}You’re receiving this confirmation because you’re listed as a contributor.\n\n"
+            f"{introduction}\n\n"
             f"{moderation}"
-            "The owner can review the submission through My submissions:\n"
-            f"{base}{reverse('submissions:list')}\n\n"
-            "If you should not be listed, or your details are incorrect, please reply to this email.\n\n"
+            f"{next_steps}"
             "The math-stoa team\n"
         )
     elif job.kind == "changes":

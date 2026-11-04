@@ -409,7 +409,9 @@ preview or an alternative process manager, run
 launch command that runs Gunicorn alone does not run this worker.
 
 Contributor-notice recipients come from the submitted revision's frozen contributor contacts;
-account emails and provider profiles are not used. Addresses are validated and
+account emails and provider profiles are not added as recipients. A recipient
+whose address matches a verified email on the owner's account receives
+owner-specific creation and revision confirmations. Addresses are validated and
 deduplicated ignoring case. Removed contributor contacts are checked again before
 claiming a queued notice, so an erased contact is not sent a pending message. The
 queue stores keyed recipient digests and revision references, not another copy
@@ -433,8 +435,10 @@ SMTP also needs `EMAIL_HOST`. Production requires exactly one of `EMAIL_USE_TLS`
 or `EMAIL_USE_SSL`, including when email sign-in is disabled. Missing delivery
 configuration suppresses new notices. Creation confirmations identify the project
 title; revision confirmations also give the revision number and explain that
-changes need moderation and approval before appearing publicly. Both link the
-owner to My submissions and invite contributors to reply about incorrect details.
+changes need moderation and approval before appearing publicly. Owner confirmations
+link directly to the submission's edit page. Other contributors receive confirmation
+of their listing and an invitation to reply about incorrect details, without a
+private submission link.
 Change-request messages include the frozen title, revision number and a general
 submissions link for the owner. Only the owner can read feedback and edit the
 private submission; being listed grants no account access. No moderation feedback
