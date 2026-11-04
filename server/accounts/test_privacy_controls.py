@@ -100,12 +100,12 @@ class PrivacyNoticeTests(TestCase):
         for sentence in (
             "an internal account name generated at random",
             "where offered, an institutional sign-in",
-            "only those needed to run the service",
+            "only cookies needed to run the service",
             'There is no "remember this browser" cookie',
             "Sign-in sessions last up to 14 days",
             "a completed authorization is valid for 30 days",
-            "Render hosts the website and database in Frankfurt on the controllers' instructions, with Cloudflare's network in front",
-            "The website's own request log keeps only the time, method, status and size of each request",
+            "Render hosts the website and database in Frankfurt, Germany, on the controllers' instructions, with Cloudflare's network in front",
+            "The site uses technical information about visits and sign-ins to prevent abuse and protect accounts",
             "the website queries GitHub about that public repository",
             'id="retention"',
         ):
@@ -137,7 +137,7 @@ class PrivacyNoticeTests(TestCase):
 
     def test_email_collection_wording_follows_email_login_setting(self):
         offered = "If you sign in with email or add an email address"
-        not_offered = "do not retain an email address from your sign-in provider for account access;"
+        not_offered = "do not retain an email address from your sign-in provider for account access."
         with override_settings(EMAIL_LOGIN_ENABLED=False):
             response = self.client.get("/privacy/")
             self.assertContains(response, not_offered)
