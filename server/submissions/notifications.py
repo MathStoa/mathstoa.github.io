@@ -6,6 +6,7 @@ Addresses are resolved from the frozen submitted revision, not copied into jobs.
 """
 import logging
 from datetime import timedelta
+from time import monotonic
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -253,8 +254,11 @@ def process_notification_queue(*, batch_size=20):
     with transaction.atomic():
         _lock_queue()
         counts["expired"], counts["failed"] = _cleanup(timezone.now())
+    deadline = monotonic() + 90
     if can_send():
         for _ in range(max(0, min(int(batch_size), 100))):
+            if monotonic() >= deadline:
+                break
             job, person, state = _claim()
             if job is None:
                 break

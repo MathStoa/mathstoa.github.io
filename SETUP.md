@@ -92,6 +92,37 @@ legacy `MODERATION_NOTIFY_EMAIL` environment variable is ignored and may be
 removed from the host. `PUBLIC_CONTACT_EMAIL` remains the public contact address;
 it does not subscribe the mailbox to submission alerts.
 
+## Organisation accounts
+
+Organisations apply for a separate account at `/accounts/organisation/register/`.
+Applications require `ORGANISATION_LOGIN_ENABLED=true` and public registration
+to be enabled, with the same production contact requirement as ordinary registrations.
+The organisation flag defaults to `EMAIL_LOGIN_ENABLED` when omitted. Set it
+explicitly to enable organisation email codes while keeping personal email sign-in
+and signup disabled. Production requires the same configured encrypted SMTP
+service and sender address described above. The form
+collects the organisation name, account email, website, description, named
+representative and explanation of their authority. An application creates an
+inactive account; it cannot sign in or submit projects before approval.
+
+Use **Organisation applications** in the navigation or **Organisation accounts**
+in `/admin/` to review applications. Check the organisation and the representative's
+authority, then approve or reject the application. Rejection requires a reason.
+The decision records the moderator and time, and its note is applicant-facing.
+Decision emails are handled by the existing `process_notification_queue` worker;
+receipt of an application does not send an email to an unverified address.
+The application's **Notification status** in administration shows failed
+deliveries. Attempted decision emails are not retried automatically, including
+when an interrupted send leaves delivery uncertain; arrange any needed follow-up
+after checking the record.
+
+Approval activates the account without marking the submitted email as verified.
+The organisation signs in at `/accounts/organisation/login/` using an email code,
+which proves control of that mailbox. This is a distinct account, rather than a
+personal account with organisation membership. Project submissions still require
+repository authorization and their own moderation. An approved organisation does
+not receive moderator privileges or authenticated ORCID credit.
+
 ## Register sign-in providers
 
 Register a separate application with each provider you want to enable. The
@@ -215,6 +246,10 @@ public registration.
 mathStoa retains stable sign-in identifiers, account details, session data,
 private contact email where supplied, and submission and moderation records. Public
 collaborator names, affiliations, roles, and ORCID iDs remain personal data.
+Organisation applications also retain their supplied organisation and
+representative details, the moderation decision and its delivery metadata.
+The organisation account's self-export includes its application and decision;
+it does not expose the moderator's private account identifiers.
 Provider profile payloads are stripped rather than retained in
 `SocialAccount.extra_data`; OAuth access and refresh tokens are not stored.
 mathStoa does not receive the provider's account password. An authenticated
@@ -264,6 +299,12 @@ only together with its never-submitted unused draft. The cleanup records the
 latest real draft activity in `updated_at` before pruning short-lived supporting
 records. Simply viewing a page does not extend retention.
 
+An organisation application, including one awaiting a decision or rejected,
+counts as a retained application record. Its account and associated moderator
+references are protected from automatic empty-account deletion. Review these
+records manually through the privacy-request and account-closure procedure;
+the seven-day unverified-signup rule does not delete pending applications.
+
 Each candidate is locked and rechecked before deletion; rows another request is
 editing are skipped on PostgreSQL. Accounts are evaluated before drafts, so an
 account freed of its last draft waits for a later cleanup run. Dry-run reports
@@ -307,13 +348,15 @@ transaction as their submitted revision. Change-request notices enter the same
 queue with the moderation decision. A rollback creates no notice. Verification
 does not queue another confirmation. The container's `run_web` supervisor starts
 a separate delivery process at startup and roughly every minute, independently
-of hourly retention cleanup. Each run handles at most 20 notices and has a
-six-minute deadline. SMTP is never contacted from a web request. For a local
+of hourly retention cleanup. Each run handles at most 20 contributor notices
+and 20 organisation decisions, 40 messages overall. Each delivery loop stops
+starting new sends after its 90-second budget; the worker has a six-minute
+deadline. SMTP is never contacted from a web request. For a local
 preview or an alternative process manager, run
 `python server/manage.py process_notification_queue` once per minute. A custom
 launch command that runs Gunicorn alone does not run this worker.
 
-Recipients come from the submitted revision's frozen contributor contacts;
+Contributor-notice recipients come from the submitted revision's frozen contributor contacts;
 account emails and provider profiles are not used. Addresses are validated and
 deduplicated ignoring case. Removed contributor contacts are checked again before
 claiming a queued notice, so an erased contact is not sent a pending message. The
@@ -322,7 +365,7 @@ of the address or message body. Delivery records expire after seven days;
 unattempted notices expire after 24 hours. Bounded per-revision digest markers
 prevent repeat delivery after queue cleanup and disappear with the revision.
 
-To prevent email abuse, notices are limited to one of each kind per recipient
+To prevent email abuse, contributor notices are limited to one of each kind per recipient
 per hour, five combined per recipient per day, 100 per submitting account per
 day, and 100 per hour / 500 per day for the service. These are rolling windows,
 reserved under a shared database lock both at enqueue and before delivery. Excess

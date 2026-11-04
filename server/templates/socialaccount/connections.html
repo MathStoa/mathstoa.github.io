@@ -2,7 +2,12 @@
 {% load socialaccount %}
 {% block head_title %}Your account{% endblock %}
 {% block content %}
-  <h1>Your account</h1>
+  <h1>{% if organisation %}Your organisation account{% else %}Your account{% endif %}</h1>
+  {% if organisation %}
+    <p>You are signed in as <strong>{{ organisation.name }}</strong>.</p>
+    <p>Sign-in codes are sent to <strong>{{ organisation.email }}</strong>.</p>
+    <p class="form-note">To change the organisation's name or registered email address, {% if privacy_contact %}contact <a href="mailto:{{ privacy_contact }}">{{ privacy_contact }}</a>{% else %}contact the site moderator{% endif %} for review.</p>
+  {% else %}
   <p>Connected sign-in methods all open this same <span class="brand">math<span lang="el">Στοά</span></span> account and its submissions.</p>
   <p class="form-note">To add or remove a sign-in method, sign in using an existing method within the last five minutes. If needed, sign out and sign in again first.</p>
   <section class="account-section">
@@ -43,6 +48,7 @@
     </section>
   {% endif %}
   {% if email_login_enabled %}<p><a href="{% url 'account_email' %}">Manage your private email address</a></p>{% endif %}
+  {% endif %}
   <p><a href="{% url 'mfa_index' %}">Set up or manage your authenticator</a></p>
   <p><a href="{% url 'account_privacy' %}">Your data and privacy requests</a></p>
   <p><a href="{% url 'submissions:list' %}">View my submissions</a></p>

@@ -1,0 +1,18 @@
+{% extends "account/base_entrance.html" %}
+{% block head_title %}Register as an organisation{% endblock %}
+{% block content %}
+  <h1>Register as an organisation</h1>
+  {% if organisation_login_enabled and registration_open %}
+    <p>Tell us about your organisation and your authority to represent it. A moderator will review the application before activating the account.</p>
+    <p>Use an email address controlled by the organisation. Once approved, this inbox will receive its sign-in codes.</p>
+    <form method="post" action="{% url 'organisation_register' %}" class="account-form">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="button">Send for moderation</button>
+    </form>
+    <p class="privacy-note">The application and contact details are kept private. They are available to authorised staff and, after approval, through your organisation account. Read <a href="/privacy/">how we use your information</a>.</p>
+  {% else %}
+    <p class="notice">New organisation registration is currently closed.</p>
+  {% endif %}
+  <p><a href="{% url 'organisation_login' %}">Return to organisation sign-in</a></p>
+{% endblock %}

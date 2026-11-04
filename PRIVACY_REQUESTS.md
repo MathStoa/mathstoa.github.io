@@ -69,6 +69,10 @@ route without granting access to another person's private submissions.
   access/export requests, inspect the person's account metadata, connected provider
   identifiers, supplied email, project ownership, submission and moderation records,
   and repository-verification records.
+  An organisation account's self-export also includes its application details,
+  status, applicant-facing decision note and decision date. Review organisation
+  application and decision-delivery records for broader requests; the self-export
+  does not include the moderator's private account identifiers.
   Search supplied collaborator attribution in drafts, revision snapshots and the
   static archive too; it is separate from account identity. Produce a scoped,
   human-readable export, reviewing other people's private data before delivery.
@@ -84,6 +88,11 @@ route without granting access to another person's private submissions.
 - For closure, first inventory protected references. `Submission.owner` and
   `RepositoryVerification.user` prevent blind user deletion; submitted and
   moderated revisions and staff logs also need checking.
+  For organisation accounts, include the organisation application, representative
+  details, decision and decision-delivery metadata in the closure plan. These
+  records protect the account from automatic empty-account cleanup, even while
+  the application is pending or rejected. Review them explicitly rather than
+  treating account deactivation as erasure.
   Do not silently transfer a project or remove collaborators' work. Agree any
   replacement steward and their repository authority separately.
 

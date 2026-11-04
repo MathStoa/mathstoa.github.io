@@ -10,6 +10,28 @@ from .policy import registration_is_open
 
 
 class AccountAdapter(DefaultAccountAdapter):
+    def _organisation_denied(self, request, user):
+        from allauth.account.internal.stagekit import clear_login
+        from .organisation_login import organisation_access_denied
+
+        if organisation_access_denied(user):
+            clear_login(request)
+            return self.respond_user_inactive(request, user)
+        return None
+
+    def pre_login(self, request, user, **kwargs):
+        return self._organisation_denied(request, user) or super().pre_login(request, user, **kwargs)
+
+    def login(self, request, user):
+        # Recheck after a code/MFA stage, since moderation can change while the
+        # browser is waiting for a challenge to be completed.
+        from allauth.core.exceptions import ImmediateHttpResponse
+
+        response = self._organisation_denied(request, user)
+        if response is not None:
+            raise ImmediateHttpResponse(response)
+        return super().login(request, user)
+
     def is_open_for_signup(self, request):
         return settings.EMAIL_LOGIN_ENABLED and registration_is_open()
 
@@ -42,6 +64,16 @@ class MinimalSocialAccountAdapter(DefaultSocialAccountAdapter):
 
         data = sociallogin.state.get("data")
         verification_only = isinstance(data, dict) and "mathstoa_verification" in data
+        from django.shortcuts import render
+        from .organisation_login import organisation_account
+
+        if not verification_only and (
+            organisation_account(request.user) is not None
+            or organisation_account(sociallogin.user) is not None
+        ):
+            raise ImmediateHttpResponse(render(request, "403.html", {
+                "permission_message": "Organisation accounts use their approved email address to sign in. External accounts can only be used to verify repository access.",
+            }, status=403))
         # The repository verification receiver always exits before linking,
         # including invalid attempts. It does not change any sign-in method.
         if sociallogin.state.get("process") == AuthProcess.CONNECT and not verification_only:

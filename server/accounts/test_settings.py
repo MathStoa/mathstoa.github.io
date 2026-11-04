@@ -169,3 +169,27 @@ class RenderSettingsTests(SimpleTestCase):
                 EMAIL_HOST="smtp.example.org", DEFAULT_FROM_EMAIL="notices@example.org",
                 EMAIL_USE_TLS="true", EMAIL_USE_SSL="true",
             )
+
+    def test_organisation_only_email_codes_enable_shared_engine_without_personal_email(self):
+        configured = self.load_settings(
+            DJANGO_ALLOWED_HOSTS="math-stoa.org", EMAIL_LOGIN_ENABLED="false",
+            ORGANISATION_LOGIN_ENABLED="true", EMAIL_HOST="smtp.example.org",
+            DEFAULT_FROM_EMAIL="signin@example.org", EMAIL_USE_TLS="true",
+        )
+        self.assertFalse(configured["EMAIL_LOGIN_ENABLED"])
+        self.assertTrue(configured["ORGANISATION_LOGIN_ENABLED"])
+        self.assertTrue(configured["ACCOUNT_LOGIN_BY_CODE_ENABLED"])
+
+    def test_organisation_email_codes_default_to_personal_email_setting(self):
+        enabled = self.load_settings(DJANGO_DEBUG="1", EMAIL_LOGIN_ENABLED="true")
+        disabled = self.load_settings(DJANGO_DEBUG="1", EMAIL_LOGIN_ENABLED="false")
+        self.assertTrue(enabled["ORGANISATION_LOGIN_ENABLED"])
+        self.assertFalse(disabled["ORGANISATION_LOGIN_ENABLED"])
+        self.assertFalse(disabled["ACCOUNT_LOGIN_BY_CODE_ENABLED"])
+
+    def test_organisation_only_production_requires_sender_and_encrypted_smtp(self):
+        base = {"DJANGO_ALLOWED_HOSTS": "math-stoa.org", "EMAIL_LOGIN_ENABLED": "false", "ORGANISATION_LOGIN_ENABLED": "true"}
+        with self.assertRaisesMessage(ImproperlyConfigured, "EMAIL_HOST"):
+            self.load_settings(**base)
+        with self.assertRaisesMessage(ImproperlyConfigured, "SMTP encryption"):
+            self.load_settings(**base, EMAIL_HOST="smtp.example.org", DEFAULT_FROM_EMAIL="signin@example.org", EMAIL_USE_TLS="false", EMAIL_USE_SSL="false")

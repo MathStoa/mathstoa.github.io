@@ -136,6 +136,7 @@ if flag("DJANGO_SECURE_PROXY_SSL_HEADER"):
 DATA_UPLOAD_MAX_MEMORY_SIZE = 256 * 1024
 
 EMAIL_LOGIN_ENABLED = flag("EMAIL_LOGIN_ENABLED", DEBUG)
+ORGANISATION_LOGIN_ENABLED = flag("ORGANISATION_LOGIN_ENABLED", EMAIL_LOGIN_ENABLED)
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
@@ -147,9 +148,9 @@ EMAIL_TIMEOUT = 15
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "math-stoa <noreply@localhost>" if DEBUG else "")
 if EMAIL_USE_TLS and EMAIL_USE_SSL:
     raise ImproperlyConfigured("Choose either EMAIL_USE_TLS or EMAIL_USE_SSL, not both.")
-if not DEBUG and EMAIL_LOGIN_ENABLED and (not EMAIL_HOST or not DEFAULT_FROM_EMAIL):
+if not DEBUG and (EMAIL_LOGIN_ENABLED or ORGANISATION_LOGIN_ENABLED) and (not EMAIL_HOST or not DEFAULT_FROM_EMAIL):
     raise ImproperlyConfigured("Email sign-in needs EMAIL_HOST and DEFAULT_FROM_EMAIL in production.")
-if not DEBUG and (EMAIL_LOGIN_ENABLED or EMAIL_HOST) and not (EMAIL_USE_TLS or EMAIL_USE_SSL):
+if not DEBUG and (EMAIL_LOGIN_ENABLED or ORGANISATION_LOGIN_ENABLED or EMAIL_HOST) and not (EMAIL_USE_TLS or EMAIL_USE_SSL):
     raise ImproperlyConfigured("Production email requires SMTP encryption: enable EMAIL_USE_TLS or EMAIL_USE_SSL.")
 
 LOGIN_URL = "account_login"
@@ -173,12 +174,13 @@ ACCOUNT_EMAIL_VERIFICATION_BY_CODE_ENABLED = True
 ACCOUNT_EMAIL_VERIFICATION_BY_CODE_TIMEOUT = 180
 ACCOUNT_EMAIL_VERIFICATION_BY_CODE_MAX_ATTEMPTS = 3
 ACCOUNT_EMAIL_VERIFICATION_SUPPORTS_RESEND = True
-ACCOUNT_LOGIN_BY_CODE_ENABLED = EMAIL_LOGIN_ENABLED
+ACCOUNT_LOGIN_BY_CODE_ENABLED = EMAIL_LOGIN_ENABLED or ORGANISATION_LOGIN_ENABLED
 ACCOUNT_LOGIN_BY_CODE_TIMEOUT = 180
 ACCOUNT_LOGIN_BY_CODE_MAX_ATTEMPTS = 3
 ACCOUNT_LOGIN_BY_CODE_SUPPORTS_RESEND = True
 ACCOUNT_PREVENT_ENUMERATION = True
 ACCOUNT_RATE_LIMITS = {
+    "organisation_register": "5/h/key",
     "repository_verification": "5/m/user,10/h/user,5/m/key,10/h/key",
     "admin_login_network": "30/5m/key",
     "admin_login_account": "5/5m/key",

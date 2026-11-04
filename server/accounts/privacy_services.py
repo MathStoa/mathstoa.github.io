@@ -157,7 +157,16 @@ def verify_request_bundle(raw):
 @sensitive_variables()
 def account_export(user):
     """Current account data only; broader historical access needs manual review."""
+    from .models import OrganisationAccount
     from submissions.publication import authenticated_orcid
+    organisation = OrganisationAccount.objects.filter(user=user).first()
+    organisation_data = None
+    if organisation is not None:
+        organisation_data = {
+            field: getattr(organisation, field)
+            for field in ("name", "email", "website", "description", "representative_name", "authority", "status", "review_note")
+        }
+        organisation_data.update(created_at=_date(organisation.created_at), reviewed_at=_date(organisation.reviewed_at))
     own_orcids = {"https://orcid.org/" + uid.removeprefix("https://orcid.org/")
                  for uid in SocialAccount.objects.filter(user=user, provider="orcid").values_list("uid", flat=True)}
     projects = []
@@ -203,6 +212,7 @@ def account_export(user):
         "format": "mathstoa-account-data", "version": 1, "generated_at": _date(timezone.now()),
         "scope": "Account data and project drafts you can currently access. Historical snapshots, other people's information, and broader access requests are handled by the operator on request.",
         "account": {"id": str(user.pk), "username": user.username, "email": user.email, "created_at": _date(user.date_joined), "last_sign_in": _date(user.last_login)},
+        "organisation_account": organisation_data,
         "sign_in_methods": [{"provider": row.provider, "account_id": row.uid, "connected_at": _date(row.date_joined), "last_sign_in": _date(row.last_login)} for row in SocialAccount.objects.filter(user=user).order_by("pk")],
         "email_addresses": list(EmailAddress.objects.filter(user=user).order_by("pk").values("email", "verified", "primary")),
         "authenticators": [{"type": row.type, "created_at": _date(row.created_at), "last_used_at": _date(row.last_used_at)} for row in Authenticator.objects.filter(user=user).order_by("pk")],

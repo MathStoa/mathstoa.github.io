@@ -333,6 +333,14 @@ class WebSupervisorProcessTests(SimpleTestCase):
 
 
 class NotificationWorkerCommandTests(SimpleTestCase):
+    def setUp(self):
+        organisation_delivery = patch(
+            "submissions.management.commands.process_notification_queue.process_organisation_notifications",
+            return_value={"sent": 0, "failed": 0, "remaining": 0},
+        )
+        self.organisation_delivery = organisation_delivery.start()
+        self.addCleanup(organisation_delivery.stop)
+
     def test_bounded_worker_prints_only_known_aggregate_counts(self):
         output = StringIO()
         counts = dict(sent=2, failed=0, suppressed=0, cancelled=0, expired=1, remaining=4,
@@ -341,7 +349,16 @@ class NotificationWorkerCommandTests(SimpleTestCase):
                    return_value=counts) as process:
             call_command("process_notification_queue", batch_size=7, stdout=output)
         process.assert_called_once_with(batch_size=7)
+        self.organisation_delivery.assert_called_once_with(batch_size=7)
         self.assertEqual(output.getvalue(), "sent=2, failed=0, suppressed=0, cancelled=0, expired=1, remaining=4\n")
+
+    def test_organisation_counts_are_included_without_private_fields(self):
+        output = StringIO()
+        self.organisation_delivery.return_value = dict(sent=3, failed=0, remaining=2, email="private@example.invalid")
+        counts = dict(sent=2, failed=0, suppressed=0, cancelled=0, expired=0, remaining=1)
+        with patch("submissions.management.commands.process_notification_queue.process_notification_queue", return_value=counts):
+            call_command("process_notification_queue", batch_size=7, stdout=output)
+        self.assertEqual(output.getvalue(), "sent=5, failed=0, suppressed=0, cancelled=0, expired=0, remaining=3\n")
 
     def test_delivery_failures_signal_nonzero_status_without_message_details(self):
         output = StringIO()
@@ -360,6 +377,7 @@ class NotificationWorkerCommandTests(SimpleTestCase):
                 with self.subTest(size=size), self.assertRaisesMessage(CommandError, "between 1 and 20"):
                     call_command("process_notification_queue", batch_size=size)
         process.assert_not_called()
+        self.organisation_delivery.assert_not_called()
 
     def test_backend_exception_cannot_disclose_recipient_or_credentials(self):
         output = StringIO()

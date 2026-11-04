@@ -159,7 +159,7 @@ class LoginTests(TestCase):
 
     def test_no_password_routes_and_disabled_email_cannot_be_used(self):
         self.assertEqual(self.client.get("/accounts/password/set/").status_code, 404)
-        with override_settings(EMAIL_LOGIN_ENABLED=False, SOCIALACCOUNT_PROVIDERS={}):
+        with override_settings(EMAIL_LOGIN_ENABLED=False, ORGANISATION_LOGIN_ENABLED=False, SOCIALACCOUNT_PROVIDERS={}):
             self.assertEqual(self.client.get("/accounts/orcid/login/").status_code, 404)
             self.assertEqual(self.client.post("/accounts/signup/", {"email": "blocked@example.org"}).status_code, 404)
             self.assertEqual(self.client.post("/accounts/login/code/", {"email": "blocked@example.org"}).status_code, 404)

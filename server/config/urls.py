@@ -2,6 +2,8 @@ from django.contrib import admin
 from allauth.account.decorators import secure_admin_login
 from django.urls import include, path
 from accounts import orcid, privacy_views, views
+from accounts import organisation_registration
+from accounts.organisation_login import OrganisationLoginView
 from submissions.views import archive_json
 
 admin.site.login = secure_admin_login(admin.site.login)
@@ -12,6 +14,9 @@ urlpatterns = [
     path("accounts/privacy/", privacy_views.privacy_tools, name="account_privacy"),
     path("accounts/privacy/export/", privacy_views.download_account_data, name="account_privacy_export"),
     path("accounts/privacy/request/", privacy_views.download_privacy_request, name="account_privacy_request"),
+    path("accounts/organisation/login/", OrganisationLoginView.as_view(), name="organisation_login"),
+    path("accounts/organisation/register/", organisation_registration.register, name="organisation_register"),
+    path("accounts/organisation/received/", organisation_registration.received, name="organisation_registration_received"),
     path("accounts/orcid/login/", orcid.oauth2_login, name="orcid_login"),
     path("accounts/orcid/login/callback/", orcid.oauth2_callback, name="orcid_callback"),
     path("accounts/", include("allauth.urls")),

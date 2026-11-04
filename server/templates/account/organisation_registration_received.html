@@ -1,0 +1,9 @@
+{% extends "account/base_entrance.html" %}
+{% block head_title %}Organisation registration submitted{% endblock %}
+{% block content %}
+  <h1>Organisation registration submitted</h1>
+  <p>If the email address is available for a new organisation account, your application has been sent to the moderation queue.</p>
+  <p>The account cannot be used until a moderator approves it. We will send the decision to the email address you provided.</p>
+  <p>If you already have an account or a pending application using that address, it has not been changed.</p>
+  <a class="button" href="{% url 'organisation_login' %}">Return to organisation sign-in</a>
+{% endblock %}

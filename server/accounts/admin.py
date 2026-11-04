@@ -2,6 +2,10 @@ import re
 
 from allauth.mfa.models import Authenticator
 from django.contrib import admin
+from django.contrib import messages
+from django.core.exceptions import ValidationError
+
+from .models import OrganisationAccount
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html, format_html_join
@@ -69,3 +73,38 @@ admin.site.register(User, AccountUserAdmin)
 # Authenticator material must not be viewed, replaced, or reset in ordinary admin.
 if admin.site.is_registered(Authenticator):
     admin.site.unregister(Authenticator)
+
+
+@admin.register(OrganisationAccount)
+class OrganisationAccountAdmin(admin.ModelAdmin):
+    list_display = ("name", "website", "status", "created_at", "reviewed_by", "notification_status")
+    list_filter = ("status", "notification_status")
+    search_fields = ("name", "email")
+    fields = ("name", "website", "description", "email", "representative_name", "authority", "user", "status", "review_note", "created_at", "reviewed_by", "reviewed_at", "notification_status", "notification_attempted_at", "decision_notified_at")
+    readonly_fields = tuple(field for field in fields if field != "review_note")
+    actions = ("approve_selected", "reject_selected")
+
+    def get_readonly_fields(self, request, obj=None):
+        return self.readonly_fields + (("review_note",) if obj and obj.status != "pending" else ())
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    @admin.action(description="Approve and activate selected organisation accounts", permissions=["change"])
+    def approve_selected(self, request, queryset):
+        self._review(request, queryset, approve=True)
+
+    @admin.action(description="Reject selected organisation applications (requires a decision message)", permissions=["change"])
+    def reject_selected(self, request, queryset):
+        self._review(request, queryset, approve=False)
+
+    def _review(self, request, queryset, *, approve):
+        for application in queryset.order_by("pk"):
+            try:
+                application.review(request.user, approve=approve, note=application.review_note)
+                self.message_user(request, f"{application.name}: {'approved and activated' if approve else 'rejected'}. The decision email is queued.")
+            except ValidationError as error:
+                self.message_user(request, "; ".join(error.messages), level=messages.ERROR)

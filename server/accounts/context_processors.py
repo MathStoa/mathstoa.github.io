@@ -20,8 +20,21 @@ def asset_version(path):
 
 
 def account_options(request):
+    from .models import OrganisationAccount
+
+    user = getattr(request, "user", None)
+    organisation = None
+    pending_organisation_reviews = None
+    if user is not None and user.is_authenticated and user.is_active:
+        organisation = OrganisationAccount.objects.filter(user=user, status="approved").first()
+        if user.is_staff and user.has_perm("accounts.change_organisationaccount"):
+            pending_organisation_reviews = OrganisationAccount.objects.filter(status="pending").count()
     return {
+        "organisation": organisation,
+        "organisation_name": organisation.name if organisation else "",
+        "pending_organisation_reviews": pending_organisation_reviews,
         "email_login_enabled": settings.EMAIL_LOGIN_ENABLED,
+        "organisation_login_enabled": settings.ORGANISATION_LOGIN_ENABLED,
         "registration_open": registration_is_open(),
         "privacy_contact": settings.PUBLIC_CONTACT_EMAIL,
         "site_css_version": asset_version(settings.REPO_ROOT / "docs" / "assets" / "site.css"),

@@ -2,10 +2,11 @@
 from django.core.management.base import BaseCommand, CommandError
 
 from submissions.notifications import process_notification_queue
+from accounts.organisation_notifications import process_organisation_notifications
 
 
 class Command(BaseCommand):
-    help = "Deliver up to 20 queued contributor notifications; print aggregate counts only."
+    help = "Deliver bounded batches of contributor and organisation decision notices; print aggregate counts only."
     requires_system_checks = []
 
     def add_arguments(self, parser):
@@ -17,6 +18,9 @@ class Command(BaseCommand):
             raise CommandError("Batch size must be between 1 and 20.")
         try:
             counts = process_notification_queue(batch_size=batch_size)
+            organisations = process_organisation_notifications(batch_size=batch_size)
+            for key in ("sent", "failed", "remaining"):
+                counts[key] += organisations[key]
             summary = ", ".join(
                 f"{name}={int(counts[name])}"
                 for name in ("sent", "failed", "suppressed", "cancelled", "expired", "remaining")
@@ -29,4 +33,4 @@ class Command(BaseCommand):
             # The supervisor discards output, so a nonzero status must also
             # signal SMTP failures and timed-out claims. Terminal jobs remain
             # failed; restarting the worker never repeats an ambiguous send.
-            raise CommandError("One or more contributor notifications failed; attempted messages will not be retried.")
+            raise CommandError("One or more notifications failed; attempted messages will not be retried.")

@@ -6,16 +6,17 @@
   {% if not registration_open %}<p class="notice">New account registration is currently closed. Existing accounts can still sign in using their connected methods.</p>{% endif %}
   {{ form.non_field_errors }}
   {% get_providers as providers %}
-  {% if providers %}
-    <div class="provider-options" aria-label="Sign-in providers">
+    <div class="provider-options" aria-label="Sign-in options">
       {% for provider in providers %}
         <form method="post" action="{% provider_login_url provider process='login' %}">
           {% csrf_token %}
           <button class="button provider-button" type="submit">Continue with {% if provider.id == 'orcid' %}ORCID{% else %}{{ provider.name }}{% endif %}</button>
         </form>
       {% endfor %}
+      <a class="button provider-button" href="{% url 'organisation_login' %}">Organisation</a>
     </div>
-    <p class="form-note">{% if registration_open %}Your first sign-in creates a <span class="brand">math<span lang="el">Στοά</span></span> account. {% endif %}To add another sign-in method, first sign in using a method already connected to your account, then open <strong>Account</strong> and choose <strong>Connect</strong> for the new method.</p>
+  {% if providers %}
+    <p class="form-note">{% if registration_open %}Your first sign-in with a provider creates a personal <span class="brand">math<span lang="el">Στοά</span></span> account. Organisation registration requires moderation. {% endif %}To add another personal sign-in method, first sign in using a method already connected to your account, then open <strong>Account</strong> and choose <strong>Connect</strong> for the new method.</p>
   {% endif %}
   {% if email_login_enabled %}
     <section class="email-option" aria-labelledby="email-heading">
@@ -26,7 +27,7 @@
         {% if registration_open %}<a href="{{ signup_url }}">Create an account with email</a>{% endif %}
       </div>
     </section>
-  {% elif not providers %}
+  {% elif not providers and not organisation_login_enabled %}
     <p class="notice">Account sign-in is not available yet. You can still propose a project through the public GitHub submission form.</p>
     <a class="button" href="https://github.com/MathStoa/mathstoa.github.io/issues/new?template=submit-project.yml" target="_blank" rel="noopener noreferrer">Submit through GitHub</a>
   {% endif %}

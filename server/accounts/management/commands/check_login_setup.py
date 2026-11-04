@@ -28,6 +28,7 @@ class Command(BaseCommand):
         else:
             self.stdout.write("Email: disabled")
             missing.append("Email")
+        self.stdout.write(f"Organisation email codes: {'enabled' if settings.ORGANISATION_LOGIN_ENABLED else 'disabled'}")
         self.stdout.write("Credentials still need a real provider sign-in test after deployment.")
         if options["require_all"] and missing:
             raise CommandError("Still to configure: " + ", ".join(missing))

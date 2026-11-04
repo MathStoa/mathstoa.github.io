@@ -41,6 +41,28 @@ class AccountPolicyMiddleware:
 
     def process_view(self, request, view_func, view_args, view_kwargs):
         match = request.resolver_match
+        from django.shortcuts import render
+        from .organisation_login import organisation_account
+
+        # allauth's generic login form can also initiate an email code. Keeping
+        # it closed prevents the organisation-only flag from enabling personal
+        # email sign-in through a direct POST to the provider selection page.
+        if match and match.url_name == "account_login" and request.method == "POST" and not settings.EMAIL_LOGIN_ENABLED:
+            return HttpResponseNotFound("This sign-in method is unavailable.")
+
+        organisation = organisation_account(request.user)
+        if organisation is not None and match:
+            process = request.POST.get("process", request.GET.get("process"))
+            changing_email = match.url_name in {
+                "account_email", "account_confirm_email", "account_email_verification_sent",
+            } and request.method == "POST"
+            connecting_provider = process == "connect" and match.url_name in {
+                "orcid_login", "github_login", "gitlab_login", "openid_connect_login",
+            }
+            if changing_email or connecting_provider:
+                return render(request, "403.html", {
+                    "permission_message": "Organisation accounts sign in with their approved email address. Contact the moderators to change that address.",
+                }, status=403)
         if match and match.url_name in {
             "orcid_login", "github_login", "gitlab_login", "openid_connect_login",
         } and any(key in request.GET or key in request.POST for key in ("scope", "auth_params")):
@@ -60,11 +82,22 @@ class AccountPolicyMiddleware:
 
     def __call__(self, request):
         path = request.path
+        from django.contrib.auth import logout
+        from .organisation_login import organisation_access_denied
+
+        # Revoke existing sessions on a moderation change as well as preventing
+        # new logins. Do not rely solely on the editable auth-user active flag.
+        if organisation_access_denied(request.user):
+            logout(request)
         provider = next((name for name in ("orcid", "github", "gitlab") if path.startswith(f"/accounts/{name}/")), None)
         if provider and provider not in {item.id for item in get_adapter(request).list_providers(request)}:
             return HttpResponseNotFound("This sign-in method is unavailable.")
         email_route = path.startswith(("/accounts/signup/", "/accounts/email/", "/accounts/confirm-email/", "/accounts/login/code/"))
-        if path.startswith("/accounts/password/") or (email_route and not settings.EMAIL_LOGIN_ENABLED):
+        organisation_confirmation = False
+        if path == "/accounts/login/code/confirm/" and not settings.EMAIL_LOGIN_ENABLED:
+            from .organisation_login import organisation_code_confirmation_allowed
+            organisation_confirmation = organisation_code_confirmation_allowed(request)
+        if path.startswith("/accounts/password/") or (email_route and not settings.EMAIL_LOGIN_ENABLED and not organisation_confirmation):
             return HttpResponseNotFound("This sign-in method is unavailable.")
         response = self.get_response(request)
         # Every HTML page can contain account navigation and a logout CSRF

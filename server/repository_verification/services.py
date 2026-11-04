@@ -46,6 +46,16 @@ def _digest(value):
 def _owner(submission, user):
     if not user.is_authenticated or not user.is_active or submission.owner_id != user.pk:
         raise VerificationError("Only the submission owner can verify repository authorization.")
+    _approved_organisation(user)
+
+
+def _approved_organisation(user):
+    from accounts.organisation_login import organisation_access_denied
+
+    # Re-read moderation and activation state even when a caller holds a stale
+    # user object. Personal-account verification keeps its existing policy.
+    if organisation_access_denied(user):
+        raise VerificationError("The organisation account must be approved and active before its submission can proceed.")
 
 
 def _api(call, *args, **kwargs):
@@ -221,6 +231,7 @@ def require_verified(submission, actor=None, client=None):
     rechecks detect transfers/replacements/privacy changes, not revoked user roles.
     """
     current_submission = Submission.objects.select_related("owner").get(pk=submission.pk)
+    _approved_organisation(current_submission.owner)
     if current_submission.repository_url != submission.repository_url or current_submission.owner_id != submission.owner_id:
         raise VerificationError("The submission changed. Reload and verify its repository again.")
     # Submit/review callers hold a surrounding transaction and submission lock.
@@ -238,6 +249,7 @@ def require_verified(submission, actor=None, client=None):
         raise
     # Guard callers that do not already hold a submission lock during the fetch.
     current_submission.refresh_from_db()
+    _approved_organisation(current_submission.owner)
     if (current_submission.repository_url != proof.repository_url or current_submission.owner_id != proof.user_id
             or authenticated_orcid(current_submission.owner) != proof.orcid):
         raise VerificationError("The submission changed during verification. Please try again.")

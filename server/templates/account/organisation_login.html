@@ -1,0 +1,27 @@
+{% extends "account/base_entrance.html" %}
+{% block head_title %}Organisation sign-in{% endblock %}
+{% block content %}
+  <h1>Sign in as an organisation</h1>
+  {% if organisation_login_enabled %}
+    <p>Enter your organisation's registered email address. Approved organisations can sign in using a one-time code sent to that inbox.</p>
+    <form method="post" action="{% url 'organisation_login' %}" class="account-form">
+      {% csrf_token %}
+      {{ form.as_p }}
+      {{ redirect_field }}
+      <button type="submit" class="button">Send sign-in code</button>
+    </form>
+    {% if registration_open %}
+      <section class="account-section" aria-labelledby="organisation-register-heading">
+        <h2 id="organisation-register-heading">New organisation?</h2>
+        <p>A moderator must approve your registration before the organisation account is activated.</p>
+        <a class="button" href="{% url 'organisation_register' %}">Register as an organisation</a>
+      </section>
+    {% else %}
+      <p class="notice">New organisation registration is currently closed. Approved organisations can still sign in.</p>
+    {% endif %}
+  {% else %}
+    <p class="notice">Organisation sign-in and registration are currently unavailable.</p>
+  {% endif %}
+  <p class="privacy-note">Your contact email and application details stay private. Read <a href="/privacy/">how we use your information</a>.</p>
+  <p><a href="{% url 'account_login' %}">Other sign-in options</a></p>
+{% endblock %}
