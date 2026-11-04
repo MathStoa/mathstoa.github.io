@@ -1,5 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load static %}
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | math-stoa{% endblock %}
+{% block branding %}<div id="site-name"><a href="{% url 'admin:index' %}">math<span lang="el">Στοά</span> administration</a></div>{% endblock %}
 {% block extrastyle %}
   {{ block.super }}
   <link rel="stylesheet" href="{% static 'admin-navigation.css' %}">

@@ -4,8 +4,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#ffffff">
-  <title>{% block head_title %}mathΣτοά{% endblock %} — mathΣτοά</title>
+  <meta name="theme-color" content="#fefefd">
+  <title>{% block head_title %}Account{% endblock %} — math-stoa</title>
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
   <link rel="stylesheet" href="/assets/site.css?v={{ site_css_version }}">
   <link rel="stylesheet" href="{% static 'accounts.css' %}?v={{ accounts_css_version }}">
@@ -14,7 +14,7 @@
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header wrap">
-    <a class="wordmark" href="/index.html" aria-label="mathStoa home">math<span lang="el">Στοά</span></a>
+    <a class="wordmark" href="/index.html" aria-label="mathΣτοά home">math<span lang="el">Στοά</span></a>
     {% include "includes/main_navigation.html" %}
   </header>
   <main id="main" tabindex="-1" class="wrap account-main">
@@ -26,7 +26,7 @@
     {% block body %}{% block content %}{% endblock %}{% endblock %}
   </main>
   <footer class="site-footer wrap">
-    <div><a class="wordmark footer-wordmark" href="/index.html">math<span lang="el">Στοά</span></a></div>
+    <div><a class="wordmark footer-wordmark" href="/index.html" aria-label="mathΣτοά home">math<span lang="el">Στοά</span></a></div>
     <nav aria-label="Footer navigation">
       <a href="/privacy/">Privacy</a>
       <a href="/about.html#guidelines">Submission guidelines</a>

@@ -1,4 +1,4 @@
-import {element as el, loadArchive, tagList, projectLink} from './common.js';
+import {element as el, loadArchive, tagList, projectLink} from './common.js?v=66a620fc1606';
 const search = document.querySelector('#search');
 const subject = document.querySelector('#subject');
 const sort = document.querySelector('#sort');
@@ -55,7 +55,8 @@ function apply(next, {sync = true, hash = location.hash} = {}) {
 }
 function contributorLink(name) {
   const next = {...state, q:'', author:cleanName(name)};
-  const link = el('a', {href:stateURL(next, '#archive')}, cleanName(name));
+  const link = el('a', {className:'contributor-link', href:stateURL(next, '#archive'),
+    title:'Projects with contributions from ' + cleanName(name)}, cleanName(name));
   link.addEventListener('click', event => {
     if (!isPlainClick(event)) return;
     event.preventDefault();
@@ -87,9 +88,10 @@ function card(project) {
     if (credit.orcid) credits.append(orcidLink(credit));
   });
   return el('article', {className:'project-card'},
-    el('h3', {}, el('a', {href:projectLink(project)}, project.title)),
-    credits,
-    tagList(project.categories));
+    tagList(project.categories),
+    el('div', {className:'card-main'},
+      el('h3', {}, el('a', {href:projectLink(project)}, project.title)),
+      credits));
 }
 function matchesQuery(project, words) {
   const text = folded([project.title, project.summary, project.repositoryUrl, project.doi,

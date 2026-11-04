@@ -1,11 +1,13 @@
 import {renderAbstract} from './abstract-math.js';
-import {element as el, loadArchive, tagList, safeURL, dateLabel} from './common.js';
+import {element as el, loadArchive, tagList, safeURL, dateLabel} from './common.js?v=66a620fc1606';
 const container = document.querySelector('#project-content');
 function section(title,...content) {return el('section',{},el('h2',{},title),...content);}
 function creditLine(credit) {
-  const line = el('p', {}, el('strong', {}, credit.name));
+  const line = el('p', {className:'project-credit'}, el('strong', {}, credit.name));
   if (credit.orcid && /^https:\/\/orcid\.org\/\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/.test(credit.orcid)) {
-    line.append(el('br'), el('a', {href: credit.orcid}, 'ORCID: ' + credit.orcid.split('/').pop()));
+    line.append(el('a', {className:'orcid-link', href:credit.orcid,
+      'aria-label':'ORCID record of ' + credit.name, title:'ORCID iD ' + credit.orcid.split('/').pop()},
+      el('img', {src:'assets/orcid.svg', alt:'', width:'16', height:'16'})));
   }
   return line;
 }
@@ -13,10 +15,10 @@ try {
   const id = new URLSearchParams(location.search).get('id');
   const project = (await loadArchive()).find(p=>p.id===id);
   if (!project) {
-    document.title='Project not found — mathΣτοά';
+    document.title='Project not found — math-stoa';
     container.replaceChildren(el('h1',{},'Project not found'),el('p',{className:'lede'},'This project is not in the archive. Check the link or browse the current entries.'),el('a',{href:'index.html#archive',className:'button'},'Explore the archive'));
   } else {
-    document.title=project.title+' — mathΣτοά';
+    document.title=project.title+' — math-stoa';
     const intro=el('header',{className:'project-intro'},el('h1',{},project.title),renderAbstract(el('div',{className:'lede'}),project.summary),tagList(project.categories));
     if(project.example) intro.append(el('p',{className:'notice project-example-note'},'This entry illustrates the archive and was not submitted by the project’s maintainers. Consult the original project for current status and participation.'));
     const article=el('article',{className:'prose'},section('Contributors',...project.credits.map(creditLine)));

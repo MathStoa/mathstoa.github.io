@@ -2,3 +2,15 @@
 #header{flex-wrap:wrap;gap:16px}#header .main-navigation{display:flex;flex:1 0 100%;width:100%;min-width:0;flex-wrap:wrap;align-items:center;gap:12px 20px;font-size:14px;line-height:1.5}#header .main-navigation>a,#header .main-navigation>form{max-width:100%;flex:0 0 auto}#header .main-navigation form{display:inline;margin:0}#header .main-navigation button{padding:0;border:0;background:none;color:var(--header-link-color);font:inherit;cursor:pointer}#header .main-navigation button:hover{text-decoration:underline}#header .main-navigation .button{padding:6px 10px;border:1px solid currentColor;border-radius:2px}#header .main-navigation a:focus-visible,#header .main-navigation button:focus-visible{outline:2px solid currentColor;outline-offset:3px}
 @media(max-width:1024px){#header{flex-wrap:nowrap}#header .main-navigation{flex:0 0 auto}}
 @media(max-width:767px){#header .main-navigation{justify-content:center;gap:12px 16px;font-size:13px}}
+
+/* Shared Account disclosure, using Django admin's own colour variables. */
+#header .account-menu{position:relative}
+#header .account-menu>summary{cursor:pointer;list-style:none;white-space:nowrap;color:var(--header-link-color)}
+#header .account-menu>summary::-webkit-details-marker{display:none}
+#header .account-menu>summary::after{content:'\2304';margin-left:6px}
+#header .account-menu>summary:focus-visible{outline:2px solid currentColor;outline-offset:4px}
+#header .account-menu-panel{position:absolute;top:calc(100% + 10px);left:0;z-index:50;width:240px;max-width:calc(100vw - 32px);padding:10px 16px;border:1px solid var(--hairline-color);border-radius:2px;background:var(--body-bg);color:var(--body-fg);text-align:left}
+#header .account-menu-panel>a{display:block;padding:8px 0;color:var(--link-fg);line-height:1.5}
+#header .main-navigation .account-menu-panel form{display:block}
+#header .main-navigation .account-menu-panel button{display:block;padding:8px 0;color:var(--link-fg);line-height:1.5}
+@media(max-width:767px){#header .main-navigation{position:relative}#header .account-menu{position:static}#header .account-menu-panel{left:0;right:0;margin:0 auto}}

@@ -73,7 +73,18 @@ class NavigationBrowserTests(NavigationFixtures, StaticLiveServerTestCase):
         nav = page.get_by_role("navigation", name="Main navigation", exact=True)
         self.assertEqual(nav.count(), 1)
         self.assertEqual(nav.locator("a").evaluate_all("nodes => nodes.map(n => n.getAttribute('href'))"), self.expected_links(role), page.url)
-        items = nav.locator("a,button")
+        account = nav.locator("details.account-menu")
+        if role == "anonymous":
+            self.assertEqual(account.count(), 0)
+        else:
+            self.assertEqual(account.count(), 1)
+            summary = account.locator("summary")
+            self.assertTrue(summary.is_visible())
+            if account.get_attribute("open") is None:
+                self.assertFalse(account.get_by_role("link", name="Account settings", exact=True).is_visible())
+                summary.click()
+            self.assertIsNotNone(account.get_attribute("open"))
+        items = nav.locator("a,button,summary")
         viewport = page.viewport_size["width"]
         for item in items.all():
             self.assertTrue(item.is_visible(), item.text_content())
@@ -81,7 +92,8 @@ class NavigationBrowserTests(NavigationFixtures, StaticLiveServerTestCase):
             self.assertGreaterEqual(box["x"], 0, item.text_content())
             self.assertLessEqual(box["x"] + box["width"], viewport + 1, item.text_content())
             self.assertGreater(box["width"], 0)
-        # Check that wrapped rows do not overlap one another or the page body.
+        # Controls must not overlap one another. The dropdown may overlay the
+        # page body, but the header itself must stay above the main content.
         boxes = items.evaluate_all("nodes => nodes.map(n => {const r=n.getBoundingClientRect(); return {x:r.x,y:r.y,right:r.right,bottom:r.bottom};})")
         for i, first in enumerate(boxes):
             for second in boxes[i+1:]:
@@ -124,6 +136,7 @@ class NavigationBrowserTests(NavigationFixtures, StaticLiveServerTestCase):
             page.set_viewport_size({"width": 375, "height": 900})
             page.goto(self.live_server_url + "/project.html?id=example")
             nav = page.get_by_role("navigation", name="Main navigation", exact=True)
+            self.assert_visible_menu(page, role)
             nav.get_by_role("link", name="Account settings", exact=True).click()
             self.assertTrue(page.url.endswith("/accounts/3rdparty/"))
             self.assert_visible_menu(page, role)
@@ -141,7 +154,7 @@ class NavigationBrowserTests(NavigationFixtures, StaticLiveServerTestCase):
 
     def assert_keyboard_menu(self, page, role):
         nav = page.get_by_role("navigation", name="Main navigation", exact=True)
-        items = nav.locator("a,button")
+        items = nav.locator("a,button,summary")
         # Enter the menu with Tab, then visit every item in document order.
         # Do not use locator.focus(), which would miss broken tab order.
         for _ in range(15):
@@ -161,6 +174,29 @@ class NavigationBrowserTests(NavigationFixtures, StaticLiveServerTestCase):
                     && parseFloat(style.outlineWidth) >= 2 && parseFloat(style.outlineOffset) >= 2
                     && rect.left >= 0 && rect.right <= innerWidth + 1;
             }"""), item.text_content())
+            if item.evaluate("node => node.tagName === 'SUMMARY'"):
+                # Native disclosure stays keyboard reachable without scripts;
+                # opening it puts the permission-aware links into tab order.
+                page.keyboard.press("Enter")
+                self.assertIsNotNone(nav.locator("details.account-menu").get_attribute("open"))
+        if role != "anonymous":
+            account = nav.locator("details.account-menu")
+            summary = account.locator("summary")
+            for _ in range(items.count()):
+                page.keyboard.press("Shift+Tab")
+                if summary.evaluate("node => node === document.activeElement"):
+                    break
+            self.assertTrue(summary.evaluate("node => node === document.activeElement"))
+            page.keyboard.press("Space")
+            self.assertIsNone(account.get_attribute("open"))
+            self.assertFalse(account.get_by_role("button", name="Sign out", exact=True).is_visible())
+            # A closed account menu must not leave invisible links focusable.
+            page.keyboard.press("Tab")
+            submit = nav.get_by_role("link", name="Submit a project", exact=True)
+            self.assertTrue(submit.evaluate("node => node === document.activeElement"))
+            page.keyboard.press("Shift+Tab")
+            page.keyboard.press("Enter")
+            self.assertIsNotNone(account.get_attribute("open"))
         self.assert_visible_menu(page, role)
 
     def test_keyboard_focus_skip_links_and_csrf_error_recovery(self):

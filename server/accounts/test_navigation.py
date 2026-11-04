@@ -23,6 +23,8 @@ class MainNavigation(HTMLParser):
         self.forms = []
         self.csrf_tokens = []
         self.buttons = []
+        self.account_menus = []
+        self.summaries = []
         self.feed(html)
 
     def handle_starttag(self, tag, attrs):
@@ -39,6 +41,10 @@ class MainNavigation(HTMLParser):
             self.csrf_tokens.append(attrs.get("value"))
         if tag == "button":
             self.buttons.append(attrs)
+        if tag == "details" and "account-menu" in attrs.get("class", "").split():
+            self.account_menus.append(attrs)
+        if tag == "summary":
+            self.summaries.append(attrs)
 
     def handle_endtag(self, tag):
         if tag == "nav":
@@ -121,7 +127,12 @@ class NavigationTests(NavigationFixtures, TestCase):
         self.assertNotIn("unsafe-eval", policy)
         if role == "anonymous":
             self.assertEqual(nav.forms, [])
+            self.assertEqual(nav.account_menus, [])
+            self.assertEqual(nav.summaries, [])
         else:
+            self.assertEqual(len(nav.account_menus), 1)
+            self.assertNotIn("open", nav.account_menus[0])
+            self.assertEqual(len(nav.summaries), 1)
             self.assertEqual(len(nav.forms), 1)
             self.assertEqual(nav.forms[0]["method"], "post")
             self.assertEqual(nav.forms[0]["action"], reverse("account_logout"))

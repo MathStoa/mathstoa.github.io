@@ -22,7 +22,7 @@ export async function loadArchive() {
   return data.projects;
 }
 export function tagList(categories) {
-  return element('div', {className:'tags'}, categories.map(c => element('span', {className:'tag', title:c.label}, c.code)));
+  return element('div', {className:'tags'}, categories.map(c => element('span', {className:'tag'}, c.label)));
 }
 export function projectLink(project) { return 'project.html?id=' + encodeURIComponent(project.id); }
 export function dateLabel(iso) { return new Intl.DateTimeFormat('en-GB',{year:'numeric',month:'long',day:'numeric',timeZone:'UTC'}).format(new Date(iso + 'T00:00:00Z')); }
