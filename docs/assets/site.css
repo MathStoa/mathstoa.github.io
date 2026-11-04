@@ -175,3 +175,14 @@ select:not(:disabled), input[type=checkbox]:not(:disabled), input[type=radio]:no
   .results-toolbar { align-items: flex-start; }
   .footer-wordmark { font-size: 12px; }
 }
+
+/* Development notice stays visible across public and account pages. */
+.development-banner {
+  background: #b42318;
+  color: #fff;
+  padding: 12px 0;
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
+}
+.development-banner p { margin: 0; }
