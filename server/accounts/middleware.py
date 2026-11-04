@@ -111,5 +111,10 @@ class AccountPolicyMiddleware:
         # Browsers may apply form-action to the OAuth POST's redirect target.
         # Permit only known login origins, never origins supplied in a request.
         form_origins = " ".join(settings.AUTHENTICATION_FORM_ORIGINS)
-        response["Content-Security-Policy"] = f"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'self' {form_origins}; frame-ancestors 'none'; base-uri 'self'"
+        script_sources = "'self'"
+        connect_sources = "'self'"
+        if getattr(request, "plausible_tracking", False) and response.status_code == 200:
+            script_sources += f" https://plausible.io/js/{settings.PLAUSIBLE_SCRIPT_ID}.js"
+            connect_sources += " https://plausible.io/api/event"
+        response["Content-Security-Policy"] = f"default-src 'self'; script-src {script_sources}; style-src 'self'; img-src 'self' data:; connect-src {connect_sources}; form-action 'self' {form_origins}; frame-ancestors 'none'; base-uri 'self'"
         return response

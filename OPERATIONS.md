@@ -9,6 +9,14 @@ Dashboard names as of November 2026. Owner of every row: the operator.
 
 ## Checklist
 
+Visitor analytics, when enabled with `PLAUSIBLE_SCRIPT_ID`, are available at
+<https://plausible.io/math-stoa.org> after signing in to the owning Plausible
+account. Use **Visitors** for estimated daily readership and **Top Pages** for
+popular archive pages. Render's request graph includes assets and automated
+traffic and is not a visitor count. See SETUP.md for activation and verification.
+Plausible collection is not confirmed merely by deploying the optional code:
+record the activation date and verify an actual visit in the dashboard.
+
 | Cadence | Check | Where | How | Problem if |
 |---|---|---|---|---|
 | Weekly | Service and deploys | Render → web service → **Events**, **Logs**; `https://math-stoa.org/health/` | Last deploy live, no health-check failures or restarts; `/health/` returns `{"status": "ok"}` (`server/accounts/views.py`). Set it as the Health Check Path under **Settings**. | Failed deploy, repeated restarts, non-200 health response. |

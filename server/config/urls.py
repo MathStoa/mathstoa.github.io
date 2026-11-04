@@ -27,6 +27,7 @@ urlpatterns = [
     path("submit.html", views.old_submit),
     path("data/projects.json", archive_json, name="archive_json"),
     path("assets/<path:path>", views.site_asset),
+    path("project.html/<str:project_id>", views.project_analytics_link),
     path("", views.public_page, name="home"),
     path("<str:page>", views.public_page),
 ]

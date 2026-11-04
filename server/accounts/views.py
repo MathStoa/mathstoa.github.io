@@ -1,13 +1,16 @@
 import re
+from urllib.parse import urlencode
 
 from django.conf import settings
-from django.db import connection
+from django.db import DatabaseError, connection
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.utils.cache import patch_vary_headers
 from django.views.decorators.csrf import requires_csrf_token
 from django.views.decorators.http import require_safe
+
+from .analytics import is_public_project, tracking_script
 
 PUBLIC_PAGES = {"index.html", "about.html", "project.html", "404.html"}
 
@@ -32,9 +35,22 @@ def public_page(request, page="index.html"):
     # On the service, navigation and CSRF forms must target this request's origin.
     text = text.replace('<base href="https://math-stoa.org/">', '')
     text = text.replace('<nav aria-label="Footer navigation">', '<nav aria-label="Footer navigation"><a href="/privacy/">Privacy</a>')
+    text = text.replace("</head>", str(tracking_script(request, page)) + "\n</head>", 1)
     response = HttpResponse(text)
     patch_vary_headers(response, ["Cookie"])
     return response
+
+
+@require_safe
+def project_analytics_link(request, project_id):
+    """Let Plausible's distinct public-project URLs open their actual listing."""
+    try:
+        known_project = is_public_project(project_id)
+    except (OSError, ValueError, KeyError, TypeError, DatabaseError):
+        known_project = False
+    if not known_project:
+        raise Http404
+    return redirect("/project.html?" + urlencode({"id": project_id}))
 
 
 @require_safe

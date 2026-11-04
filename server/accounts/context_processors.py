@@ -37,6 +37,7 @@ def account_options(request):
         "organisation_login_enabled": settings.ORGANISATION_LOGIN_ENABLED,
         "registration_open": registration_is_open(),
         "privacy_contact": settings.PUBLIC_CONTACT_EMAIL,
+        "plausible_enabled": bool(settings.PLAUSIBLE_SCRIPT_ID),
         "site_css_version": asset_version(settings.REPO_ROOT / "docs" / "assets" / "site.css"),
         "accounts_css_version": asset_version(settings.BASE_DIR / "static" / "accounts.css"),
         "admin_navigation_css_version": asset_version(settings.BASE_DIR / "static" / "admin-navigation.css"),

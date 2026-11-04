@@ -55,6 +55,33 @@ required (no large-scale monitoring or special category data).
 No special category or criminal offence data is sought. No automated
 decision-making or profiling.
 
+### Optional public-page readership statistics
+
+`PLAUSIBLE_SCRIPT_ID` enables Plausible Cloud only for public archive, About and
+project pages; blank leaves it disabled. The purpose is to understand and improve
+readership, on legitimate interests grounds (Article 6(1)(f)). Account and other
+private routes and signed-in staff are excluded. Public page paths and recognised
+project IDs, referring website origins, approximate locations, device/browser
+categories and event/session statistics are processed. Queries and fragments,
+form values and account identifiers are not sent. No analytics cookies or browser
+storage are used. The provider calculates daily identifiers using IP and browser
+information without retaining their raw values. Collection starts at activation.
+
+Plausible Insights OÜ (Estonia) is the processor, with EU infrastructure. Its
+[DPA](https://plausible.io/dpa) is an addendum to its terms; the
+[data policy](https://plausible.io/data-policy) describes processing. Keep the
+account's accepted terms, actual activation date, dashboard access and configured
+retention privately; this code change is not evidence that an account exists or
+those steps are complete. Review retention annually and remove statistics no
+longer needed. Keep the dashboard private and review access when roles change.
+
+The limited measurements support aggregate readership trends without linking
+them to named contributors or monitoring private activity. Excluding sensitive
+routes, sanitising addresses, daily identifier rotation and respecting browser
+blocking reduce the impact on readers. The public notice explains the processing
+when enabled and provides the controllers' contact and right to object. Reassess
+before adding identifiers, custom events or additional tracking.
+
 ## Processors and international transfers
 
 Published provider evidence was checked on 4 November 2026. Incorporated terms

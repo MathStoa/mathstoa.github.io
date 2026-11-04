@@ -42,6 +42,38 @@ Use <http://localhost:8000/admin/> for administration and
 after three minutes and allow at most three attempts. Sessions expire after
 fourteen days.
 
+## Visitor statistics with Plausible
+
+The Django service supports optional Plausible Cloud analytics. It is off when
+`PLAUSIBLE_SCRIPT_ID` is empty; the standalone GitHub Pages copy does not track.
+
+1. In your Plausible account, add `math-stoa.org` and choose `Europe/London` as
+   the reporting timezone. Keep the statistics dashboard private.
+2. Open **Settings → General → Tracking → Site installation**. From the script
+   URL `https://plausible.io/js/pa-….js`, copy only the `pa-…` identifier.
+3. In Render, open the MathStoa web service's **Environment** page and set
+   `PLAUSIBLE_SCRIPT_ID` to that identifier, then save and deploy. This is a
+   public site identifier, not a Plausible API key. No API key is needed.
+4. Visit the public site in a browser where you are not signed in as staff,
+   then use Plausible's installation check and dashboard to confirm the visit.
+
+Only public archive, About and project pages are tracked. Signed-in staff and
+private account/submission/verification/admin routes are excluded. Page URLs
+and referrals are sanitised; no search text, form data or account identity is
+sent. Recognised project identifiers distinguish project pages in the report.
+The privacy notice describes analytics only when configured. Leave additional
+form, download and outbound-link measurements off for this visitor-count setup.
+
+Open <https://plausible.io/math-stoa.org> for visitors, visits, pageviews, popular
+pages and referral sources. These are estimates; blockers can prevent counting,
+and daily visitor identification cannot deduplicate a person across all days or
+devices. Collection starts after activation, with no historical backfill.
+
+Clear `PLAUSIBLE_SCRIPT_ID` and redeploy to stop collection. Existing statistics
+remain in Plausible until removed or expired under the account's retention.
+See the [installation guide](https://plausible.io/docs/plausible-script) and
+[metric definitions](https://plausible.io/docs/metrics-definitions).
+
 ## Production configuration
 
 Copy `.env.example` to `.env`. Docker Compose reads this file; for a manual

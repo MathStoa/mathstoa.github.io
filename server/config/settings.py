@@ -61,6 +61,10 @@ CSRF_TRUSTED_ORIGINS = [u.strip() for u in os.environ.get("DJANGO_CSRF_TRUSTED_O
 if render_origin and render_origin not in CSRF_TRUSTED_ORIGINS:
     CSRF_TRUSTED_ORIGINS.append(render_origin)
 PUBLIC_CONTACT_EMAIL = os.environ.get("PUBLIC_CONTACT_EMAIL", "").strip()
+# The public script identifier is not a secret. An empty value disables analytics.
+PLAUSIBLE_SCRIPT_ID = os.environ.get("PLAUSIBLE_SCRIPT_ID", "").strip()
+if PLAUSIBLE_SCRIPT_ID and not re.fullmatch(r"pa-[A-Za-z0-9_-]{1,128}", PLAUSIBLE_SCRIPT_ID):
+    raise ImproperlyConfigured("PLAUSIBLE_SCRIPT_ID must be the pa- identifier from the Plausible script URL, without .js.")
 # Moderators use the moderation queue. Legacy MODERATION_NOTIFY_EMAIL values
 # are deliberately ignored; contributor notifications are handled separately.
 PUBLIC_REGISTRATION_ENABLED = flag("PUBLIC_REGISTRATION_ENABLED", DEBUG)

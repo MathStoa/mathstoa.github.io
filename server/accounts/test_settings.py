@@ -34,6 +34,13 @@ class RenderSettingsTests(SimpleTestCase):
             with self.assertRaises(DisallowedHost):
                 RequestFactory().get("/health/", HTTP_HOST="another-tenant.onrender.com").get_host()
 
+    def test_plausible_script_id_is_optional_and_cannot_change_script_origin(self):
+        self.assertEqual(self.load_settings(DJANGO_ALLOWED_HOSTS="math-stoa.org")["PLAUSIBLE_SCRIPT_ID"], "")
+        self.assertEqual(self.load_settings(DJANGO_ALLOWED_HOSTS="math-stoa.org", PLAUSIBLE_SCRIPT_ID="pa-example_123")["PLAUSIBLE_SCRIPT_ID"], "pa-example_123")
+        for value in ("https://evil.example/track.js", "pa-example.js", "pa-example/../../script", "pa-example?query=1", 'pa-\" onload=\"bad', "pa-", "pa-" + "x" * 129):
+            with self.subTest(value=value), self.assertRaisesMessage(ImproperlyConfigured, "PLAUSIBLE_SCRIPT_ID"):
+                self.load_settings(DJANGO_ALLOWED_HOSTS="math-stoa.org", PLAUSIBLE_SCRIPT_ID=value)
+
     def test_custom_canonical_url_and_explicit_origins_are_preserved(self):
         configured = self.load_settings(
             RENDER_EXTERNAL_HOSTNAME="math-stoa.onrender.com",
