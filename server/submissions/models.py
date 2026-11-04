@@ -152,15 +152,23 @@ class SubmissionRevision(models.Model):
         labels = dict(CATEGORIES)
         # The main subject comes first. Revisions frozen before further subjects existed have none.
         codes = dict.fromkeys([data["category"], *data.get("secondary_categories", [])])
+        from .publication import ABSTRACT_LICENSE, authenticated_orcid
+        declaration = data.get("publication_declaration", {})
+        # Do not retroactively assert a licence grant for a historical revision
+        # whose snapshot predates recorded publication declarations.
+        licensing = {}
+        if declaration.get("license") == ABSTRACT_LICENSE and declaration.get("accepted_at") and declaration.get("version"):
+            licensing = {"summaryLicense": ABSTRACT_LICENSE, "summaryAttribution": [display_name(author["name"]) for author in data["collaborators"]]}
         return {
             "id": self.submission.public_id, "title": data["title"],
             "summary": data["abstract"],
+            **licensing,
             "categories": [{"code": code, "label": labels[code]} for code in codes],
             "repositoryUrl": data["repository_url"],
             # The DOI and website are optional.
             **{key: data[name] for key, name in (("doi", "doi"), ("readingUrl", "reading_url")) if data.get(name)},
             "credits": [
-                {"name": display_name(author["name"]), **({"orcid": author["orcid"]} if author.get("orcid") else {})}
+                {"name": display_name(author["name"]), **({"orcid": author["orcid"], "orcidAuthenticated": authenticated_orcid(author)} if author.get("orcid") else {})}
                 for author in data["collaborators"]
             ],
             "added": (first.reviewed_at if first else self.reviewed_at or timezone.now()).date().isoformat(),

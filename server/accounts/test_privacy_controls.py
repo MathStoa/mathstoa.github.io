@@ -137,7 +137,7 @@ class PrivacyNoticeTests(TestCase):
 
     def test_email_collection_wording_follows_email_login_setting(self):
         offered = "If you sign in with email or add an email address"
-        not_offered = "do not collect your email address."
+        not_offered = "do not retain an email address from your sign-in provider for account access;"
         with override_settings(EMAIL_LOGIN_ENABLED=False):
             response = self.client.get("/privacy/")
             self.assertContains(response, not_offered)

@@ -10,3 +10,10 @@ htmlcov/
 !.env.example
 server/db.sqlite3*
 server/staticfiles/
+
+# Private legal and provider-transfer records are held outside this repository.
+legal-review/
+DATA_TRANSFERS.md
+IDTA_REVIEW.md
+TRANSFER_RISK_ASSESSMENT.md
+*IDTA*review*draft.docx

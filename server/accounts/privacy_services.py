@@ -157,6 +157,9 @@ def verify_request_bundle(raw):
 @sensitive_variables()
 def account_export(user):
     """Current account data only; broader historical access needs manual review."""
+    from submissions.publication import authenticated_orcid
+    own_orcids = {"https://orcid.org/" + uid.removeprefix("https://orcid.org/")
+                 for uid in SocialAccount.objects.filter(user=user, provider="orcid").values_list("uid", flat=True)}
     projects = []
     for project in Submission.objects.filter(owner=user).order_by("pk"):
         content = {field: getattr(project, field) for field in ("title", "repository_url", "doi", "reading_url", "abstract", "category", "secondary_categories")}
@@ -165,6 +168,14 @@ def account_export(user):
             {key: person[key] for key in ("name", "role", "orcid", "affiliation") if isinstance(person.get(key), str)}
             for person in project.collaborators if isinstance(person, dict)
         ]
+        # An owned project can contain other people's identifiers. Export OAuth
+        # provenance only for the requester's currently connected iD, retaining
+        # the narrow allowlist; historical or disconnected identity evidence is
+        # handled in the manual access-request process described in scope.
+        for original, exported in zip((person for person in project.collaborators if isinstance(person, dict)), content["collaborators"]):
+            if original.get("orcid") in own_orcids and authenticated_orcid(original):
+                proof = original["orcid_authentication"]
+                exported["orcid_authentication"] = {key: proof[key] for key in ("source", "provider", "identifier", "authenticated_at", "collected_at") if isinstance(proof.get(key), str)}
         projects.append({
             "id": str(project.pk), "revision": project.revision, "created_at": _date(project.created_at),
             "updated_at": _date(project.updated_at), "content": content,

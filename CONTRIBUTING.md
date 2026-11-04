@@ -44,7 +44,9 @@ mathStoa maintainers check scope, readable content, public links and any DOI, pe
 
 In the account service, submitting a draft creates a fixed revision for moderation. Staff can approve it or request changes. A previously approved revision remains public while an update is being moderated; editing a draft does not silently replace the published listing. Moderation decisions are retained with the submitted revision. Legacy submissions retain their decisions in the GitHub issue or pull request.
 
-To correct a listing, report a credit problem, or appeal a decision, open an issue with the project ID and relevant public evidence, or use the private contact route in the service's privacy notice when the request includes private information. Avoid posting private contact details or confidential correspondence. A maintainer should record the resolution and explain material changes. A steward can request removal or other changes through the same route.
+To report a listing, suspected illegal content, a credit or copyright problem, a privacy or accessibility concern, or to appeal a moderation decision, email [contact@math-stoa.org](mailto:contact@math-stoa.org). No mathStoa or GitHub account is required. Give the listing URL or project ID and explain the concern; do not send unnecessary sensitive information or copies of suspected illegal material. Public GitHub issues remain optional for ordinary public feedback. A steward can request removal or other changes through the same private route.
+
+Reports are assessed according to urgency. We acknowledge complaints within 30 days, investigate, provide appropriate updates and explain the outcome; this is not a waiting period for urgent safety action. Privacy-rights requests have separate deadlines, normally one calendar month. See [the complaint and appeal procedure](COMPLAINTS.md) and [the provisional online-safety assessment](ONLINE_SAFETY.md). A maintainer records the resolution and explains material listing changes without publishing confidential evidence.
 
 ## Contribution credit
 

@@ -7,6 +7,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.utils.html import format_html
+from django.utils import timezone
 
 from .models import CATEGORIES, MAX_SECONDARY_CATEGORIES, Submission
 
@@ -74,7 +75,9 @@ class ContributorInputs(forms.Widget):
             value = getter(f"{name}-{part}")
             return [value] if isinstance(value, str) else list(value or ())
 
-        return [{"name": person, "orcid": orcid, "email": email} for person, orcid, email in zip_longest(values("name"), values("orcid"), values("email"), fillvalue="")]
+        own_rows = set(values("own-orcid"))
+        return [{"name": person, "orcid": orcid, "email": email, "use_own_orcid": str(number) in own_rows}
+                for number, (person, orcid, email) in enumerate(zip_longest(values("name"), values("orcid"), values("email"), fillvalue=""), 1)]
 
     def value_omitted_from_data(self, data, files, name):
         # Removing every row posts no inputs, which must clear the list rather than keep the old one.
@@ -84,13 +87,27 @@ class ContributorInputs(forms.Widget):
 class ContributorsField(forms.Field):
     widget = ContributorInputs
     default_error_messages = {"required": "Add at least one contributor."}
+    connected_orcid = None
+    expected_own_orcids = None
 
     def to_python(self, rows):
         contributors = []
         seen_orcids = set()
         for number, row in enumerate(rows, 1):
             name, orcid, email = (str(row.get(part) or "").strip() for part in ("name", "orcid", "email"))
-            if not name and not orcid and not email:
+            own = row.get("use_own_orcid") is True
+            provenance = None
+            if own:
+                if not self.connected_orcid:
+                    raise ValidationError(f"Contributor {number}: connect your ORCID account before choosing 'Use my connected ORCID'.")
+                orcid = self.connected_orcid["url"]
+                expected = (self.expected_own_orcids or {}).get(number)
+                if expected and expected != orcid:
+                    raise ValidationError(f"Contributor {number}: your connected ORCID changed. Edit and save this contributor before submitting.")
+                provenance = {"source": "authenticated-account-selection", "provider": "orcid",
+                              "identifier": orcid, "collected_at": timezone.now().isoformat(),
+                              "authenticated_at": self.connected_orcid["authenticated_at"]}
+            if not name and not orcid and not email and not own:
                 continue
             if not name:
                 raise ValidationError(f"Contributor {number}: add their first names and surname.")
@@ -107,6 +124,8 @@ class ContributorsField(forms.Field):
                 orcid = normalize_orcid(orcid)
             except ValidationError as error:
                 raise ValidationError(f"Contributor {number}: {error.messages[0]}") from None
+            if not own and self.connected_orcid and orcid == self.connected_orcid["url"]:
+                raise ValidationError(f"Contributor {number}: select 'Use my connected ORCID' to collect your own iD from your authenticated account.")
             # The field is only required when submitting for moderation, so drafts can hold contributors without one.
             if self.required and not orcid:
                 raise ValidationError(f"Contributor {number}: add their ORCID iD.")
@@ -123,7 +142,8 @@ class ContributorsField(forms.Field):
                     raise ValidationError(f"Contributor {number}: the email address must be at most 254 characters.")
             if self.required and not email:
                 raise ValidationError(f"Contributor {number}: add their institutional email.")
-            contributors.append({"name": name, "orcid": orcid, "email": email})
+            contributors.append({"name": name, "orcid": orcid, "email": email,
+                                 **({"orcid_authentication": provenance} if provenance else {})})
         if len(contributors) > 100:
             raise ValidationError("Please list at most 100 contributors.")
         return contributors
@@ -132,7 +152,7 @@ class ContributorsField(forms.Field):
 class SubmissionForm(forms.ModelForm):
     collaborators = ContributorsField(
         label="Contributors", required=False,
-        help_text=format_html('Add everyone who contributed to the project, including yourself, with their ORCID iD and institutional email. Write each name as first names, a comma, then the surname. Anyone can <a href="{}" target="_blank" rel="noopener noreferrer">register for an ORCID iD</a> free of charge. Email addresses are never published; each contributor receives a confirmation when the project is submitted.', ORCID_REGISTER_URL),
+        help_text=format_html('Add everyone who contributed to the project, including yourself, with their ORCID iD and institutional email. Write each name as first names, a comma, then the surname. Anyone can <a href="{}" target="_blank" rel="noopener noreferrer">register for an ORCID iD</a> free of charge. Email addresses are never published; a confirmation is queued for each contributor when the project is submitted; delivery is not guaranteed.', ORCID_REGISTER_URL),
     )
     secondary_categories = forms.MultipleChoiceField(
         label="Further subjects", required=False, choices=CATEGORIES,
@@ -140,7 +160,7 @@ class SubmissionForm(forms.ModelForm):
         help_text=f"If the project spans several areas, tick up to {MAX_SECONDARY_CATEGORIES} more.",
     )
     revision = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
-    permission_confirmed = forms.BooleanField(required=False, label="I maintain this project or have permission to submit it and its contributor details, and have the right to publish its abstract under CC BY 4.0.")
+    permission_confirmed = forms.BooleanField(required=False, label="I maintain this project or have permission to submit it and its contributor details, and have the right to publish its abstract under CC BY 4.0.", help_text=format_html('Before submitting this saved draft, you will grant the public an irrevocable <a href="{}" target="_blank" rel="noopener noreferrer">CC BY 4.0 licence</a> to the abstract, with credit to the named project contributors. Linked repositories keep their own terms.', "https://creativecommons.org/licenses/by/4.0/"))
     # Everything else is required before a draft can be submitted for moderation.
     optional_fields = ("doi", "reading_url", "secondary_categories")
 
@@ -161,9 +181,20 @@ class SubmissionForm(forms.ModelForm):
             "abstract": forms.Textarea(attrs={"rows": 5}),
         }
 
-    def __init__(self, *args, for_submission=False, **kwargs):
+    def __init__(self, *args, for_submission=False, user=None, expected_own_orcids=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.for_submission = for_submission
+        self.connected_orcid = None
+        if user is not None and user.is_authenticated:
+            from allauth.socialaccount.models import SocialAccount
+            identity = SocialAccount.objects.filter(user=user, provider="orcid").first()
+            if identity:
+                try:
+                    self.connected_orcid = {"url": normalize_orcid(identity.uid), "authenticated_at": identity.last_login.isoformat()}
+                except (ValidationError, AttributeError):
+                    pass
+        self.fields["collaborators"].connected_orcid = self.connected_orcid
+        self.fields["collaborators"].expected_own_orcids = expected_own_orcids
         self.initial.setdefault("revision", self.instance.revision)
         if for_submission:
             for name, field in self.fields.items():
@@ -193,7 +224,8 @@ class SubmissionForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
-        # The one confirmation also grants the abstract licence; the model keeps both flags.
+        # This draft flag records claimed permission. The explicit public licence
+        # is accepted separately at the final submission step.
         self.instance.license_confirmed = bool(cleaned.get("permission_confirmed"))
         for field, value in list(cleaned.items()):
             if isinstance(value, str) and any(ord(char) < 32 and char not in "\n\r\t" for char in value):
@@ -201,12 +233,14 @@ class SubmissionForm(forms.ModelForm):
         return cleaned
 
 
-def review_form(submission):
+def review_form(submission, *, user=None):
     data = {field: getattr(submission, field) for field in SubmissionForm.Meta.fields if field != "collaborators"}
     data.update({
         "revision": submission.revision,
         "collaborators-name": [person.get("name", "") for person in submission.collaborators],
         "collaborators-orcid": [person.get("orcid") or "" for person in submission.collaborators],
         "collaborators-email": [person.get("email") or "" for person in submission.collaborators],
+        "collaborators-own-orcid": [str(number) for number, person in enumerate(submission.collaborators, 1) if user is not None and person.get("orcid_authentication")],
     })
-    return SubmissionForm(data=data, instance=submission, for_submission=True)
+    expected = {number: person.get("orcid") for number, person in enumerate(submission.collaborators, 1) if person.get("orcid_authentication")}
+    return SubmissionForm(data=data, instance=submission, for_submission=True, user=user, expected_own_orcids=expected)

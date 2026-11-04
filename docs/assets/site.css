@@ -137,3 +137,9 @@
   .results-toolbar { align-items: flex-start; }
   .footer-wordmark { font-size: 12px; }
 }
+
+/* Identifier provenance and abstract reuse information. */
+.supplied-orcid { display: inline-flex; align-items: baseline; gap: .3rem; flex-wrap: wrap; font-size: .85em; }
+.supplied-orcid .orcid-link { display: inline-flex; align-items: center; gap: .3rem; }
+.supplied-orcid img { flex-shrink: 0; vertical-align: middle; }
+.abstract-license { font-size: .9rem; color: var(--muted, #5b6472); line-height: 1.6; }

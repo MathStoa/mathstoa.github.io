@@ -1,4 +1,4 @@
-import {element as el, loadArchive, tagList, projectLink} from './common.js?v=66a620fc1606';
+import {element as el, loadArchive, tagList, projectLink, suppliedOrcidLink} from './common.js?v=30b3f113a369';
 const search = document.querySelector('#search');
 const subject = document.querySelector('#subject');
 const sort = document.querySelector('#sort');
@@ -66,10 +66,7 @@ function contributorLink(name) {
 }
 const ORCID_ID = /^https:\/\/orcid\.org\/\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
 function orcidLink(credit) {
-  const id = credit.orcid.slice('https://orcid.org/'.length);
-  return el('a', {className:'orcid-link', href:credit.orcid, title:'ORCID iD ' + id,
-    'aria-label':'ORCID record of ' + cleanName(credit.name) + ' (' + id + ')'},
-    el('img', {src:'assets/orcid.svg', alt:'', width:'16', height:'16'}));
+  return suppliedOrcidLink(credit);
 }
 function card(project) {
   const contributors = new Map();
@@ -78,8 +75,8 @@ function card(project) {
     if (!key) continue;
     const orcid = ORCID_ID.test(credit.orcid || '') ? credit.orcid : '';
     const seen = contributors.get(key);
-    if (!seen) contributors.set(key, {name:credit.name, orcid});
-    else if (!seen.orcid) seen.orcid = orcid;
+    if (!seen) contributors.set(key, {name:credit.name, orcid, orcidAuthenticated:credit.orcidAuthenticated === true});
+    else if (!seen.orcid) {seen.orcid = orcid; seen.orcidAuthenticated = credit.orcidAuthenticated === true;}
   }
   const credits = el('p', {className:'card-credits'});
   [...contributors.values()].forEach((credit, index) => {

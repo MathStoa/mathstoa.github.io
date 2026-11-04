@@ -52,7 +52,16 @@ def render_feed(data: dict) -> str:
         element(entry, "link", href=link, rel="alternate", type="text/html")
         element(entry, "published", f"{project['added']}T00:00:00Z")
         element(entry, "updated", f"{project['added']}T00:00:00Z")
-        element(entry, "summary", project["summary"], type="text")
+        # Only republish abstract text when the portable record contains its
+        # licence and attribution. Historical entries still announce a link.
+        if project.get("summaryLicense"):
+            element(entry, "summary", project["summary"], type="text")
+            element(entry, "rights", "Abstract: CC BY 4.0. Attribution: " + "; ".join(project["summaryAttribution"]) + ". Linked repositories retain their own terms.")
+            element(entry, "link", href=project["summaryLicense"], rel="license")
+            for name in project["summaryAttribution"]:
+                element(element(entry, "author"), "name", name)
+        else:
+            element(entry, "summary", "View the project listing for its abstract, contributors and reuse terms.", type="text")
         for category in project["categories"]:
             element(entry, "category", term=category["code"], label=category["label"])
     ET.indent(feed, space="  ")

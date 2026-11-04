@@ -14,5 +14,8 @@
       <input type="email" id="contributor-{{ number }}-email" name="{{ field.html_name }}-email" value="{{ email }}" maxlength="254" placeholder="name@university.edu" autocomplete="off" spellcheck="false" data-part="email">
     </div>
   </div>
+  {% if form.connected_orcid %}
+    <label class="checkbox-field"><input type="checkbox" name="{{ field.html_name }}-own-orcid" value="{{ number }}" data-own-orcid="{{ form.connected_orcid.url }}"{% if own_orcid or orcid_proof %} checked{% endif %}><span>This is my contributor row. Use my connected ORCID: {{ form.connected_orcid.url|cut:'https://orcid.org/' }}.</span></label>
+  {% endif %}
   <button type="button" class="text-button" aria-label="Remove contributor {{ number }}" data-remove-contributor hidden>Remove</button>
 </fieldset>

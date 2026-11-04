@@ -28,7 +28,7 @@
         <ul class="contributors">
           {% for person in submission.collaborators %}
             <li><strong>{{ person.name }}</strong>
-              {% if person.orcid %}<small>ORCID: {{ person.orcid }} · supplied attribution</small>{% else %}<small>ORCID iD not supplied yet</small>{% endif %}
+              {% if person.orcid %}<small>ORCID: {{ person.orcid }} · {% if person.orcid_authentication %}collected from your connected ORCID account{% else %}supplied attribution (unauthenticated){% endif %}</small>{% else %}<small>ORCID iD not supplied yet</small>{% endif %}
               {% if person.email %}<small>Email (private): {{ person.email }}</small>{% else %}<small>Institutional email not supplied yet</small>{% endif %}
             </li>
           {% empty %}<li>No contributors supplied yet.</li>{% endfor %}
@@ -53,6 +53,7 @@
           <form method="post" action="{% url 'submissions:submit' pk=submission.pk %}">
             {% csrf_token %}
             <input type="hidden" name="revision" value="{{ submission.revision }}">
+            <label class="checkbox-field"><input type="checkbox" name="publication_confirmed" required><span>{{ publication_declaration }} <a href="{{ abstract_license }}" target="_blank" rel="noopener noreferrer">Read the CC BY 4.0 licence</a>.</span></label>
             <button type="submit" class="button" aria-describedby="verification-status"{% if not repository_verified %} disabled{% endif %}>Submit saved draft</button>
           </form>
           <p class="private-note">The saved version is sent for moderation. Later edits stay in your draft until you submit them again.</p>

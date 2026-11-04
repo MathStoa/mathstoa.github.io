@@ -7,6 +7,16 @@ The site sends no email and creates no request model, saved export file, or new
 account contact address. The user sends the downloaded JSON file as an attachment
 from their own mail client to the configured public privacy contact.
 
+For complaints about data handling, follow [COMPLAINTS.md](COMPLAINTS.md):
+acknowledge within 30 days, investigate and communicate the outcome. This
+is separate from the normal one-calendar-month privacy-rights deadline.
+Mixed requests run both processes in parallel.
+
+Never-accepted submissions receive a monthly necessity review after six
+months of inactivity, with 30 days’ notice before removal under
+[RETENTION.md](RETENTION.md). This does not limit an individual’s right to
+request erasure sooner.
+
 ## Confirming and receiving a request
 
 Both downloads require an existing-account sign-in within five minutes and
@@ -152,3 +162,28 @@ Reply with what changed, what remains and why, and the applicable backup/log
 limits. Keep a minimal restricted record of completed erasures/corrections so a
 backup restoration does not silently restore removed data. Record the host's
 actual backup and log windows; do not promise immediate erasure of backup copies.
+
+## Contributor information notices: operational follow-up
+
+Email security limits do not remove the Article 14 duty. Review new saved
+drafts and submitted revisions at least weekly against the restricted notice
+record. Collection begins when collaborator details are first saved, not
+when a project is submitted. Unless an applicable exception is documented,
+provide the privacy information within one calendar month of collection, or
+at the first communication/disclosure if sooner. A submitter’s permission
+checkbox is not proof that the contributor already received the notice.
+
+For existing records with no reliable first-collection date, use the
+submission creation date as a conservative review date, and review overdue
+records immediately. Record delivery evidence or the specific exception
+privately, with only the minimum data needed. Do not put contact addresses
+or complaint details in the public repository.
+
+Check queued notices that fail, expire or are suppressed, and arrange a
+proportionate manual follow-up or justified alternative before the deadline.
+Do not bypass abuse limits with bulk mail or treat an SMTP attempt as proof
+of delivery. Do not publish or disclose contributor data while a required
+notice remains unresolved. The current outbox handles security and bounded
+delivery; it does not itself track first collection, Article 14 deadlines,
+exceptions or long-term proof of information. This remains an operator
+procedure until a dedicated notice-tracking workflow is implemented.

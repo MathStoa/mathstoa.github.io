@@ -131,6 +131,25 @@ class PrivacyToolsTests(TestCase):
         self.assertEqual([row["id"] for row in data["projects"]], [str(own.pk)])
         self.assertNotIn("other-private-draft", json.dumps(data))
 
+    def test_current_own_orcid_provenance_exports_without_other_people_or_extra_fields(self):
+        own_orcid = "https://orcid.org/0000-0002-1825-0097"
+        other_orcid = "https://orcid.org/0000-0001-5109-3700"
+        identity = SocialAccount.objects.create(user=self.user, provider="orcid", uid=own_orcid.rsplit("/", 1)[1])
+        now = timezone.now().isoformat()
+        def contributor(identifier):
+            return {"name": "Example contributor", "orcid": identifier,
+                    "orcid_authentication": {"source": "authenticated-account-selection", "provider": "orcid", "identifier": identifier,
+                                             "authenticated_at": now, "collected_at": now, "unexpected_secret": "do-not-export"}}
+        Submission.objects.create(owner=self.user, title="Owned draft", collaborators=[contributor(own_orcid), contributor(other_orcid)])
+        exported = account_export(self.user)["projects"][0]["content"]["collaborators"]
+        self.assertEqual(exported[0]["orcid_authentication"]["identifier"], own_orcid)
+        self.assertEqual(exported[0]["orcid_authentication"]["collected_at"], now)
+        self.assertNotIn("orcid_authentication", exported[1])
+        self.assertNotIn("do-not-export", json.dumps(exported))
+        identity.delete()
+        exported = account_export(self.user)["projects"][0]["content"]["collaborators"]
+        self.assertNotIn("orcid_authentication", exported[0])
+
     def test_request_is_downloaded_without_account_email_or_database_retention(self):
         self.record()
         models = list(apps.get_models())

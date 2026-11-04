@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from .admin import SubmissionAdmin, SubmissionRevisionAdmin
 from .forms import SubmissionForm
+from .publication import accepted_declaration
 from .models import Submission, SubmissionRevision
 
 
@@ -32,7 +33,7 @@ class AbstractMathTests(TestCase):
         self.assertEqual(form.cleaned_data['abstract'], self.source)
 
     def test_snapshot_public_json_and_feed_retain_plaintext_source(self):
-        revision = SubmissionRevision.objects.create(submission=self.submission, number=1, snapshot=self.submission.snapshot(), submitted_by=self.user, status='approved', reviewed_at=timezone.now())
+        revision = SubmissionRevision.objects.create(submission=self.submission, number=1, snapshot={**self.submission.snapshot(), "publication_declaration": accepted_declaration()}, submitted_by=self.user, status='approved', reviewed_at=timezone.now())
         self.submission.published_revision = revision
         self.submission.save()
         self.assertEqual(revision.snapshot['abstract'], self.source)

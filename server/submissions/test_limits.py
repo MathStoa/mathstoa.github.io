@@ -29,7 +29,7 @@ class SubmissionMutationLimitTests(TestCase):
         self.submission.save()
 
     def submit(self):
-        return self.client.post(reverse("submissions:submit", args=[self.submission.pk]), {"revision": self.submission.revision})
+        return self.client.post(reverse("submissions:submit", args=[self.submission.pk]), {"revision": self.submission.revision, "publication_confirmed": "on"})
 
     def new_revision(self):
         self.submission.revision += 1

@@ -175,7 +175,7 @@ class SubmitNoticeTests(TestCase):
 
     def submit(self):
         with self.captureOnCommitCallbacks(execute=True):
-            response = self.client.post(reverse("submissions:submit", args=[self.submission.pk]), {"revision": self.submission.revision}, follow=True)
+            response = self.client.post(reverse("submissions:submit", args=[self.submission.pk]), {"revision": self.submission.revision, "publication_confirmed": "on"}, follow=True)
         self.assertEqual(response.status_code, 200)
         return response
 

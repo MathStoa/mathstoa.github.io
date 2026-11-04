@@ -1,5 +1,7 @@
 """Publication checks for imported metadata and the announcements feed."""
 from copy import deepcopy
+import ast
+from pathlib import Path
 import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
@@ -22,6 +24,19 @@ class ArchiveTests(unittest.TestCase):
 
     def test_repository_archive_is_valid(self):
         load_archive()
+
+    def test_legacy_submission_routes_offer_the_same_versioned_explicit_grant(self):
+        root = Path(__file__).resolve().parents[1]
+        declarations = {}
+        for node in ast.parse((root / "server/submissions/publication.py").read_text()).body:
+            if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name) and node.targets[0].id in {"DECLARATION", "DECLARATION_VERSION"}:
+                declarations[node.targets[0].id] = ast.literal_eval(node.value)
+        for path in ("docs/submit.html", "docs/assets/submit.js", ".github/ISSUE_TEMPLATE/submit-project.yml"):
+            with self.subTest(path=path):
+                text = (root / path).read_text()
+                self.assertIn(declarations["DECLARATION"], text)
+                self.assertIn("Declaration version " + declarations["DECLARATION_VERSION"], text)
+                self.assertIn("https://creativecommons.org/licenses/by/4.0/", text)
 
     def test_examples_do_not_announce_participation(self):
         root = ET.fromstring(render_feed(self.data))
@@ -72,6 +87,8 @@ class ArchiveTests(unittest.TestCase):
         project["example"] = False
         project["title"] = 'A <script>alert("test")</script> & B'
         project["summary"] = "a < b & b > c"
+        project["summaryLicense"] = "https://creativecommons.org/licenses/by/4.0/"
+        project["summaryAttribution"] = ["Ada Example", "Ben Example"]
         xml = render_feed(self.data)
         root = ET.fromstring(xml)
         entries = root.findall(f"{{{ATOM}}}entry")
@@ -79,6 +96,28 @@ class ArchiveTests(unittest.TestCase):
         self.assertEqual(entries[0].find(f"{{{ATOM}}}title").text, project["title"])
         self.assertNotIn("<script>", xml)
         self.assertIn("project.html?id=test-project", xml)
+        self.assertEqual(entries[0].find(f"{{{ATOM}}}summary").text, project["summary"])
+        self.assertEqual([author.find(f"{{{ATOM}}}name").text for author in entries[0].findall(f"{{{ATOM}}}author")], project["summaryAttribution"])
+        self.assertIn("CC BY 4.0", entries[0].find(f"{{{ATOM}}}rights").text)
+        self.assertEqual(entries[0].find(f"{{{ATOM}}}link[@rel='license']").attrib["href"], project["summaryLicense"])
+
+    def test_legacy_feed_does_not_invent_licence_or_republish_unrecorded_abstract(self):
+        self.data["projects"][0]["example"] = False
+        xml = render_feed(self.data)
+        entry = ET.fromstring(xml).find(f"{{{ATOM}}}entry")
+        self.assertNotIn(self.data["projects"][0]["summary"], xml)
+        self.assertIsNone(entry.find(f"{{{ATOM}}}link[@rel='license']"))
+
+    def test_abstract_licence_requires_attribution_and_cannot_cover_external_work(self):
+        project = self.data["projects"][0]
+        project["summaryLicense"] = "https://creativecommons.org/licenses/by/4.0/"
+        with self.assertRaises(ArchiveError):
+            validate_archive(self.data)
+        project["summaryAttribution"] = ["Example contributors"]
+        validate_archive(self.data)
+        project["summaryLicense"] = "https://example.org/unverified-license"
+        with self.assertRaises(ArchiveError):
+            validate_archive(self.data)
 
     def test_feed_retains_identity_when_its_host_changes(self):
         self.data["projects"][0]["example"] = False
@@ -114,7 +153,12 @@ class ArchiveTests(unittest.TestCase):
     def test_optional_public_contributor_identifiers(self):
         credit = self.data["projects"][0]["credits"][0]
         credit["orcid"] = "https://orcid.org/0000-0002-1825-0097"
+        credit["orcidAuthenticated"] = False
         validate_archive(self.data)
+        credit["orcidAuthenticated"] = "true"
+        with self.assertRaisesRegex(ArchiveError, "must be a boolean"):
+            validate_archive(self.data)
+        credit["orcidAuthenticated"] = False
         for key, value in (("email", "private@example.org"), ("affiliation", "Example University"), ("role", "Author")):
             with self.subTest(key=key):
                 credit[key] = value

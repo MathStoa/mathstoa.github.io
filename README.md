@@ -63,6 +63,17 @@ Account contact details, sign-in identifiers, and session records are private. P
 
 Project credit belongs to the people and groups responsible for the work. An archive listing does not make mathStoa a contributor to the research. Each project sets its own contribution and credit policy; see [our contribution policy](CONTRIBUTING.md) for the requirements for listings.
 
-The site code is available under the [MIT License](LICENSE). Original archive summaries contributed to mathStoa are available under [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/): credit mathStoa, retain any supplied contributor attribution, and link to the source record and license. Mention changes when adapting a summary.
+The site code is available under the [MIT License](LICENSE). New submissions include an explicit [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/) grant for the abstract, retained with each submitted revision. Where this grant is recorded, the listing, data export and feed identify the abstract licence and supplied contributor attribution. Credit those contributors, link to the source record and licence, and indicate modifications. Historical records are not retrospectively marked as accepting the new declaration; check each listing’s licence information before reuse. Linked repositories retain their own terms.
+
+For the legacy GitHub route, moderators must retain the issue permalink, the submitting account, the submitted abstract and contributor attribution, and the exact accepted declaration and its version before adding `summaryLicense` and `summaryAttribution` to an archive record. Record the acceptance time from the submitted issue or a later explicit confirmation, rather than inventing it from a migration date. Treat ORCID iDs supplied in public issues as unauthenticated. An old issue with the earlier permission statement is not evidence that the new declaration was accepted: obtain a new confirmation or leave the abstract licence metadata unset.
 
 External repositories, linked documents, quoted material, and other third-party content retain their own rights and licenses. Listing them does not change those terms. mathStoa is an independent pilot and is not affiliated with arXiv.
+
+## Legal and operational procedures
+
+[Retention reviews](RETENTION.md), [reports and complaints](COMPLAINTS.md), and
+[Online Safety Act scope and risk assessment](ONLINE_SAFETY.md) record the
+procedures and the remaining operational evidence. A draft assessment or
+unsigned agreement is not a completed compliance check. Keep private
+agreements, addresses, correspondence and supporting account evidence out
+of this public repository.

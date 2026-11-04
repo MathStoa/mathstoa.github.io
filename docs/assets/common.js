@@ -14,6 +14,22 @@ export function safeURL(value) {
   try { const u = new URL(value); return u.protocol === 'https:' && !u.username && !u.password ? u.href : '#'; }
   catch { return '#'; }
 }
+export function suppliedOrcidLink(credit) {
+  // Only server-recorded OAuth-account selection yields authenticated metadata.
+  const authenticated = credit.orcidAuthenticated === true;
+  return element('span', {className:'supplied-orcid'},
+    element('a', {href:safeURL(credit.orcid), 'aria-label':'ORCID record of ' + credit.name + (authenticated ? '' : ' (unauthenticated)')},
+      element('img', {src:authenticated ? 'assets/orcid.svg' : 'assets/orcid-unauthenticated.svg', alt:'ORCID iD', width:'16', height:'16'}),
+      ' ' + credit.orcid.slice('https://orcid.org/'.length)), authenticated ? '' : ' (unauthenticated)');
+}
+export function abstractLicense(project) {
+  if (project.summaryLicense === 'https://creativecommons.org/licenses/by/4.0/' && Array.isArray(project.summaryAttribution) && project.summaryAttribution.length) {
+    return element('p', {className:'abstract-license'}, 'Abstract: ',
+      element('a', {href:project.summaryLicense}, 'CC BY 4.0'),
+      '. Attribution: ' + project.summaryAttribution.join('; ') + '. Linked repositories retain their own terms.');
+  }
+  return element('p', {className:'abstract-license'}, 'The abstract’s reuse terms have not been recorded for this listing. Check with the contributor before reusing it. Linked repositories retain their own terms.');
+}
 export async function loadArchive() {
   const response = await fetch('data/projects.json');
   if (!response.ok) throw new Error('Archive unavailable');

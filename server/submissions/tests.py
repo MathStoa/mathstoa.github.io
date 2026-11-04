@@ -46,7 +46,7 @@ class SubmissionTests(TestCase):
         return Submission.objects.latest("created_at")
 
     def submit(self, submission):
-        response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": submission.revision})
+        response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": submission.revision, "publication_confirmed": "on"})
         self.assertEqual(response.status_code, 302)
         return submission.revisions.get(number=submission.revision)
 
@@ -142,7 +142,7 @@ class SubmissionTests(TestCase):
 
     def test_draft_can_be_incomplete_but_cannot_be_submitted(self):
         submission = self.create_submission({"title": "Early draft", "revision": "1"})
-        response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1})
+        response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1, "publication_confirmed": "on"})
         self.assertEqual(response.status_code, 400)
         self.assertFalse(submission.revisions.exists())
 
@@ -173,7 +173,7 @@ class SubmissionTests(TestCase):
         self.assertEqual(form.errors["collaborators"], ["Contributor 2: add their ORCID iD."])
         submission = self.create_submission({**self.payload, **rows})
         self.assertContains(self.client.get(reverse("submissions:detail", args=[submission.pk])), "ORCID iD not supplied yet")
-        response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1})
+        response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1, "publication_confirmed": "on"})
         self.assertContains(response, "Contributor 2: add their ORCID iD.", status_code=400)
         self.assertFalse(submission.revisions.exists())
 
@@ -254,7 +254,7 @@ class SubmissionTests(TestCase):
         self.assertEqual(self.client.post(reverse("submissions:edit", args=[submission.pk]), without_rows).status_code, 302)
         submission.refresh_from_db()
         self.assertEqual(submission.collaborators, [])
-        response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": submission.revision})
+        response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": submission.revision, "publication_confirmed": "on"})
         self.assertContains(response, "Add at least one contributor.", status_code=400)
 
     def test_revision_submitted_before_the_doi_requirement(self):
@@ -278,7 +278,7 @@ class SubmissionTests(TestCase):
         payload = {key: value for key, value in self.payload.items() if key != "permission_confirmed"}
         submission = self.create_submission(payload)
         self.assertFalse(submission.license_confirmed)
-        response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1})
+        response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1, "publication_confirmed": "on"})
         self.assertEqual(response.status_code, 400)
         self.assertFalse(submission.revisions.exists())
         self.assertTrue(self.create_submission().license_confirmed)
@@ -286,13 +286,13 @@ class SubmissionTests(TestCase):
     def test_stale_submit_does_not_submit_unseen_draft(self):
         submission = self.create_submission()
         self.client.post(reverse("submissions:edit", args=[submission.pk]), self.payload)
-        self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1})
+        self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1, "publication_confirmed": "on"})
         self.assertFalse(submission.revisions.exists())
 
     def test_submission_requires_repository_verification(self):
         submission = self.create_submission()
         self.verification.side_effect = ValidationError("Verify this repository first.")
-        response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1}, follow=True)
+        response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1, "publication_confirmed": "on"}, follow=True)
         self.assertContains(response, "Verify this repository first.")
         self.assertFalse(submission.revisions.exists())
 
@@ -370,7 +370,7 @@ class SubmissionTests(TestCase):
         self.assertIsNone(submission.published_revision)
         response = self.client.get(reverse("submissions:detail", args=[submission.pk]))
         self.assertContains(response, "Please explain the contribution policy.")
-        self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1})
+        self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1, "publication_confirmed": "on"})
         self.assertEqual(submission.revisions.count(), 1)
         self.client.post(reverse("submissions:edit", args=[submission.pk]), self.payload)
         submission.refresh_from_db()
@@ -389,7 +389,7 @@ class SubmissionTests(TestCase):
         for secret in (self.owner.email, self.staff.email, "Private editorial note", "token_hash", "submitted_by", "owner_id"):
             self.assertNotContains(response, secret)
         project = next(p for p in response.json()["projects"] if p["id"] == submission.public_id)
-        self.assertEqual(project["credits"], [{"name": "Anna Example", "orcid": "https://orcid.org/0000-0002-1825-0097"}])
+        self.assertEqual(project["credits"], [{"name": "Anna Example", "orcid": "https://orcid.org/0000-0002-1825-0097", "orcidAuthenticated": False}])
         self.assertEqual(project["doi"], "https://doi.org/10.5281/zenodo.1234567")
         self.assertEqual(project["readingUrl"], "https://example.org/research")
         self.assertFalse(project["example"])
@@ -481,7 +481,7 @@ class VerificationBoundaryTests(TestCase):
         )
 
     def test_real_gate_refuses_missing_proof(self):
-        response = self.client.post(reverse("submissions:submit", args=[self.submission.pk]), {"revision": 1}, follow=True)
+        response = self.client.post(reverse("submissions:submit", args=[self.submission.pk]), {"revision": 1, "publication_confirmed": "on"}, follow=True)
         self.assertContains(response, "must verify repository authorization")
         self.assertFalse(self.submission.revisions.exists())
 
@@ -490,7 +490,7 @@ class VerificationBoundaryTests(TestCase):
         repository = Repository(repository_id=10, owner_id=20, owner_type="User", owner="example", name="research", default_branch="main")
         self.make_proof()
         with patch("repository_verification.services.GitHubClient.resolve_repository", return_value=repository):
-            response = self.client.post(reverse("submissions:submit", args=[self.submission.pk]), {"revision": 1})
+            response = self.client.post(reverse("submissions:submit", args=[self.submission.pk]), {"revision": 1, "publication_confirmed": "on"})
             self.assertEqual(response.status_code, 302)
             first = self.submission.revisions.get(number=1)
             first.review(self.staff, approve=True)
@@ -502,7 +502,7 @@ class VerificationBoundaryTests(TestCase):
             self.submission.revision = 2
             self.submission.title = "Unreviewed changes"
             self.submission.save()
-            self.client.post(reverse("submissions:submit", args=[self.submission.pk]), {"revision": 2})
+            self.client.post(reverse("submissions:submit", args=[self.submission.pk]), {"revision": 2, "publication_confirmed": "on"})
         changed_owner = Repository(repository_id=10, owner_id=99, owner_type="User", owner="example", name="research", default_branch="main")
         with patch("repository_verification.services.GitHubClient.resolve_repository", return_value=changed_owner):
             second = self.submission.revisions.get(number=2)

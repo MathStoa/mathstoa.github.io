@@ -15,6 +15,7 @@ from accounts.middleware import limit_action
 from .forms import SubmissionForm, review_form
 from .models import Submission, SubmissionRevision
 from .notifications import notify_contributors
+from .publication import ABSTRACT_LICENSE, DECLARATION, accepted_declaration
 
 
 def accessible(user):
@@ -32,7 +33,7 @@ def create(request):
         limited = limit_action(request, action="submission_create", user=request.user, retry_after=300)
         if limited:
             return limited
-    form = SubmissionForm(request.POST or None)
+    form = SubmissionForm(request.POST or None, user=request.user)
     if request.method == "POST" and form.is_valid():
         submission = form.save(commit=False)
         submission.owner = request.user
@@ -51,6 +52,7 @@ def detail(request, pk):
         "repository_verified": has_current_verification(submission),
         # Once this draft revision has been submitted, the page states the outcome instead of offering submission.
         "current_revision": submission.revisions.filter(number=submission.revision).first(),
+        "publication_declaration": DECLARATION, "abstract_license": ABSTRACT_LICENSE,
     }
     return render(request, "submissions/detail.html", context)
 
@@ -63,7 +65,7 @@ def edit(request, pk):
             limited = limit_action(request, action="submission_edit", user=request.user, key=str(submission.pk), retry_after=300)
             if limited:
                 return limited
-        form = SubmissionForm(request.POST or None, instance=submission)
+        form = SubmissionForm(request.POST or None, instance=submission, user=request.user)
         if request.method == "POST" and form.is_valid():
             if form.cleaned_data["revision"] != submission.revision:
                 form.add_error(None, "Someone saved a newer draft. Reload this page before editing so their changes are not overwritten.")
@@ -94,17 +96,24 @@ def submit(request, pk):
         limited = limit_action(request, action="submission_submit", user=request.user, key=str(submission.pk))
         if limited:
             return limited
-        form = review_form(submission)
+        form = review_form(submission, user=request.user)
         if not form.is_valid():
             messages.error(request, "Please complete the highlighted details before submitting.")
             return render(request, "submissions/form.html", {"form": form, "submission": submission}, status=400)
+        if request.POST.get("publication_confirmed") != "on":
+            messages.error(request, "Please read and accept the abstract licence and permission declaration before submitting this version.")
+            return redirect("submissions:detail", pk=pk)
         from repository_verification.services import require_verified
         try:
             require_verified(submission, actor=request.user)
         except ValidationError as error:
             messages.error(request, "; ".join(error.messages))
             return redirect("submissions:detail", pk=pk)
-        revision, created = SubmissionRevision.objects.get_or_create(submission=submission, number=submission.revision, defaults={"snapshot": submission.snapshot(), "submitted_by": request.user})
+        snapshot = submission.snapshot()
+        # Record only the declaration just accepted in this request. Legacy
+        # snapshots and saved permission booleans do not prove this acceptance.
+        snapshot["publication_declaration"] = accepted_declaration()
+        revision, created = SubmissionRevision.objects.get_or_create(submission=submission, number=submission.revision, defaults={"snapshot": snapshot, "submitted_by": request.user})
         if created:
             # The durable outbox commits with the revision; the worker sends later.
             notify_contributors(revision)
@@ -119,6 +128,10 @@ def submit(request, pk):
 def public_archive():
     path = Path(getattr(settings, "ARCHIVE_PATH", Path(__file__).resolve().parents[2] / "docs/data/projects.json"))
     archive = json.loads(path.read_text(encoding="utf-8"))
+    for project in archive["projects"]:
+        for credit in project["credits"]:
+            if credit.get("orcid"):
+                credit.setdefault("orcidAuthenticated", False)
     for submission in Submission.objects.exclude(published_revision=None).select_related("published_revision"):
         archive["projects"].append(submission.published_revision.public_project())
     return archive

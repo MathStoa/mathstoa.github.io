@@ -1,4 +1,4 @@
-import {element as el, REPOSITORY, safeURL} from './common.js?v=66a620fc1606';
+import {element as el, REPOSITORY, safeURL} from './common.js?v=30b3f113a369';
 const form=document.querySelector('#submission-form');
 const result=document.querySelector('#submission-result');
 const subjectBoxes=[...form.querySelectorAll('input[name="secondary"]')];
@@ -21,7 +21,7 @@ form.addEventListener('submit',event=>{
   doi.setCustomValidity('');
   if(fields.doi.trim() && !/^(?:(?:https?:\/\/)?(?:dx\.)?doi\.org\/|doi:\s*)?10\.\d{4,9}(?:\.\d+)*\/[-._;()\/:a-z0-9]+$/i.test(fields.doi.trim())) {doi.setCustomValidity('Please enter a DOI such as 10.5281/zenodo.1234567, or its https://doi.org/ link.');doi.reportValidity();return;}
   const lines=[['Project title',fields.title],['Public repository',fields.repository],['DOI',fields.doi.trim()||'Not provided'],['Project website',fields.reading.trim()||'Not provided'],['Short abstract',fields.abstract],['Main subject',fields.category],['Further subjects',secondary.join(', ')||'None'],['Contributors',fields.collaborators]];
-  const body=lines.map(([label,value])=>'### '+label+'\n\n'+String(value).trim()).join('\n\n')+'\n\n### Submission confirmation\n\n- [x] I maintain this project or have permission to submit it, have read the submission guidelines, and have the right to publish its abstract under CC BY 4.0.\n- [x] I understand that listing is not peer review.\n';
+  const body=lines.map(([label,value])=>'### '+label+'\n\n'+String(value).trim()).join('\n\n')+'\n\n### Submission confirmation\n\n- [x] I maintain this project or have permission to submit it and its contributor details. I have the necessary rights and grant the public permission to reuse this abstract under Creative Commons Attribution 4.0 International (CC BY 4.0), with attribution to the named project contributors. I understand that this licence is irrevocable and allows commercial reuse and adaptations. Linked repositories retain their own terms. [Read the CC BY 4.0 licence](https://creativecommons.org/licenses/by/4.0/). Declaration version 2026-11-04.1.\n- [x] I understand that listing is not peer review.\n';
   const url=new URL(REPOSITORY+'/issues/new');
   url.searchParams.set('title','[Project] '+fields.title.trim());
   url.searchParams.set('body',body);

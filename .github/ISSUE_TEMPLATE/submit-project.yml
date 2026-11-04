@@ -93,7 +93,7 @@ body:
     attributes:
       label: Submission confirmation
       options:
-        - label: I maintain this project or have permission to submit it, have read the submission guidelines, and have the right to publish its abstract under CC BY 4.0.
+        - label: I maintain this project or have permission to submit it and its contributor details. I have the necessary rights and grant the public permission to reuse this abstract under Creative Commons Attribution 4.0 International (CC BY 4.0), with attribution to the named project contributors. I understand that this licence is irrevocable and allows commercial reuse and adaptations. Linked repositories retain their own terms. [Read the CC BY 4.0 licence](https://creativecommons.org/licenses/by/4.0/). Declaration version 2026-11-04.1.
           required: true
         - label: I understand that acceptance is archive moderation, not mathematical peer review or an endorsement of correctness.
           required: true

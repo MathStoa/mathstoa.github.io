@@ -14,7 +14,8 @@ ROOT = Path(__file__).resolve().parents[1]
 ARCHIVE = ROOT / "docs" / "data" / "projects.json"
 FIELDS = {"id", "title", "summary", "categories", "repositoryUrl", "credits", "added", "example"}
 # The DOI and project website are optional.
-OPTIONAL_FIELDS = {"doi", "readingUrl"}
+OPTIONAL_FIELDS = {"doi", "readingUrl", "summaryLicense", "summaryAttribution"}
+ABSTRACT_LICENSE = "https://creativecommons.org/licenses/by/4.0/"
 DOI_URL = re.compile(r"https://doi\.org/10\.\d{4,9}(?:\.\d+)*/[-._;()/:A-Za-z0-9]+")
 
 
@@ -83,6 +84,11 @@ def validate_archive(data: object) -> dict:
         ids.add(slug)
         for field in ("title", "summary"):
             text(project[field], f"{path}.{field}", 200 if field == "title" else 10000)
+        if "summaryLicense" in project or "summaryAttribution" in project:
+            if project.get("summaryLicense") != ABSTRACT_LICENSE:
+                fail(f"{path}.summaryLicense", "must be the CC BY 4.0 licence URL when abstract attribution is supplied")
+            for author in sequence(project.get("summaryAttribution"), f"{path}.summaryAttribution", 100):
+                text(author, f"{path}.summaryAttribution", 200)
         if type(project["example"]) is not bool:
             fail(f"{path}.example", "must be true or false, never a string")
         for field in ("repositoryUrl", "readingUrl"):
@@ -107,8 +113,10 @@ def validate_archive(data: object) -> dict:
             codes.add(code)
             text(category["label"], f"{path}.categories.label", 100)
         for credit in sequence(project["credits"], f"{path}.credits", 100):
-            if not isinstance(credit, dict) or "name" not in credit or set(credit) - {"name", "orcid"}:
+            if not isinstance(credit, dict) or "name" not in credit or set(credit) - {"name", "orcid", "orcidAuthenticated"}:
                 fail(f"{path}.credits", "each credit needs a name, with an optional orcid")
+            if "orcidAuthenticated" in credit and ("orcid" not in credit or type(credit["orcidAuthenticated"]) is not bool):
+                fail(f"{path}.credits.orcidAuthenticated", "must be a boolean attached to an ORCID identifier")
             text(credit["name"], f"{path}.credits.name", 200)
             if "orcid" in credit:
                 identifier = text(credit["orcid"], f"{path}.credits.orcid", 37)

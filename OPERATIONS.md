@@ -1,7 +1,8 @@
 # Ongoing maintenance routine
 
-Proposal for running the mathStoa account service on Render, written against
-commit `5e1842a`; accept it or amend the cadences and thresholds. Where SETUP.md
+Operating procedures for the mathStoa account service on Render.
+Legal handling and retention sections reviewed 4 November 2026; infrastructure
+observations below still need the indicated account-level verification. Where SETUP.md
 gives Docker Compose commands, use the web service's **Shell** tab (working
 directory `/app`) or `psql` with the database's external connection string.
 Dashboard names as of November 2026. Owner of every row: the operator.
@@ -15,8 +16,10 @@ Dashboard names as of November 2026. Owner of every row: the operator.
 | Weekly | Contributor notification worker | Render → **Logs**, filter `Notification delivery`; `python server/manage.py process_notification_queue` for aggregate counts | Worker completes roughly every minute and outstanding count stays small. Moderator submission alerts are disabled; use the moderation queue. | Worker failures/timeouts, a growing backlog, or no successful run for several minutes. SMTP failures and rate limits may suppress notices; inspect provider delivery logs. |
 | Weekly | Backups | Render → database → **Recovery**, **Backups** | Point-in-time window present (observed: 3 days) and latest export recent; export retention is per the Render plan, recorded below. | Shorter window, missing export, database not "Available". |
 | Weekly | Pending submissions | `/admin/submissions/submissionrevision/?status__exact=pending`; the **Moderation queue** count in the site header | Moderate each pending revision following CONTRIBUTING.md's maintainer workflow: approve, or request changes with a note. A moderator may approve their own project; the decision records who made it. | A revision pending for more than a week, or a queue count that does not match pending records. |
-| Weekly | Privacy mailbox | `PUBLIC_CONTACT_EMAIL` mailbox | Log receipt date, action and deadline in the restricted correspondence record; verify files at `/admin/privacy-requests/verify/` (PRIVACY_REQUESTS.md). UK GDPR: one month from receipt, extendable by two months for complex requests if the requester is told. | A request unacknowledged after a week, or within a week of its deadline. |
-| Weekly | CI and dependencies | GitHub → **Actions**, **Security** | Latest run on `main` green, including `pip-audit --strict` (`.github/workflows/test.yml`). It runs only on push and there is no Dependabot configuration; proposed: enable Dependabot alerts or add a weekly `schedule` trigger. | Red run on `main`, open alert, or a Django/allauth security release not deployed within a week. |
+| Weekly | Contributor information notices | Private draft/revision review and restricted notice record | Apply PRIVACY_REQUESTS.md Article 14 follow-up from first saved collection; resolve failed/suppressed/expired notices before the legal deadline or first disclosure. | Unrecorded delivery/exception, overdue draft notice, or publication with unresolved required information. |
+| Weekly | Privacy mailbox | `PUBLIC_CONTACT_EMAIL` mailbox | Log receipt date, action and deadline in the restricted correspondence record; apply COMPLAINTS.md to complaints (acknowledge within 30 days, investigate and give updates/outcome), separately from privacy-rights requests; verify files at `/admin/privacy-requests/verify/` (PRIVACY_REQUESTS.md). UK GDPR: one month from receipt, extendable by two months for complex requests if the requester is told. | A request unacknowledged after a week, or within a week of its deadline. |
+| Weekly | CI and dependencies | GitHub → **Actions**, **Security** | Latest run on `main` green, including `pip-audit --strict` (`.github/workflows/test.yml`). The dependency audit also runs on the weekly schedule; check its result alongside release checks. | Red run on `main`, open alert, or a Django/allauth security release not deployed within a week. |
+| Monthly | Never-accepted submission review | `python server/manage.py review_submission_retention` | Review six-month inactivity candidates under RETENTION.md, record necessity and next review, or give the owner 30 days’ notice of proposed removal. The report sends no notices and changes no records. | Review missed, unjustified retention, or expired notice with no decision. |
 | Monthly | Cleanup preview | Render → **Shell** | `python server/manage.py purge_transient_data --dry-run` prints counts. "Skipped" means the hourly run holds the lock; retry. | Hundreds of `sessions` or `cache_entries` (hourly cleanup failing), or unexpected account or draft counts. |
 | Monthly | Database storage | Render → database → **Metrics**; `psql` | Compare usage with the plan limit; `SELECT count(*) FILTER (WHERE expires >= now()), count(*) FROM mathstoa_cache;`. The security cache never evicts unexpired counters (`server/accounts/security_cache.py`), so a flood grows the table for up to an hour. | Usage above 70% of the plan, thousands of unexpired rows, or expired rows surviving an hour. |
 | Quarterly | MFA and recovery codes | `/accounts/2fa/` (recent MFA required); Render, GitHub, ORCID, GitLab, Porkbun and mailbox account settings | Regenerate at three or fewer unused codes; store offline (STAFF_SECURITY.md); confirm the authenticator app is backed up; once a year sign in with one code, then regenerate. MFA on for every platform account, with recovery codes in the password manager; Render team and GitHub collaborators are only the operator. | Fewer than three codes, codes kept only on the authenticator device, a rejected code, an account without MFA, or an unknown member. |
@@ -89,9 +92,12 @@ restoration test send messages to real contributors.
 **Breach handling.** A personal data breach is any accidental or unlawful
 loss, alteration, disclosure of or access to personal data, including an
 availability loss such as a failed restore. Whoever notices one tells the
-other controller at once (RECORD_OF_PROCESSING.md). Tommaso Rosati decides,
-within 72 hours of either controller becoming aware, whether it is likely to
-risk people's rights and freedoms; if so, report it to the ICO
+other controller at once (RECORD_OF_PROCESSING.md). Both share responsibility
+for assessing the risk to people's rights and freedoms without delay. Either
+may coordinate the incident, recording who is doing so; neither needs to wait
+for the other's availability before taking urgent protective action or meeting
+a notification deadline. If notification is required, report to the ICO within
+72 hours of either controller becoming aware
 (ico.org.uk/for-organisations/report-a-breach, or 0303 123 1113), and if the
 risk is high, tell the people affected without undue delay. Record **every**
 breach, reported or not, in the breach register: a restricted spreadsheet
@@ -127,7 +133,23 @@ recovery codes are the root of trust and belong in the password manager. Nobody 
 | Unverified sign-ups | 7 days with no sign-in, verified email or provider identity | `retention.py` |
 | Never-submitted drafts | 90 days without saved or verification activity | `retention.py` |
 | Accounts without responsibilities | 365 days after creation or last sign-in, whichever is later | `retention.py` |
-| Submitted revisions, moderation decisions, published records | No automatic deletion; by request only | PRIVACY_REQUESTS.md |
-| Render backups and logs, and Cloudflare edge logs | Point-in-time recovery 3 days (observed); exports and platform logs per the Render plan; edge-network logs (IP addresses, full URLs) under the provider's own retention. Record both here: ____ | Render |
+| Never-accepted submissions and related records | Monthly necessity review after six calendar months of inactivity; 30 days’ notice before removal; justified exceptions reviewed within three months | RETENTION.md; read-only `review_submission_retention`; reviewed erasure |
+| Previously published revisions and moderation records | Retain while needed for scholarly attribution or a documented legal purpose; periodic necessity/rights review, not blanket indefinite retention | PRIVACY_REQUESTS.md |
+| Render backups and logs, and Cloudflare edge logs | Point-in-time recovery 3 days (observed); exports and platform logs per the Render plan; edge-network logs (IP addresses, full URLs) under the provider's own retention. Confirm actual account windows and dated evidence in the restricted provider/transfer record; unverified until recorded | Render |
 | Off-platform dumps (proposed) | Last three monthly dumps, about 90 days | Operator |
 | Privacy correspondence (proposed) | Delete request files and exports at closure; keep date, action and outcome two years | Mailbox; restricted record |
+
+## Contract and transfer evidence
+
+The restricted provider/transfer record separates current published provider
+terms from account evidence still required. Keep it outside this repository. Render and Porkbun publish incorporated processing
+terms; record the actual customer/version and transfer safeguards privately.
+Simon’s moderation and shared-correspondence access requires the completed
+controller-to-controller transfer agreement and assessment; a draft does not
+resolve this. Do not put personal service addresses, mailbox destinations,
+signatures or security credentials in this repository.
+
+For reported content use COMPLAINTS.md, including the non-destructive
+`unpublish_submission` preview and reviewed execution. Keep the actual
+Online Safety Act scope decision, risk reviews and children’s-access
+evidence current under ONLINE_SAFETY.md.
