@@ -4,7 +4,7 @@
 {% block branding %}<div id="site-name"><a href="{% url 'admin:index' %}">math<span lang="el">Στοά</span> administration</a></div>{% endblock %}
 {% block extrastyle %}
   {{ block.super }}
-  <link rel="stylesheet" href="{% static 'admin-navigation.css' %}">
+  <link rel="stylesheet" href="{% static 'admin-navigation.css' %}?v={{ admin_navigation_css_version }}">
 {% endblock %}
 {% block nav-global %}
   {% include "includes/main_navigation.html" %}

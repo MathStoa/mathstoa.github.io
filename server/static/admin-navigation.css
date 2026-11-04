@@ -1,5 +1,5 @@
 /* Keep Django's model navigation and security controls, plus the site menu. */
-#header{flex-wrap:wrap;gap:16px}#header .main-navigation{display:flex;flex:1 0 100%;width:100%;min-width:0;flex-wrap:wrap;align-items:center;gap:12px 20px;font-size:14px;line-height:1.5}#header .main-navigation>a,#header .main-navigation>form{max-width:100%;flex:0 0 auto}#header .main-navigation form{display:inline;margin:0}#header .main-navigation button{padding:0;border:0;background:none;color:var(--header-link-color);font:inherit;cursor:pointer}#header .main-navigation button:hover{text-decoration:underline}#header .main-navigation .button{padding:6px 10px;border:1px solid currentColor;border-radius:2px}#header .main-navigation a:focus-visible,#header .main-navigation button:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+#header{flex-wrap:wrap;gap:16px}#header .main-navigation{display:flex;flex:1 0 100%;width:100%;min-width:0;flex-wrap:wrap;align-items:center;gap:12px 20px;font-size:14px;line-height:1.5}#header .main-navigation>a,#header .main-navigation>form{max-width:100%;flex:0 0 auto}#header .main-navigation form{display:inline;margin:0}#header .main-navigation button{padding:0;border:0;background:none;color:var(--header-link-color);font:inherit;cursor:pointer}#header .main-navigation .button{padding:6px 10px;border:1px solid currentColor;border-radius:2px}#header .main-navigation a:focus-visible,#header .main-navigation button:focus-visible{outline:2px solid currentColor;outline-offset:3px}
 @media(max-width:1024px){#header{flex-wrap:nowrap}#header .main-navigation{flex:0 0 auto}}
 @media(max-width:767px){#header .main-navigation{justify-content:center;gap:12px 16px;font-size:13px}}
 
@@ -14,9 +14,27 @@
 #header .main-navigation .account-menu-panel form{display:block}
 #header .main-navigation .account-menu-panel button{display:block;padding:8px 0;color:var(--link-fg);line-height:1.5}
 @media(max-width:767px){#header .main-navigation{position:relative}#header .account-menu{position:static}#header .account-menu-panel{left:0;right:0;margin:0 auto}}
-#header .account-menu>summary:hover{text-decoration:underline}
 #header .account-menu>summary::after{display:inline-block}
 #header .account-menu[open]>summary::after{transform:rotate(180deg)}
 #header .account-menu-panel>a,#header .main-navigation .account-menu-panel button{padding:8px;border-radius:2px}
 #header .main-navigation .account-menu-panel button{width:100%;text-align:left}
-#header .account-menu-panel>a:hover,#header .account-menu-panel>a:focus-visible,#header .main-navigation .account-menu-panel button:hover,#header .main-navigation .account-menu-panel button:focus-visible{background:var(--darkened-bg)}
+
+/* Match the public site's text-link treatment without changing admin colours. */
+#header .main-navigation a:not(.button),
+#header .main-navigation .text-button,
+#header .account-menu > summary {
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  text-underline-offset: 3px;
+  text-decoration-skip-ink: auto;
+}
+#header .main-navigation a:not(.button):hover,
+#header .main-navigation a:not(.button):focus-visible,
+#header .main-navigation .text-button:hover,
+#header .main-navigation .text-button:focus-visible,
+#header .account-menu > summary:hover,
+#header .account-menu > summary:focus-visible {
+  text-decoration-thickness: 2px;
+  text-decoration-color: currentColor;
+}
