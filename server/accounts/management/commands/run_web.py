@@ -20,7 +20,7 @@ class Command(BaseCommand):
             "--access-logformat", '%(t)s "%(m)s" %(s)s %(b)s',
         ]
         cleanup_command = [sys.executable, str(server / "manage.py"), "purge_transient_data", "--skip-checks"]
-        notification_command = [sys.executable, str(server / "manage.py"), "process_notification_queue", "--batch-size", "20", "--skip-checks"]
+        notification_command = [sys.executable, str(server / "manage.py"), "process_notification_queue", "--batch-size", "20"]
         status = WebSupervisor(web_command, cleanup_command, notification_command=notification_command,
                                log=self.stdout.write).run()
         if status:

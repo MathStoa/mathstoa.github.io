@@ -373,13 +373,21 @@ class NotificationWorkerCommandTests(SimpleTestCase):
         self.assertEqual(output.getvalue(), "")
 
     def test_container_entrypoint_starts_bounded_queue_worker(self):
+        from submissions.management.commands.process_notification_queue import Command
+
         with patch("accounts.management.commands.run_web.WebSupervisor") as supervisor:
             supervisor.return_value.run.return_value = 0
             call_command("run_web", stdout=StringIO())
         args, kwargs = supervisor.call_args
         self.assertIn("purge_transient_data", args[1])
         worker_command = kwargs["notification_command"]
-        self.assertEqual(worker_command[2:], ["process_notification_queue", "--batch-size", "20", "--skip-checks"])
+        # Exercise the real CLI parser: call_command alone accepts options that
+        # Django omits from the CLI when requires_system_checks is empty.
+        counts = dict(sent=0, failed=0, suppressed=0, cancelled=0, expired=0, remaining=0)
+        with patch("submissions.management.commands.process_notification_queue.process_notification_queue",
+                   return_value=counts) as process:
+            Command(stdout=StringIO()).run_from_argv(worker_command[1:])
+        process.assert_called_once_with(batch_size=20)
         supervisor.return_value.run.assert_called_once_with()
 
 
