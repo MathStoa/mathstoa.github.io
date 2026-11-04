@@ -60,6 +60,8 @@
   padding: 21px 0;
 }
 .card-main { min-width: 0; }
+.card-meta { min-width: 0; }
+.card-date { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .project-card .tags { flex-direction: column; align-items: flex-start; gap: 6px; margin: 4px 0 0; }
 .project-card .tag { font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
 .project-card h3 {

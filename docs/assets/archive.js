@@ -1,4 +1,4 @@
-import {element as el, loadArchive, tagList, projectLink, suppliedOrcidLink} from './common.js?v=3e4b890dc1e8';
+import {element as el, loadArchive, tagList, projectLink, suppliedOrcidLink, dateLabel} from './common.js?v=3e4b890dc1e8';
 const search = document.querySelector('#search');
 const subject = document.querySelector('#subject');
 const sort = document.querySelector('#sort');
@@ -85,7 +85,9 @@ function card(project) {
     if (credit.orcid) credits.append(orcidLink(credit));
   });
   return el('article', {className:'project-card'},
-    tagList(project.categories),
+    el('div', {className:'card-meta'},
+      tagList(project.categories),
+      el('time', {className:'card-date', datetime:project.added}, dateLabel(project.added))),
     el('div', {className:'card-main'},
       el('h3', {}, el('a', {href:projectLink(project)}, project.title)),
       credits));
