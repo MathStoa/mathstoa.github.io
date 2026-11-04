@@ -59,7 +59,7 @@ def _record_submission(submission, user):
 
 def _submitted_response(request, revision):
     if revision.status == "unverified":
-        messages.success(request, "Submission received. Verify by file to send this revision for moderation.")
+        messages.success(request, "Submission received. Verify repository access to send this revision for moderation.")
         return redirect("verification:overview", pk=revision.submission_id)
     return redirect("submissions:detail", pk=revision.submission_id)
 

@@ -33,13 +33,13 @@ def _session_key(request, submission):
     return f"mathstoa_verification_file:{request.user.pk}:{submission.pk}"
 
 
-def _rate_limit_response(request, submission):
+def _rate_limit_response(request, submission, *, destination="verification:overview"):
     if not ratelimit.consume(
         request, action="repository_verification", user=request.user,
         key=f"user:{request.user.pk}:submission:{submission.pk}",
     ):
         messages.error(request, "Too many verification attempts. Please wait and try again later; the limit resets within an hour.")
-        return redirect("verification:overview", pk=submission.pk)
+        return redirect(destination, pk=submission.pk)
     return None
 
 
@@ -61,10 +61,32 @@ def _error(request, error):
     messages.error(request, message)
 
 
+def _verification_context(submission):
+    return {
+        "submission": submission,
+        # A cached proof can still exist after its live recheck failed. The
+        # received version remains blocked until verification succeeds again.
+        "verified": has_current_verification(submission) and not submission.revisions.filter(
+            number=submission.revision, status="unverified",
+        ).exists(),
+    }
+
+
 @login_required
 @require_GET
 @never_cache
 def overview(request, pk):
+    submission = _owned_submission(request, pk)
+    return render(request, "repository_verification/overview.html", {
+        **_verification_context(submission),
+        "github_available": _github_provider(request) is not None,
+    })
+
+
+@login_required
+@require_GET
+@never_cache
+def file_overview(request, pk):
     submission = _owned_submission(request, pk)
     key = _session_key(request, submission)
     file_state = request.session.get(key)
@@ -82,15 +104,21 @@ def overview(request, pk):
         if not attempt:
             request.session.pop(key, None)
             file_state = None
-    return render(request, "repository_verification/overview.html", {
-        "submission": submission,
-        # A cached proof can still exist after its live recheck failed. The
-        # received version remains blocked until verification succeeds again.
-        "verified": has_current_verification(submission) and not submission.revisions.filter(
-            number=submission.revision, status="unverified",
-        ).exists(),
+    return render(request, "repository_verification/file.html", {
+        **_verification_context(submission),
         "file_attempt": attempt,
         "file_content": file_state.get("content", "") if attempt else "",
+    })
+
+
+@login_required
+@require_GET
+@never_cache
+def github_overview(request, pk):
+    submission = _owned_submission(request, pk)
+    return render(request, "repository_verification/github.html", {
+        **_verification_context(submission),
+        "github_available": _github_provider(request) is not None,
     })
 
 
@@ -100,7 +128,7 @@ def overview(request, pk):
 @sensitive_variables("token")
 def issue_file(request, pk):
     submission = _owned_submission(request, pk)
-    limited = _rate_limit_response(request, submission)
+    limited = _rate_limit_response(request, submission, destination="verification:file_overview")
     if limited:
         return limited
     try:
@@ -112,7 +140,7 @@ def issue_file(request, pk):
         messages.info(request, "Add the verification file below to your repository's default branch, then check it here.")
     except (ValidationError, GitHubError) as error:
         _error(request, error)
-    return redirect("verification:overview", pk=submission.pk)
+    return redirect("verification:file_overview", pk=submission.pk)
 
 
 @login_required
@@ -120,7 +148,7 @@ def issue_file(request, pk):
 @never_cache
 def verify_file(request, pk):
     submission = _owned_submission(request, pk)
-    limited = _rate_limit_response(request, submission)
+    limited = _rate_limit_response(request, submission, destination="verification:file_overview")
     if limited:
         return limited
     key = _session_key(request, submission)
@@ -128,7 +156,7 @@ def verify_file(request, pk):
     attempt_id = file_state.get("attempt_id") if isinstance(file_state, dict) else None
     if not attempt_id:
         messages.error(request, "Generate a verification file before checking the repository.")
-        return redirect("verification:overview", pk=submission.pk)
+        return redirect("verification:file_overview", pk=submission.pk)
     try:
         attempt = get_object_or_404(
             VerificationAttempt, pk=attempt_id, submission=submission,
@@ -140,7 +168,7 @@ def verify_file(request, pk):
         return redirect("submissions:detail", pk=submission.pk)
     except (ValidationError, GitHubError) as error:
         _error(request, error)
-    return redirect("verification:overview", pk=submission.pk)
+    return redirect("verification:file_overview", pk=submission.pk)
 
 
 @login_required
@@ -149,22 +177,22 @@ def verify_file(request, pk):
 @sensitive_variables("nonce")
 def github_start(request, pk):
     submission = _owned_submission(request, pk)
-    limited = _rate_limit_response(request, submission)
+    limited = _rate_limit_response(request, submission, destination="verification:github_overview")
     if limited:
         return limited
     provider = _github_provider(request)
     if provider is None:
         messages.error(request, "GitHub verification is not configured yet. You can verify by file instead.")
-        return redirect("verification:overview", pk=submission.pk)
+        return redirect("verification:github_overview", pk=submission.pk)
     try:
         attempt, nonce = start_attempt(submission, request.user, "github")
         request.session.pop(_session_key(request, submission), None)
         return provider.redirect(
             request, process="connect",
-            next_url=reverse("verification:overview", kwargs={"pk": submission.pk}),
+            next_url=reverse("verification:github_overview", kwargs={"pk": submission.pk}),
             data={"mathstoa_verification": str(attempt.pk), "nonce": nonce},
             scope=[],
         )
     except (ValidationError, GitHubError) as error:
         _error(request, error)
-    return redirect("verification:overview", pk=submission.pk)
+    return redirect("verification:github_overview", pk=submission.pk)

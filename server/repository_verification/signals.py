@@ -93,7 +93,7 @@ def verify_github_callback(sender, request, sociallogin, **kwargs):
         ).first()
         if not attempt:
             raise ValidationError("This verification request is no longer available. Start again from your submission.")
-        target = redirect("verification:overview", pk=attempt.submission_id)
+        target = redirect("verification:github_overview", pk=attempt.submission_id)
         github_uid = str(sociallogin.account.uid)
         if SocialAccount.objects.filter(provider="github", uid=github_uid).exclude(user=request.user).exists():
             raise ValidationError("This GitHub account is connected to another mathΣτοά account. Use that account or verify by file.")

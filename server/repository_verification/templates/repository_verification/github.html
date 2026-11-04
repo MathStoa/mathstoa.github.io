@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block head_title %}Verify with GitHub{% endblock %}
+{% block content %}
+<section class="account-panel submission-form-panel">
+  <p><a href="{% url 'submissions:detail' submission.pk %}">Back to {{ submission.title }}</a></p>
+  <h1>Verify with GitHub</h1>
+  {% include "repository_verification/_status.html" %}
+  <p>Authorise a one-time check using your GitHub account. For a personal repository, you must be its owner. For an organisation repository, you must have administrator or maintainer access.</p>
+  <p><strong>Repository:</strong> {{ submission.repository_url|default:"Add a repository URL to your submission first." }}</p>
+  <form method="post" action="{% url 'verification:github_start' submission.pk %}">
+    {% csrf_token %}
+    <button type="submit" {% if not github_available or not submission.repository_url %}disabled{% endif %}>Continue to GitHub</button>
+  </form>
+  {% if not github_available %}<p class="helptext">GitHub verification is not configured yet. Return to the method selection to choose another option.</p>{% endif %}
+  <p class="helptext">Continuing starts a new verification check and replaces any unfinished check for this submission.</p>
+  <p class="privacy-note"><span class="brand">math<span lang="el">Στοά</span></span> records the GitHub account identifier and the result of this check. It does not retain the authorisation token or gain permission to edit your repository. This check does not change how you sign in to your personal or organisation account.</p>
+  <p class="account-section"><a href="{% url 'verification:overview' submission.pk %}">Change verification method</a></p>
+</section>
+{% endblock %}

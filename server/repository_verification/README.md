@@ -5,6 +5,13 @@ connection. Both establish repository authorization. Neither establishes
 authorship or intellectual-property ownership. An authorized maintainer can
 merge the file for the submitter. ORCID sign-in remains independent of this check.
 
+The verification overview offers both methods to personal and approved organisation
+accounts, including when a file check is already in progress. Each method opens its
+own instructions page, with a link back to change methods. Visiting these pages
+preserves an active file challenge; generating a new file or starting the GitHub
+check replaces any unfinished attempt. File-check errors stay on the file page,
+and GitHub-check errors stay on the GitHub page.
+
 The initial release accepts **public github.com repositories only**. A fork may
 be submitted as its own repository; its proof cannot verify the upstream project.
 GitLab and other account providers can still be used to sign in, but repositories

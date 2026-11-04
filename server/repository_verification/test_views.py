@@ -23,6 +23,7 @@ from django.test import Client, RequestFactory, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
+from accounts.models import OrganisationAccount
 from submissions.models import Submission
 from .models import RepositoryVerification, VerificationAttempt
 from .signals import verify_github_callback
@@ -70,6 +71,14 @@ class VerificationUITests(TestCase):
         session.save()
         return key
 
+    def approve_organisation(self):
+        return OrganisationAccount.objects.create(
+            user=self.owner, name="Test Research Group", email="group@example.org",
+            website="https://example.org", description="An independent research group.",
+            representative_name="Example Representative", authority="I run the group.",
+            status="approved",
+        )
+
     def callback_request(self, user=None):
         request = RequestFactory().get("/accounts/github/login/callback/")
         request.user = self.owner if user is None else user
@@ -88,11 +97,82 @@ class VerificationUITests(TestCase):
 
     def test_only_owner_can_view_or_perform_verification(self):
         self.client.force_login(self.other)
-        self.assertEqual(self.client.get(self.url()).status_code, 404)
+        for name in ("overview", "file_overview", "github_overview"):
+            self.assertEqual(self.client.get(self.url(name)).status_code, 404)
         for name in ("issue_file", "verify_file", "github_start"):
             self.assertEqual(self.client.post(self.url(name)).status_code, 404)
         self.client.logout()
-        self.assertEqual(self.client.get(self.url()).status_code, 302)
+        for name in ("overview", "file_overview", "github_overview"):
+            self.assertEqual(self.client.get(self.url(name)).status_code, 302)
+
+    def test_method_chooser_keeps_both_options_for_personal_and_organisation_accounts(self):
+        for organisation in (False, True):
+            if organisation:
+                self.approve_organisation()
+                self.submission.verification_attempts.all().delete()
+                session = self.client.session
+                session.pop(f"mathstoa_verification_file:{self.owner.pk}:{self.submission.pk}", None)
+                session.save()
+            for file_started in (False, True):
+                with self.subTest(organisation=organisation, file_started=file_started):
+                    if file_started:
+                        self.store_document(self.attempt(), "private-file-challenge")
+                    response = self.client.get(self.url())
+                    self.assertContains(response, f'href="{self.url("file_overview")}"')
+                    self.assertContains(response, f'href="{self.url("github_overview")}"')
+                    self.assertContains(response, "Verify by file")
+                    self.assertContains(response, "Verify with GitHub")
+                    self.assertNotContains(response, "private-file-challenge")
+
+    def test_method_pages_show_only_the_selected_workflow_and_link_back_to_chooser(self):
+        file_response = self.client.get(self.url("file_overview"))
+        self.assertContains(file_response, f'action="{self.url("issue_file")}"')
+        self.assertNotContains(file_response, f'action="{self.url("github_start")}"')
+        self.assertNotContains(file_response, "Continue to GitHub")
+        github_response = self.client.get(self.url("github_overview"))
+        self.assertContains(github_response, f'action="{self.url("github_start")}"')
+        self.assertContains(github_response, "Continue to GitHub")
+        self.assertNotContains(github_response, f'action="{self.url("issue_file")}"')
+        self.assertNotContains(github_response, ".mathstoa-verification")
+        self.assertNotContains(github_response, 'id="verification-content"')
+        for response in (file_response, github_response):
+            self.assertContains(response, f'<a href="{self.url()}">Change verification method</a>', html=True)
+
+    def test_method_navigation_preserves_active_file_attempt_and_document(self):
+        attempt = self.attempt()
+        key = self.store_document(attempt, "keep-this-file-challenge")
+        original_state = self.client.session[key]
+        for name in ("file_overview", "overview", "github_overview", "overview", "file_overview"):
+            with self.subTest(page=name):
+                response = self.client.get(self.url(name))
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(self.client.session[key], original_state)
+                attempt.refresh_from_db()
+                self.assertIsNone(attempt.revoked_at)
+                self.assertIsNone(attempt.consumed_at)
+                self.assertEqual(self.submission.verification_attempts.count(), 1)
+        self.assertContains(response, "keep-this-file-challenge")
+
+    def test_verification_pages_require_get_and_prevent_caching(self):
+        for name in ("overview", "file_overview", "github_overview"):
+            with self.subTest(page=name):
+                response = self.client.get(self.url(name))
+                self.assertEqual(response.status_code, 200)
+                self.assertIn("no-store", response["Cache-Control"])
+                self.assertEqual(self.client.post(self.url(name)).status_code, 405)
+
+    @patch("repository_verification.views._github_provider", return_value=None)
+    def test_unconfigured_github_page_disables_authorization(self, provider):
+        chooser = self.client.get(self.url())
+        self.assertContains(chooser, f'href="{self.url("github_overview")}"')
+        response = self.client.get(self.url("github_overview"))
+        self.assertFalse(response.context["github_available"])
+        self.assertContains(response, '<button type="submit" disabled>Continue to GitHub</button>', html=True)
+
+    def test_configured_github_page_enables_authorization(self):
+        response = self.client.get(self.url("github_overview"))
+        self.assertTrue(response.context["github_available"])
+        self.assertContains(response, '<button type="submit">Continue to GitHub</button>', html=True)
 
     def test_mutations_require_post_and_csrf(self):
         csrf_client = Client(enforce_csrf_checks=True)
@@ -104,7 +184,7 @@ class VerificationUITests(TestCase):
     def test_file_display_escapes_content_and_prevents_caching(self):
         attempt = self.attempt()
         self.store_document(attempt, '</textarea><script>alert("test")</script>')
-        response = self.client.get(self.url())
+        response = self.client.get(self.url("file_overview"))
         self.assertContains(response, "&lt;/textarea&gt;&lt;script&gt;")
         self.assertNotContains(response, '<script>alert("test")</script>')
         self.assertIn("no-store", response["Cache-Control"])
@@ -113,7 +193,7 @@ class VerificationUITests(TestCase):
     def test_expired_file_content_is_removed(self):
         attempt = self.attempt(expires_at=timezone.now() - timedelta(seconds=1))
         key = self.store_document(attempt, "expired-code-do-not-display")
-        response = self.client.get(self.url())
+        response = self.client.get(self.url("file_overview"))
         self.assertNotContains(response, "expired-code-do-not-display")
         self.assertNotIn(key, self.client.session)
 
@@ -123,6 +203,7 @@ class VerificationUITests(TestCase):
         attempt = self.attempt()
         start.return_value = (attempt, "raw-file-token")
         response = self.client.post(self.url("issue_file"), follow=True)
+        self.assertRedirects(response, self.url("file_overview"))
         self.assertContains(response, "generated document")
         start.assert_called_once_with(self.submission, self.owner, "file")
         document.assert_called_once_with(attempt, "raw-file-token")
@@ -130,8 +211,22 @@ class VerificationUITests(TestCase):
     @patch("repository_verification.views.check_file")
     def test_file_check_without_issued_document_does_not_verify(self, check):
         response = self.client.post(self.url("verify_file"), follow=True)
+        self.assertRedirects(response, self.url("file_overview"))
         self.assertContains(response, "Generate a verification file")
         check.assert_not_called()
+
+    @patch("repository_verification.views.start_attempt", side_effect=ValidationError("Repository unavailable."))
+    def test_file_generation_error_returns_to_file_instructions(self, start):
+        response = self.client.post(self.url("issue_file"), follow=True)
+        self.assertRedirects(response, self.url("file_overview"))
+        self.assertContains(response, "Repository unavailable.")
+
+    @patch("repository_verification.views.check_file", side_effect=ValidationError("File not found."))
+    def test_file_check_error_returns_to_file_instructions(self, check):
+        self.store_document(self.attempt())
+        response = self.client.post(self.url("verify_file"), follow=True)
+        self.assertRedirects(response, self.url("file_overview"))
+        self.assertContains(response, "File not found.")
 
     @patch("repository_verification.views.check_file")
     def test_successful_file_check_discards_displayed_token(self, check):
@@ -145,10 +240,17 @@ class VerificationUITests(TestCase):
 
     @patch("repository_verification.views._github_provider", return_value=None)
     @patch("repository_verification.views.start_attempt")
-    def test_unconfigured_github_falls_back_to_file(self, start, provider):
+    def test_unconfigured_github_returns_to_github_instructions(self, start, provider):
         response = self.client.post(self.url("github_start"), follow=True)
+        self.assertRedirects(response, self.url("github_overview"))
         self.assertContains(response, "GitHub verification is not configured yet")
         start.assert_not_called()
+
+    @patch("repository_verification.views.start_attempt", side_effect=ValidationError("Repository unavailable."))
+    def test_github_start_error_returns_to_github_instructions(self, start):
+        response = self.client.post(self.url("github_start"), follow=True)
+        self.assertRedirects(response, self.url("github_overview"))
+        self.assertContains(response, "Repository unavailable.")
 
     @patch("repository_verification.views._github_provider")
     @patch("repository_verification.views.start_attempt")
@@ -161,8 +263,46 @@ class VerificationUITests(TestCase):
         response = self.client.post(self.url("github_start"))
         kwargs = provider.redirect.call_args.kwargs
         self.assertEqual(kwargs["process"], "connect")
+        self.assertEqual(kwargs["next_url"], self.url("github_overview"))
         self.assertEqual(kwargs["data"], {"mathstoa_verification": str(attempt.pk), "nonce": "raw-nonce"})
         self.assertNotIn("raw-nonce", response["Location"])
+
+    def test_starting_github_revokes_existing_file_challenge_for_personal_and_organisation_accounts(self):
+        repository = {
+            "id": 123, "owner": {"id": 456, "login": "owner", "type": "User"},
+            "name": "research", "full_name": "owner/research", "default_branch": "main",
+            "private": False, "visibility": "public", "disabled": False, "fork": False,
+        }
+
+        def github_api(request, timeout):
+            self.assertEqual(request.full_url, "https://api.github.com/repos/owner/research")
+            response = io.BytesIO(json.dumps(repository).encode())
+            response.status = 200
+            return response
+
+        with patch("urllib.request.OpenerDirector.open", side_effect=github_api):
+            for organisation in (False, True):
+                if organisation:
+                    self.approve_organisation()
+                with self.subTest(organisation=organisation):
+                    issued = self.client.post(self.url("issue_file"))
+                    self.assertRedirects(issued, self.url("file_overview"))
+                    key = f"mathstoa_verification_file:{self.owner.pk}:{self.submission.pk}"
+                    file_state = self.client.session[key]
+                    file_attempt = VerificationAttempt.objects.get(pk=file_state["attempt_id"])
+                    token = json.loads(file_state["content"])["token"]
+                    self.assertEqual(file_attempt.token_hash, hashlib.sha256(token.encode()).hexdigest())
+                    started = self.client.post(self.url("github_start"))
+                    self.assertEqual(started.status_code, 302)
+                    self.assertEqual(urlsplit(started["Location"]).netloc, "github.com")
+                    file_attempt.refresh_from_db()
+                    self.assertIsNotNone(file_attempt.revoked_at)
+                    self.assertIsNone(file_attempt.consumed_at)
+                    self.assertNotIn(key, self.client.session)
+                    active = self.submission.verification_attempts.get(revoked_at__isnull=True)
+                    self.assertEqual(active.method, "github")
+                    self.assertEqual(active.user, self.owner)
+                    self.assertNotEqual(active.token_hash, file_attempt.token_hash)
 
     @patch("repository_verification.signals.check_github")
     def test_ordinary_github_login_is_untouched(self, check):
@@ -209,7 +349,7 @@ class VerificationUITests(TestCase):
         self.assertIn("expired", text)
         self.assertNotIn("private-oauth-token", text)
         self.assertNotIn("private-oauth-token", response.exception.response["Location"])
-        self.assertEqual(response.exception.response["Location"], self.url())
+        self.assertEqual(response.exception.response["Location"], self.url("github_overview"))
 
     def test_changing_repository_away_and_back_cannot_restore_proof(self):
         attempt = self.attempt()
@@ -257,6 +397,8 @@ class VerificationUITests(TestCase):
         for name in ("issue_file", "verify_file", "github_start"):
             with self.subTest(name=name):
                 response = self.client.post(self.url(name), follow=True)
+                target = "github_overview" if name == "github_start" else "file_overview"
+                self.assertRedirects(response, self.url(target))
                 self.assertContains(response, "Too many verification attempts")
         start.assert_not_called()
         check.assert_not_called()

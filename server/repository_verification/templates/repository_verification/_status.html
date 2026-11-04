@@ -1,0 +1,4 @@
+{% if verified %}
+  <p class="notice" role="status"><strong>Repository authorization verified.</strong> Submitted versions proceed automatically to moderation.</p>
+  <p><a class="button" href="{% url 'submissions:detail' submission.pk %}">Return to submission</a></p>
+{% endif %}
