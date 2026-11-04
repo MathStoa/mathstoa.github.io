@@ -6,7 +6,8 @@ permissions:
   contents: read
 jobs:
   navigation:
-    runs-on: ubuntu-latest
+    # Keep the runner on the Ubuntu release supported by pinned Playwright.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7

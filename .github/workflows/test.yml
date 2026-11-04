@@ -47,7 +47,8 @@ jobs:
           MATHSTOA_TEST_DATABASE_URL: ${{ matrix.database }}
   browser-math:
     if: github.event_name != 'schedule'
-    runs-on: ubuntu-latest
+    # Playwright 1.60 supports Ubuntu 24.04; ubuntu-latest has moved to 26.04.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
