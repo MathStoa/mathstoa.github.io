@@ -1,14 +1,9 @@
-import json
-
-from django.conf import settings
-from django.contrib.admin.models import LogEntry
-from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
-from repository_verification.models import RepositoryVerification, VerificationAttempt
+from submissions.erasure import erase_submission, has_static_listing, redact_admin_log
 from submissions.forms import normalize_orcid
 from submissions.models import Submission, SubmissionRevision
 
@@ -49,19 +44,7 @@ class Command(BaseCommand):
         if not execute:
             self.stdout.write("Dry run: nothing changed. Add --execute to erase.")
             return
-        with transaction.atomic():
-            submission = Submission.objects.select_for_update().get(pk=submission.pk)
-            log_targets = [
-                (Submission, [submission.pk]),
-                (SubmissionRevision, list(submission.revisions.values_list("pk", flat=True))),
-                (VerificationAttempt, list(submission.verification_attempts.values_list("pk", flat=True))),
-                (RepositoryVerification, list(submission.repository_verifications.values_list("pk", flat=True))),
-            ]
-            # Both relations deliberately PROTECT; clear them before the cascade.
-            Submission.objects.filter(pk=submission.pk).update(published_revision=None)
-            RepositoryVerification.objects.filter(submission=submission).delete()
-            submission.delete()
-            redacted = self.redact_admin_log(log_targets)
+        redacted = erase_submission(submission)
         self.stdout.write(f"Erased submission {submission.pk} on {timezone.now().date().isoformat()}: " + ", ".join(f"{name}={value}" for name, value in counts.items() if name != "published") + f", admin_log_entries_redacted={redacted}.")
         self.stdout.write("Record this line (not the title or names) in the restricted erasure record so a backup restore can be re-applied.")
 
@@ -100,20 +83,13 @@ class Command(BaseCommand):
                 snapshot = dict(revision.snapshot, collaborators=[person for person in revision.snapshot["collaborators"] if not matches(person)])
                 # Revisions are immutable through save(); this reviewed erasure is the one exception.
                 SubmissionRevision.objects.filter(pk=revision.pk).update(snapshot=snapshot)
-            redacted = self.redact_admin_log([(SubmissionRevision, [revision.pk for revision in changed_revisions])])
+            redacted = redact_admin_log([(SubmissionRevision, [revision.pk for revision in changed_revisions])])
         self.stdout.write(f"Removed a contributor from submission {submission.pk} on {timezone.now().date().isoformat()}: draft={'yes' if in_draft else 'no'}, revisions={len(changed_revisions)}, admin_log_entries_redacted={redacted}.")
-
-    def redact_admin_log(self, targets):
-        redacted = 0
-        for model, pks in targets:
-            if pks:
-                redacted += LogEntry.objects.filter(content_type=ContentType.objects.get_for_model(model), object_id__in=[str(pk) for pk in pks]).update(object_repr="[erased]", change_message="")
-        return redacted
 
     def warn_static_archive(self, submission):
         try:
-            archive = json.loads(settings.ARCHIVE_PATH.read_text(encoding="utf-8"))
+            listed = has_static_listing(submission)
         except (AttributeError, OSError, ValueError):
             return
-        if any(project.get("id") == submission.public_id for project in archive.get("projects", [])):
+        if listed:
             self.stdout.write(self.style.WARNING(f"{submission.public_id} is also in docs/data/projects.json. Edit and commit that file too."))

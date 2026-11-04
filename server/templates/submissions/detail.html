@@ -7,7 +7,10 @@
       <h1>{{ submission.title|default:"Untitled submission" }}</h1>
       <div class="submission-meta"><span class="status">{{ submission.get_status_display|default:submission.status }}</span><span>Revision {{ submission.revision }}</span></div>
     </div>
-    <a class="button" href="{% url 'submissions:edit' pk=submission.pk %}">{% if current_revision %}Edit submission{% else %}Complete submission{% endif %}</a>
+    <div class="actions">
+      <a class="button" href="{% url 'submissions:edit' pk=submission.pk %}">{% if current_revision %}Edit submission{% else %}Complete submission{% endif %}</a>
+      <a class="delete-link" href="{% url 'submissions:delete' pk=submission.pk %}">Delete submission</a>
+    </div>
   </div>
   {% if submission.published_revision %}
     <p class="notice">An accepted version is public. Your current submission is shown below. <a href="/project.html?id={{ submission.public_id|urlencode }}">View the published listing</a>.</p>

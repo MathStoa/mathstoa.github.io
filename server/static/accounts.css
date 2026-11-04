@@ -12,3 +12,8 @@
 .account-main button:not(.text-button):disabled:hover { background: var(--soft); }
 .account-main button.button-submit:not(.text-button):not(:disabled):hover,
 .account-main button.button-submit:not(.text-button):not(:disabled):focus-visible { background: #28713f; border-color: #28713f; color: #fff; }
+
+.account-main .delete-link { color: #8b2424; }
+.account-main button.button-delete:not(.text-button) { border-color: #8b2424; color: #8b2424; background: #fff6f5; }
+.account-main button.button-delete:not(.text-button):not(:disabled):hover,
+.account-main button.button-delete:not(.text-button):not(:disabled):focus-visible { background: #8b2424; border-color: #8b2424; color: #fff; }

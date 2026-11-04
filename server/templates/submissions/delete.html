@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block head_title %}Delete submission{% endblock %}
+{% block content %}
+  <a class="back-link" href="{% url 'submissions:detail' pk=submission.pk %}">← Back to submission</a>
+  <section class="account-panel">
+    <h1>Delete submission?</h1>
+    <h2>{{ submission.title|default:"Untitled submission" }}</h2>
+    <div class="submission-meta"><span class="status">{{ submission.status }}</span><span>Revision {{ submission.revision }}</span></div>
+    {% if error %}<p class="notice error" role="alert">{{ error }}</p>{% endif %}
+    {% if static_listing %}
+      <p class="notice">This submission also has a separately maintained archive listing. {% if privacy_contact %}<a href="mailto:{{ privacy_contact }}">Contact us</a>{% else %}Contact the site administrators{% endif %} to remove both together.</p>
+      <a href="{% url 'submissions:detail' pk=submission.pk %}">Back to submission</a>
+    {% else %}
+      <p>This permanently deletes the submission, all its revisions and its repository verification records. This cannot be undone.</p>
+      {% if submission.published_revision_id %}
+        <p class="notice">The published listing will also be removed from the public archive. Cached copies may remain visible briefly.</p>
+      {% endif %}
+      <p>Your account and the linked repository will remain. <a href="/privacy/#retention">Read about backup retention.</a></p>
+      <form method="post" action="{% url 'submissions:delete' pk=submission.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="revision" value="{{ submission.revision }}">
+        <input type="hidden" name="published_revision" value="{{ submission.published_revision_id|default_if_none:'' }}">
+        <div class="actions">
+          <a href="{% url 'submissions:detail' pk=submission.pk %}">Cancel</a>
+          <button class="button-delete" type="submit">Delete submission permanently</button>
+        </div>
+      </form>
+    {% endif %}
+  </section>
+{% endblock %}

@@ -14,6 +14,11 @@ The public archive provides search and subject filters, readable project pages a
 
 The account service runs on a production host with PostgreSQL and configured sign-in providers or SMTP; publishing this code to GitHub Pages does not activate it. Since 3 November 2026 the service has served <https://math-stoa.org/>, and signed-in submission at `/submissions/new/` is the operational route. The [GitHub submission form](https://github.com/MathStoa/mathstoa.github.io/issues/new?template=submit-project.yml) remains available as the legacy public route. See [SETUP.md](SETUP.md) for the exact setup and limitations.
 
+Submission owners can open a project under **My submissions** and choose
+**Delete submission**. A confirmation page explains the permanent removal of
+the submission and its history, including any published listing. A separately
+maintained archive copy requires staff assistance to remove both together.
+
 ## Run locally
 
 For the complete service, use Python 3.12 and follow the [local account-service instructions](SETUP.md#local-preview). Its entry points are `/accounts/login/`, `/submissions/`, and `/admin/`. The service serves the archive and accounts from one origin.

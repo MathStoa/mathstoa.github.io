@@ -122,6 +122,20 @@ record, or from a repository or institutional page that clearly belongs to
 them). The submitter may have given a wrong address, so a confirmation that
 reached someone else is itself a correction request.
 
+Owners can delete their own submission through **My submissions → open the
+submission → Delete submission**, followed by a confirmation page. This removes
+all revisions, repository verification records and queued notifications, removes
+the database-backed public listing, and redacts matching admin log descriptions.
+It leaves accounts and external repositories intact. A matching listing in
+`docs/data/projects.json` blocks self-service deletion so staff can remove both
+copies together. Messages already sent or in flight cannot be recalled.
+
+Successful owner deletions emit a `submissions.erasure` warning in the application
+logs containing the submission UUID, without its title or contributor details.
+Copy these identifiers and dates into the restricted erasure record before the
+logs expire, and re-apply them before bringing a restored backup back online.
+The confirmation page links to the existing backup-retention notice.
+
 `erase_submission` handles both submission-level erasure and contributor
 removal. It prints an inventory and changes nothing unless `--execute` is
 given. Run it in Render → web service → **Shell**:

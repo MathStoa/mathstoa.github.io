@@ -1,4 +1,5 @@
 import json
+import logging
 from pathlib import Path
 
 from django.conf import settings
@@ -8,14 +9,18 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods, require_POST
 
 from accounts.middleware import limit_action
 
 from .forms import SubmissionForm, review_form
+from .erasure import erase_submission, has_static_listing
 from .models import Submission, SubmissionRevision
 from .notifications import notify_contributors, notify_submission_received
 from .publication import accepted_declaration
+
+
+erasure_logger = logging.getLogger("submissions.erasure")
 
 
 def accessible(user):
@@ -106,6 +111,33 @@ def edit(request, pk):
             revision = _record_submission(submission, request.user)
             return _submitted_response(request, revision)
     return render(request, "submissions/form.html", {"form": form, "submission": submission})
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def delete(request, pk):
+    with transaction.atomic():
+        submission = get_object_or_404(accessible(request.user).select_for_update(), pk=pk)
+        static_listing = has_static_listing(submission)
+        context = {"submission": submission, "static_listing": static_listing}
+        if request.method == "GET":
+            return render(request, "submissions/delete.html", context)
+        if static_listing:
+            return render(request, "submissions/delete.html", context, status=409)
+        if (
+            request.POST.get("revision") != str(submission.revision)
+            or request.POST.get("published_revision") != str(submission.published_revision_id or "")
+        ):
+            context["error"] = "The submission changed or the confirmation was incomplete. Check the details below before confirming deletion."
+            return render(request, "submissions/delete.html", context, status=409)
+        erase_submission(submission)
+        # Keep only the identifier in operational logs for backup restoration.
+        transaction.on_commit(lambda: erasure_logger.warning(
+            "Submission %s deleted by its owner; re-apply this deletion after restoring a backup.", pk,
+        ))
+    request.session.pop(f"mathstoa_verification_file:{request.user.pk}:{pk}", None)
+    messages.success(request, "Submission deleted.")
+    return redirect("submissions:list")
 
 
 @login_required
