@@ -62,7 +62,7 @@
 .card-main { min-width: 0; }
 .card-meta { min-width: 0; }
 .card-date { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.5; }
-.project-card .tags { flex-direction: column; align-items: flex-start; gap: 6px; margin: 4px 0 0; }
+.project-card .tags { flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: 6px 14px; margin: 8px 0 0; }
 .project-card .tag { font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
 .project-card h3 {
   font-family: var(--serif);
@@ -164,7 +164,6 @@ select:not(:disabled), input[type=checkbox]:not(:disabled), input[type=radio]:no
   .account-menu { position: static; }
   .account-menu-panel { right: 0; left: 0; margin: 0 auto; }
   .project-card { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-  .project-card .tags { flex-direction: row; flex-wrap: wrap; margin: 0; }
 }
 @media (max-width: 620px) {
   .hero { padding-top: 24px; }

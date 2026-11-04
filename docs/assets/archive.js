@@ -1,4 +1,4 @@
-import {element as el, loadArchive, tagList, projectLink, suppliedOrcidLink, dateLabel} from './common.js?v=3e4b890dc1e8';
+import {element as el, loadArchive, projectLink, suppliedOrcidLink, dateLabel} from './common.js?v=3e4b890dc1e8';
 const search = document.querySelector('#search');
 const subject = document.querySelector('#subject');
 const sort = document.querySelector('#sort');
@@ -64,6 +64,17 @@ function contributorLink(name) {
   });
   return link;
 }
+function subjectLink(category) {
+  const next = {...state, q:'', author:'', subject:category.code};
+  const link = el('a', {className:'tag', href:stateURL(next, '#archive'),
+    title:'All projects in ' + category.label}, category.label);
+  link.addEventListener('click', event => {
+    if (!isPlainClick(event)) return;
+    event.preventDefault();
+    apply(next, {hash:'#archive'});
+  });
+  return link;
+}
 const ORCID_ID = /^https:\/\/orcid\.org\/\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
 function orcidLink(credit) {
   return suppliedOrcidLink(credit);
@@ -86,11 +97,11 @@ function card(project) {
   });
   return el('article', {className:'project-card'},
     el('div', {className:'card-meta'},
-      tagList(project.categories),
       el('time', {className:'card-date', datetime:project.added}, dateLabel(project.added))),
     el('div', {className:'card-main'},
       el('h3', {}, el('a', {href:projectLink(project)}, project.title)),
-      credits));
+      credits,
+      el('div', {className:'tags'}, project.categories.map(subjectLink))));
 }
 function matchesQuery(project, words) {
   const text = folded([project.title, project.summary, project.repositoryUrl, project.doi,
