@@ -221,12 +221,14 @@ class PublicPageTests(TestCase):
             response = self.client.get(path)
             self.assertEqual(response.status_code, 200, path)
             html = response.content.decode()
-            self.assertIn('<a href="/accounts/login/">Sign in</a><a class="button button-small" href="/submissions/new/">', html, path)
+            self.assertIn('<a href="/accounts/login/">Sign in</a>', html, path)
+            self.assertIn('<a class="button button-small" href="/submissions/new/">', html, path)
             self.assertIn('<nav aria-label="Footer navigation"><a href="/privacy/">Privacy</a>', html, path)
             self.assertNotIn('href="submit.html"', html, path)
         self.client.force_login(User.objects.create_user(username="public-page-reader"))
         html = self.client.get("/").content.decode()
-        self.assertIn('<a href="/submissions/">My submissions</a><a class="button button-small" href="/submissions/new/">', html)
+        self.assertIn('<a href="/submissions/">My submissions</a>', html)
+        self.assertIn('<a class="button button-small" href="/submissions/new/">', html)
         self.assertNotIn('<a href="/accounts/login/">Sign in</a>', html)
 
     def test_service_pages_share_the_public_navigation(self):

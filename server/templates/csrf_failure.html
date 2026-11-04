@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block head_title %}Request could not be verified{% endblock %}
+{% block content %}
+  <h1>Request could not be verified</h1>
+  <p>Your action was not processed because its security check failed.</p>
+  <p>Open the page again using the navigation, then try the action again.{% if user.is_authenticated %} To sign out, use the Sign out button above.{% endif %}</p>
+{% endblock %}

@@ -67,7 +67,10 @@ class AccountPolicyMiddleware:
         if path.startswith("/accounts/password/") or (email_route and not settings.EMAIL_LOGIN_ENABLED):
             return HttpResponseNotFound("This sign-in method is unavailable.")
         response = self.get_response(request)
-        if path.startswith(("/accounts/", "/submissions/", "/verify/", "/admin/")):
+        # Every HTML page can contain account navigation and a logout CSRF
+        # token, including public content and error pages. Never share/cache it.
+        html_response = response.get("Content-Type", "").startswith("text/html")
+        if html_response or path.startswith(("/accounts/", "/submissions/", "/verify/", "/admin/")):
             add_never_cache_headers(response)
             # Keep same-origin form Origin/Referer checks working. External
             # navigation receives no referrer.

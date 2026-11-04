@@ -7,7 +7,7 @@ from allauth.account.authentication import get_authentication_records
 from allauth.mfa.models import Authenticator
 from django.conf import settings
 from django.contrib.auth.views import redirect_to_login
-from django.http import HttpResponseForbidden, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils.deprecation import MiddlewareMixin
@@ -110,7 +110,7 @@ class StaffSecurityMiddleware(MiddlewareMixin):
             if not request.user.is_authenticated:
                 return redirect_to_login(reverse("admin:index"), settings.LOGIN_URL)
             if not request.user.is_active or not request.user.is_staff:
-                return HttpResponseForbidden("Staff access is required.")
+                return render(request, "403.html", {"permission_message": "Staff access is required."}, status=403)
             # Signing out must remain possible even if a factor was revoked.
             if name == "logout":
                 return None
@@ -121,7 +121,7 @@ class StaffSecurityMiddleware(MiddlewareMixin):
 
         if request.user.is_authenticated and name.startswith("mfa_"):
             if not request.user.is_active:
-                return HttpResponseForbidden("This account is inactive.")
+                return render(request, "403.html", {"permission_message": "This account is inactive."}, status=403)
             if has_primary_factor(request.user):
                 # The challenge must be reachable before a verified MFA record exists.
                 if name != "mfa_reauthenticate" and not has_recent_mfa(request):

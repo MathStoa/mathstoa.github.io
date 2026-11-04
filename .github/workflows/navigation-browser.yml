@@ -1,0 +1,22 @@
+name: Check navigation in Chromium
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  navigation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: server/requirements.txt
+      - run: python -m pip install -r server/requirements.txt playwright==1.60.0
+      - run: python -m playwright install --with-deps chromium
+      - run: python server/manage.py collectstatic --noinput --settings=config.test_settings
+      - run: python server/manage.py test accounts.test_navigation_browser --settings=config.test_settings -v 2
+        env:
+          MATHSTOA_BROWSER_TESTS: '1'

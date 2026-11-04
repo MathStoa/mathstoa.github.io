@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block head_title %}Permission required{% endblock %}
+{% block content %}
+  <h1>Permission required</h1>
+  <p>{{ permission_message|default:"Your account does not have permission to open this page or perform this action." }}</p>
+  <p>Use the navigation to return to a page available to your account.</p>
+{% endblock %}

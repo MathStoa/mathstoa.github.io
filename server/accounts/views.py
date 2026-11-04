@@ -1,10 +1,12 @@
-from pathlib import Path
+import re
 
 from django.conf import settings
 from django.db import connection
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.template.loader import render_to_string
 from django.utils.cache import patch_vary_headers
+from django.views.decorators.csrf import requires_csrf_token
 from django.views.decorators.http import require_safe
 
 PUBLIC_PAGES = {"index.html", "about.html", "project.html", "404.html"}
@@ -19,12 +21,16 @@ def public_page(request, page="index.html"):
     # The static pages describe the legacy GitHub route; the service takes
     # submissions itself, and its pages link the same account and privacy routes.
     text = text.replace('href="submit.html"', 'href="/submissions/new/"')
-    if request.user.is_authenticated:
-        account_link = '<a href="/submissions/">My submissions</a>'
-    else:
-        account_link = '<a href="/accounts/login/">Sign in</a>'
-    submit_button = '<a class="button button-small" href="/submissions/new/">'
-    text = text.replace(submit_button, account_link + submit_button)
+    # Public content stays static; navigation uses the same permission-aware
+    # template as account pages. Render with the request for context and CSRF.
+    navigation = render_to_string("includes/main_navigation.html", request=request)
+    text = re.sub(
+        r'<nav aria-label="Main navigation">.*?</nav>',
+        lambda match: navigation, text, count=1, flags=re.DOTALL,
+    )
+    # The standalone recovery page needs a canonical base on GitHub Pages only.
+    # On the service, navigation and CSRF forms must target this request's origin.
+    text = text.replace('<base href="https://math-stoa.org/">', '')
     text = text.replace('<nav aria-label="Footer navigation">', '<nav aria-label="Footer navigation"><a href="/privacy/">Privacy</a>')
     response = HttpResponse(text)
     patch_vary_headers(response, ["Cookie"])
@@ -55,3 +61,10 @@ def health(request):
     with connection.cursor() as cursor:
         cursor.execute("SELECT 1")
     return JsonResponse({"status": "ok"})
+
+
+@requires_csrf_token
+def csrf_failure(request, reason=""):
+    # Keep the rejection and its security logging in CsrfViewMiddleware. Show
+    # generic recovery guidance without echoing the failed request or reason.
+    return render(request, "csrf_failure.html", status=403)
