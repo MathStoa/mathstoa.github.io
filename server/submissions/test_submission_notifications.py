@@ -14,7 +14,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .models import NotificationDelivery, Submission, SubmissionRevision
-from .notifications import notify_submission_received, process_notification_queue
+from .notifications import notify_contributors, notify_submission_received, process_notification_queue
 from .publication import DECLARATION, DECLARATION_VERSION, ABSTRACT_LICENSE
 
 
@@ -150,6 +150,21 @@ class SubmissionNotificationTests(TestCase):
                 self.assertNotIn(self.owner.username, message.body)
         self.client.force_login(self.other)
         self.assertEqual(self.client.get(reverse("submissions:detail", args=[submission.pk])).status_code, 404)
+
+    def test_all_confirmation_greetings_format_the_stored_name_separator(self):
+        names = {"collaborators-name": ["Tommaso Cornelis, Rosati", "Ben, Example"]}
+        submission = self.create(**names)
+        self.edit(submission, **names)
+        first_revision = submission.revisions.get(number=1)
+        notify_contributors(first_revision)
+        self.assertEqual(process_notification_queue()["sent"], 6)
+        messages = [message for message in mail.outbox if message.to == ["anna@university.example"]]
+        self.assertEqual(len(messages), 3)
+        for message in messages:
+            with self.subTest(subject=message.subject):
+                self.assertTrue(message.body.startswith("Dear Tommaso Cornelis Rosati,\n\n"))
+                self.assertNotIn("Tommaso Cornelis, Rosati", message.body)
+        self.assertEqual(first_revision.snapshot["collaborators"][0]["name"], "Tommaso Cornelis, Rosati")
 
     def test_blank_contacts_are_invalid_and_do_not_fall_back_to_account_addresses(self):
         self.owner.email = "untrusted@example.invalid"

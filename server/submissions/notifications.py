@@ -207,7 +207,7 @@ def _message(job, person):
         when = timezone.localtime(revision.created_at).strftime("%d %B %Y")
         subject = f'{settings.ACCOUNT_EMAIL_SUBJECT_PREFIX}You are listed as a contributor to "{title}"'
         body = (
-            f"Dear {person['name']},\n\n"
+            f"Dear {display_name(person['name'])},\n\n"
             f'On {when}, the project "{title}" was submitted to math-stoa ({base}), '
             "an archive of open mathematical research projects. You are listed as a contributor, together with:\n\n"
             f"{names}\n\n"
