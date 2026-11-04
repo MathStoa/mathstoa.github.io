@@ -125,9 +125,6 @@ class ContributorsField(forms.Field):
                 raise ValidationError(f"Contributor {number}: {error.messages[0]}") from None
             if not own and self.connected_orcid and orcid == self.connected_orcid["url"]:
                 raise ValidationError(f"Contributor {number}: select 'Use my connected ORCID' to collect your own iD from your authenticated account.")
-            # The field is only required when submitting for moderation, so drafts can hold contributors without one.
-            if self.required and not orcid:
-                raise ValidationError(f"Contributor {number}: add their ORCID iD.")
             if orcid and orcid in seen_orcids:
                 raise ValidationError(f"Contributor {number}: this ORCID is already listed.")
             if orcid:

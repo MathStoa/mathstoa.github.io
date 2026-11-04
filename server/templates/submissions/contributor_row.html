@@ -6,7 +6,7 @@
       <input type="text" id="contributor-{{ number }}-name" name="{{ field.html_name }}-name" value="{{ name }}" maxlength="200" placeholder="Josiah Stinkney, Carberry" autocomplete="off" data-part="name">
     </div>
     <div class="field">
-      <label for="contributor-{{ number }}-orcid">ORCID iD</label>
+      <label for="contributor-{{ number }}-orcid">ORCID iD <span>(optional)</span></label>
       <input type="text" id="contributor-{{ number }}-orcid" name="{{ field.html_name }}-orcid" value="{{ orcid|cut:'https://orcid.org/' }}" maxlength="37" placeholder="0000-0002-1825-0097" autocomplete="off" spellcheck="false" data-part="orcid">
     </div>
     <div class="field">

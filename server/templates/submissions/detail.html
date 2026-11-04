@@ -20,7 +20,7 @@
         <ul class="contributors">
           {% for person in submission.collaborators %}
             <li><strong>{{ person.name }}</strong>
-              {% if person.orcid %}<a class="orcid-link" href="{{ person.orcid }}" target="_blank" rel="noopener noreferrer" title="View ORCID record" aria-label="ORCID record of {{ person.name }}"><img src="/assets/orcid.svg" alt="" width="16" height="16"></a>{% else %}<small>ORCID iD not supplied yet</small>{% endif %}
+              {% if person.orcid %}<a class="orcid-link" href="{{ person.orcid }}" target="_blank" rel="noopener noreferrer" title="View ORCID record" aria-label="ORCID record of {{ person.name }}"><img src="/assets/orcid.svg" alt="" width="16" height="16"></a>{% endif %}
               {% if person.email %}<small>Email (private): {{ person.email }}</small>{% else %}<small>Institutional email not supplied yet</small>{% endif %}
             </li>
           {% empty %}<li>No contributors supplied yet.</li>{% endfor %}

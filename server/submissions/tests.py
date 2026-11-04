@@ -150,7 +150,7 @@ class SubmissionTests(TestCase):
         self.assertContains(response, "DOI <span>(optional)</span>")
         self.assertContains(response, "Project website <span>(optional)</span>")
         self.assertContains(response, "Further subjects <span>(optional)</span>")
-        self.assertContains(response, "(optional)", count=3)
+        self.assertContains(response, "ORCID iD <span>(optional)</span>")
         self.assertContains(response, 'placeholder="Induced subgraphs of hypercubes and a proof of the Sensitivity Conjecture"')
         self.assertNotContains(response, "Required to save a draft")
         self.assertNotContains(response, "optional in a draft")
@@ -163,17 +163,42 @@ class SubmissionTests(TestCase):
                 self.assertFalse(form.is_valid())
                 self.assertIn(field, form.errors)
 
-    def test_each_contributor_needs_an_orcid_for_review_but_not_for_a_draft(self):
-        rows = {"collaborators-name": ["Anna, Example", "Ben, Example"], "collaborators-orcid": ["0000-0002-1825-0097", ""], "collaborators-email": ["anna@university.example", "ben@university.example"]}
-        self.assertTrue(SubmissionForm({**self.payload, **rows}).is_valid())
-        form = SubmissionForm({**self.payload, **rows}, for_submission=True)
-        self.assertFalse(form.is_valid())
-        self.assertEqual(form.errors["collaborators"], ["Contributor 2: add their ORCID iD."])
-        submission = self.create_submission({**self.payload, **rows})
-        self.assertContains(self.client.get(reverse("submissions:detail", args=[submission.pk])), "ORCID iD not supplied yet")
-        response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1, "publication_confirmed": "on"})
-        self.assertContains(response, "Contributor 2: add their ORCID iD.", status_code=400)
-        self.assertFalse(submission.revisions.exists())
+    def test_contributors_without_orcids_can_be_saved_submitted_and_published(self):
+        for orcids in (["", ""], ["0000-0002-1825-0097", ""]):
+            with self.subTest(orcids=orcids):
+                rows = {
+                    "collaborators-name": ["Anna, Example", "Ben, Example"],
+                    "collaborators-orcid": orcids,
+                    "collaborators-email": ["anna@university.example", "ben@university.example"],
+                }
+                for for_submission in (False, True):
+                    form = SubmissionForm({**self.payload, **rows}, for_submission=for_submission)
+                    self.assertTrue(form.is_valid(), form.errors)
+                submission = self.create_submission({**self.payload, **rows})
+                detail = self.client.get(reverse("submissions:detail", args=[submission.pk]))
+                self.assertNotContains(detail, "ORCID iD not supplied")
+                self.submit(submission).review(self.staff, approve=True)
+                project = next(p for p in self.client.get("/data/projects.json").json()["projects"] if p["id"] == submission.public_id)
+                expected_credits = [{"name": "Anna Example"}, {"name": "Ben Example"}]
+                if orcids[0]:
+                    expected_credits[0].update(orcid="https://orcid.org/0000-0002-1825-0097", orcidAuthenticated=False)
+                self.assertEqual(project["credits"], expected_credits)
+
+    def test_optional_orcids_still_reject_invalid_and_duplicate_identifiers_for_review(self):
+        for orcids, error in (
+            (["0000-0002-1825-0098", ""], "invalid check digit"),
+            (["not-an-id", ""], "An ORCID must look like"),
+            (["0000-0002-1825-0097", "https://orcid.org/0000-0002-1825-0097"], "this ORCID is already listed"),
+        ):
+            with self.subTest(orcids=orcids):
+                form = SubmissionForm({
+                    **self.payload,
+                    "collaborators-name": ["Anna, Example", "Ben, Example"],
+                    "collaborators-orcid": orcids,
+                    "collaborators-email": ["anna@university.example", "ben@university.example"],
+                }, for_submission=True)
+                self.assertFalse(form.is_valid())
+                self.assertIn(error, str(form.errors["collaborators"]))
 
     def test_doi_is_stored_as_a_link_and_shown_on_the_draft(self):
         for value in ("10.5281/zenodo.1234567", "doi:10.5281/zenodo.1234567", "https://doi.org/10.5281/zenodo.1234567", "http://dx.doi.org/10.5281/zenodo.1234567"):

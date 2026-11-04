@@ -16,7 +16,7 @@
         {% if field.name == "collaborators" %}
           <fieldset class="contributors-field">
             <legend>{{ field.label }}</legend>
-            {% if not form.connected_orcid %}<p class="private-note">For your own contributor row, <a href="{% url 'socialaccount_connections' %}">connect your ORCID account</a>, then return here and select “Use my connected ORCID”. Save your draft before leaving this page.</p>{% endif %}
+            {% if not form.connected_orcid %}<p class="private-note">If you want to include your own ORCID iD, <a href="{% url 'socialaccount_connections' %}">connect your ORCID account</a>, then return here and select “Use my connected ORCID”. Save your draft before leaving this page.</p>{% endif %}
             {% with rows=field.value %}
               <div class="contributor-rows" data-contributor-rows>
                 {% for person in rows %}
@@ -53,7 +53,7 @@
           </div>
         {% endif %}
       {% endfor %}
-      <p class="private-note">Contributor names and ORCID links will be public if this submission is accepted.</p>
+      <p class="private-note">Contributor names and any supplied ORCID links will be public if this submission is accepted.</p>
       {% if submission.owner_id == user.pk %}<p class="private-note">Before submitting the project, <a href="{% url 'verification:overview' submission.pk %}">verify repository access</a>.</p>{% endif %}
       <div class="actions">
         <button class="button" type="submit">Save draft</button>

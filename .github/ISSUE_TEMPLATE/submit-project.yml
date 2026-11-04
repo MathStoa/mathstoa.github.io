@@ -84,7 +84,7 @@ body:
     id: collaborators
     attributes:
       label: Contributors
-      description: One contributor per line, including yourself. Give the name and surname, then their ORCID iD. Anyone can [register for an ORCID iD](https://orcid.org/register) free of charge.
+      description: One contributor per line, including yourself. Give the name and surname, followed by their ORCID iD if available. ORCID iDs are optional.
       placeholder: Josiah Carberry, 0000-0002-1825-0097
     validations:
       required: true
