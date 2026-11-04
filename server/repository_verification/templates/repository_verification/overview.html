@@ -8,16 +8,16 @@
   <p>Choose how to confirm that you are authorised to submit this repository. Your submission will proceed automatically to moderation once verification succeeds.</p>
   <p><strong>Repository:</strong> {{ submission.repository_url|default:"Add a repository URL to your submission first." }}</p>
 
-  <section class="account-section" aria-labelledby="file-verification">
-    <h2 id="file-verification">Verify by file</h2>
-    <p>Add a temporary file to the repository yourself, or ask a repository maintainer to add it for you. If you have already generated a file, you can continue that check.</p>
-    <p><a class="button" href="{% url 'verification:file_overview' submission.pk %}">Verify by file</a></p>
-  </section>
   <section class="account-section" aria-labelledby="github-verification">
     <h2 id="github-verification">Verify with GitHub</h2>
     <p>Use your GitHub account for a one-time check of your access to the repository.</p>
     <p><a class="button" href="{% url 'verification:github_overview' submission.pk %}">Verify with GitHub</a></p>
     {% if not github_available %}<p class="helptext">GitHub verification is not configured yet. File verification is available.</p>{% endif %}
+  </section>
+  <section class="account-section" aria-labelledby="file-verification">
+    <h2 id="file-verification">Verify by file</h2>
+    <p>Add a temporary file to the repository yourself, or ask a repository maintainer to add it for you. If you have already generated a file, you can continue that check.</p>
+    <p><a class="button" href="{% url 'verification:file_overview' submission.pk %}">Verify by file</a></p>
   </section>
 </section>
 {% endblock %}
