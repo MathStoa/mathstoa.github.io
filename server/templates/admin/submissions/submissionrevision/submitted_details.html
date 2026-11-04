@@ -1,0 +1,52 @@
+<div class="revision-review">
+  <p class="revision-review-intro">These details are from this fixed submitted revision. Contributor emails are private.</p>
+  {% if snapshot_is_object %}
+    <section aria-labelledby="submitted-title-heading">
+      <h3 id="submitted-title-heading">Title</h3>
+      <div class="revision-review-title revision-review-text">{% include "admin/submissions/submissionrevision/submitted_value.html" with value=title only %}</div>
+    </section>
+    <section aria-labelledby="submitted-abstract-heading">
+      <h3 id="submitted-abstract-heading">Abstract</h3>
+      {% if abstract.text %}<div class="abstract-text" data-abstract>{{ abstract.text }}</div>{% else %}{% include "admin/submissions/submissionrevision/submitted_value.html" with value=abstract only %}{% endif %}
+    </section>
+    <section aria-labelledby="submitted-categories-heading">
+      <h3 id="submitted-categories-heading">Categories</h3>
+      <dl class="revision-review-fields">
+        <dt>Main subject</dt>
+        <dd>{% include "admin/submissions/submissionrevision/submitted_value.html" with value=main_category only %}{% if main_category.label %} — {{ main_category.label }}{% endif %}</dd>
+        <dt>Further subjects</dt>
+        <dd>{% if secondary_malformed %}<span class="revision-review-missing">Cannot display these categories. See the exact submission JSON below.</span>{% elif secondary_categories %}<ul>{% for category in secondary_categories %}<li>{% include "admin/submissions/submissionrevision/submitted_value.html" with value=category only %}{% if category.label %} — {{ category.label }}{% endif %}</li>{% endfor %}</ul>{% else %}<span class="revision-review-missing">None supplied</span>{% endif %}</dd>
+      </dl>
+    </section>
+    <section aria-labelledby="submitted-contributors-heading">
+      <h3 id="submitted-contributors-heading">Contributors{% if contributors %} ({{ contributors|length }}){% endif %}</h3>
+      {% if contributors_malformed %}<p class="revision-review-missing">Cannot display these contributors. See the exact submission JSON below.</p>{% else %}
+        <ol class="revision-review-contributors">
+          {% for person in contributors %}
+            <li>
+              {% if person.malformed %}<p class="revision-review-missing">Cannot display this contributor. See the exact submission JSON below.</p>{% else %}
+                <div class="revision-review-name revision-review-text">{% include "admin/submissions/submissionrevision/submitted_value.html" with value=person.name only %}</div>
+                <dl class="revision-review-fields">
+                  <dt>Email (private)</dt><dd class="revision-review-text">{% include "admin/submissions/submissionrevision/submitted_value.html" with value=person.email only %}</dd>
+                  <dt>ORCID iD</dt><dd class="revision-review-text">{% include "admin/submissions/submissionrevision/submitted_value.html" with value=person.orcid only %}</dd>
+                </dl>
+              {% endif %}
+            </li>
+          {% empty %}<li class="revision-review-missing">No contributors supplied.</li>{% endfor %}
+        </ol>
+      {% endif %}
+    </section>
+    <section aria-labelledby="submitted-links-heading">
+      <h3 id="submitted-links-heading">Project links</h3>
+      <dl class="revision-review-fields">
+        {% for link in project_links %}<dt>{{ link.label }}</dt><dd>{% include "admin/submissions/submissionrevision/submitted_value.html" with value=link only %}</dd>{% endfor %}
+      </dl>
+    </section>
+  {% else %}
+    <p class="revision-review-missing">This older snapshot is not a submission object. See the exact submission JSON below.</p>
+  {% endif %}
+  <details class="revision-review-json">
+    <summary>Exact submission JSON</summary>
+    <pre>{{ raw_json }}</pre>
+  </details>
+</div>

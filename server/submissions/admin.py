@@ -1,14 +1,15 @@
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.html import format_html, format_html_join
-import json
 
 from repository_verification.models import RepositoryVerification
 
 from .models import Submission, SubmissionRevision
 from .notifications import can_send, contributor_contacts
+from .review_presentation import submitted_details
 
 
 class AbstractPreviewMedia:
@@ -39,17 +40,16 @@ class SubmissionRevisionAdmin(AbstractPreviewMedia, admin.ModelAdmin):
     list_display = ("submission", "number", "status", "created_at", "reviewed_by")
     list_filter = ("status",)
     search_fields = ("submission__title",)
-    fields = ("submission", "number", "submitted_by", "snapshot_display", "abstract_preview", "verification_display", "status", "review_note", "created_at", "reviewed_by", "reviewed_at")
-    readonly_fields = ("submission", "number", "submitted_by", "snapshot_display", "abstract_preview", "verification_display", "status", "created_at", "reviewed_by", "reviewed_at")
+    fields = ("submission", "number", "submitted_by", "snapshot_display", "verification_display", "status", "review_note", "created_at", "reviewed_by", "reviewed_at")
+    readonly_fields = ("submission", "number", "submitted_by", "snapshot_display", "verification_display", "status", "created_at", "reviewed_by", "reviewed_at")
     actions = ("approve_selected", "request_changes")
 
-    @admin.display(description="Submitted abstract preview")
-    def abstract_preview(self, obj):
-        return format_html('<div data-abstract>{}</div>', obj.snapshot.get("abstract", ""))
+    class Media(AbstractPreviewMedia.Media):
+        css = {"all": (*AbstractPreviewMedia.Media.css["all"], "revision-review.css")}
 
-    @admin.display(description="Exact submitted details")
+    @admin.display(description="Submitted details")
     def snapshot_display(self, obj):
-        return format_html("<pre style='white-space:pre-wrap'>{}</pre>", json.dumps(obj.snapshot, ensure_ascii=False, indent=2))
+        return render_to_string("admin/submissions/submissionrevision/submitted_details.html", submitted_details(obj.snapshot))
 
     @admin.display(description="Repository verification")
     def verification_display(self, obj):
@@ -78,7 +78,7 @@ class SubmissionRevisionAdmin(AbstractPreviewMedia, admin.ModelAdmin):
             f"Verified {stamp(proof.verified_at)}" + (f" with ORCID {proof.orcid}" if proof.orcid else ""),
             f"Status: {state}",
         ]
-        if obj.snapshot.get("repository_url") != proof.repository_url:
+        if not isinstance(obj.snapshot, dict) or obj.snapshot.get("repository_url") != proof.repository_url:
             lines.append("Warning: this revision names a different repository URL from the proof. Approval will be refused.")
         return format_html("<ul style='margin:0;padding-left:18px'>{}</ul>", format_html_join("", "<li>{}</li>", ((line,) for line in lines)))
 

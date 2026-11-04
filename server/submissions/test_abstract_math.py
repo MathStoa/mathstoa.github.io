@@ -43,7 +43,7 @@ class AbstractMathTests(TestCase):
 
     def test_moderators_preview_exact_revision_and_escape_html(self):
         revision = SubmissionRevision(submission=self.submission, snapshot={'abstract': self.source})
-        preview = SubmissionRevisionAdmin(SubmissionRevision, admin.site).abstract_preview(revision)
+        preview = SubmissionRevisionAdmin(SubmissionRevision, admin.site).snapshot_display(revision)
         self.assertIn(str(escape(self.source)), preview)
         self.assertNotIn('<img src=x', preview)
         self.submission.abstract = 'Changed draft $y$'

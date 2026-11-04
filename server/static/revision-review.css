@@ -1,0 +1,27 @@
+/* Keep the revision readable within Django's aligned read-only form. */
+.field-snapshot_display .flex-container { display: block; }
+.aligned .field-snapshot_display label { float: none; width: auto; padding-bottom: .75rem; }
+.aligned .field-snapshot_display .readonly { margin-left: 0; min-width: 0; }
+.revision-review { min-width: 0; max-width: 64rem; overflow-wrap: anywhere; }
+.revision-review section { padding: 1rem 0; border-bottom: 1px solid var(--hairline-color); }
+.revision-review h3 { margin: 0 0 .75rem; padding: 0; font-size: 1rem; color: var(--body-fg); }
+.revision-review .revision-review-intro { margin: 0 0 .25rem; color: var(--body-quiet-color); }
+.revision-review-text { white-space: pre-wrap; }
+.revision-review-title { font-size: 1.25rem; font-weight: 600; line-height: 1.5; }
+.revision-review-name { font-weight: 600; margin-bottom: .5rem; }
+.revision-review .revision-review-fields { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: .5rem 1rem; margin: 0; }
+.revision-review-fields dt { color: var(--body-quiet-color); }
+.revision-review-fields dd { margin: 0; min-width: 0; }
+.aligned .revision-review-fields ul { margin: 0; padding: 0; list-style: none; }
+.revision-review .revision-review-contributors { margin: 0; padding-left: 1.5rem; }
+.revision-review-contributors > li { padding: .75rem 0; }
+.revision-review-contributors > li:first-child { padding-top: 0; }
+.revision-review-missing { color: var(--body-quiet-color); }
+.revision-review-json { margin-top: 1.25rem; border: 1px solid var(--hairline-color); border-radius: 4px; }
+.revision-review-json summary { padding: .75rem; cursor: pointer; font-weight: 600; }
+.revision-review-json summary:focus-visible { outline: 2px solid var(--link-fg); outline-offset: 2px; }
+.revision-review-json pre { margin: 0; padding: 1rem; max-height: 32rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--darkened-bg); }
+@media (max-width: 600px) {
+  .revision-review .revision-review-fields { grid-template-columns: minmax(0, 1fr); gap: .25rem; }
+  .revision-review-fields dd { margin-bottom: .75rem; }
+}
