@@ -133,7 +133,7 @@ class PrivacyNoticeTests(TestCase):
             "Anyone, with or without an account",
         ):
             self.assertContains(response, sentence)
-        self.assertContains(response, "mailto:privacy@example.invalid", count=2)
+        self.assertContains(response, "mailto:privacy@example.invalid", count=3)
 
     def test_email_collection_wording_follows_email_login_setting(self):
         offered = "If you sign in with email or add an email address"

@@ -40,7 +40,7 @@ For renderer changes, run `python -m pip install -r browser_tests/requirements.t
 
 ## Moderation and corrections
 
-mathStoa maintainers check scope, readable content, public links and any DOI, permission to register, attribution, and clarity of the requested collaboration. They may ask for revisions or decline an empty, misleading, duplicate, or out-of-scope submission. This is archive moderation, not mathematical peer review.
+mathStoa maintainers check scope, readable content, public links and any DOI, permission to register, attribution, and clarity of the requested collaboration. They may ask for revisions or decline submissions, including those that are empty, misleading, duplicate, or out of scope. Meeting the criteria does not guarantee a listing. We may decline to list a project at our discretion, without giving a reason, except where an explanation is required by law or our complaints procedure. This is archive moderation, not mathematical peer review.
 
 In the account service, submitting a draft creates a fixed revision for moderation. Staff can approve it or request changes. A previously approved revision remains public while an update is being moderated; editing a draft does not silently replace the published listing. Moderation decisions are retained with the submitted revision. Legacy submissions retain their decisions in the GitHub issue or pull request.
 
@@ -75,7 +75,7 @@ Moderation rules:
 - Decide within a week of submission. The site header shows moderators a **Moderation queue** count, and a moderation mailbox can receive a notice for every submitted revision (see [SETUP.md](SETUP.md)).
 - One moderator is enough to publish, and a moderator may approve a project they own or submitted themselves; every decision records who made it.
 - Every decision carries a moderation note. The note is the only message the submitter receives: accounts created through ORCID, GitHub or GitLab hold no email address, so submitters read the outcome on their draft page.
-- "Request changes" is also how to decline. State the reason, including out-of-scope or duplicate listings, so the submitter can respond or stop.
+- "Request changes" is also how to decline. For an initial refusal, a brief outcome note such as "Not accepted for listing" is sufficient unless an explanation is required by law or the complaints procedure. This does not remove the obligation to investigate complaints and explain their outcomes.
 - Never approve a test or demonstration draft; use "Request changes" to clear it from the queue.
 
 ### Legacy JSON archive
