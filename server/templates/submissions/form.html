@@ -53,7 +53,7 @@
           </div>
         {% endif %}
       {% endfor %}
-      <p class="private-note">Contributor names and ORCID links will be public if this submission is accepted. Email addresses stay private: the project's owner and <span class="brand">math<span lang="el">Στοά</span></span> staff can see them, and they are used to confirm the submission to each contributor. Adding a contributor does not give them editing access.</p>
+      <p class="private-note">Contributor names and ORCID links will be public if this submission is accepted.</p>
       {% if submission.owner_id == user.pk %}<p class="private-note">Before submitting the project, <a href="{% url 'verification:overview' submission.pk %}">verify repository access</a>.</p>{% endif %}
       <div class="actions">
         <button class="button" type="submit">Save draft</button>

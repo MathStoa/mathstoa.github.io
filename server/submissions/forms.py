@@ -156,7 +156,7 @@ class SubmissionForm(forms.ModelForm):
         help_text=f"If the project spans several areas, tick up to {MAX_SECONDARY_CATEGORIES} more.",
     )
     revision = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
-    permission_confirmed = forms.BooleanField(required=False, label="I maintain this project or have permission to submit it and its contributor details, and have the right to publish its abstract under CC BY 4.0.", help_text=format_html('Before submitting this saved draft, you will grant the public an irrevocable <a href="{}" target="_blank" rel="noopener noreferrer">CC BY 4.0 licence</a> to the abstract, with credit to the named project contributors. Linked repositories keep their own terms.', "https://creativecommons.org/licenses/by/4.0/"))
+    permission_confirmed = forms.BooleanField(required=False, label="I maintain this project or have permission to submit it and its contributor details, and have the right to publish its abstract under CC BY 4.0.")
     # Everything else is required before a draft can be submitted for moderation.
     optional_fields = ("doi", "reading_url", "secondary_categories")
 
