@@ -130,6 +130,13 @@ a:hover, a:focus-visible,
   text-decoration-color: currentColor;
 }
 
+/* Keep the About introduction, paragraphs and lists at one reading size. */
+.about-main .lede, .about-main .prose p, .about-main .prose li {
+  font-size: 16px;
+  line-height: 1.8;
+}
+.about-main .prose .button { font-size: 16px; }
+
 /* Bordered buttons retain their filled interaction state. */
 .button:not(:disabled):hover, .button:not(:disabled):focus-visible {
   background: var(--link);
