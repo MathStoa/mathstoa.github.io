@@ -82,7 +82,13 @@
 .contributor-link:hover, .contributor-link:focus-visible { text-decoration: underline; }
 .orcid-link { margin-left: 5px; }
 .orcid-link img { filter: none; }
-.project-credit strong { font-family: var(--sans); font-size: 15px; font-weight: 600; }
+.project-credit .contributor-link { font-size: 15px; text-decoration: underline; text-decoration-thickness: 1px; }
+.project-credit .contributor-link:hover { text-decoration-thickness: 2px; }
+.project-sidebar .button:hover, .project-sidebar .button:focus-visible {
+  background: var(--link);
+  border-color: var(--link);
+  color: #fff;
+}
 .project-intro h1 { font-family: var(--serif); font-size: 28px; font-weight: 400; }
 .project-intro .tag { font-size: 12px; }
 .site-footer { padding-top: 20px; font-size: 12px; }
