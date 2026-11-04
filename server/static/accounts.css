@@ -25,4 +25,6 @@
 .account-main a.button.button-delete:focus-visible,
 .account-main button.button-delete:not(.text-button):not(:disabled):hover,
 .account-main button.button-delete:not(.text-button):not(:disabled):focus-visible { background: #8b2424; border-color: #8b2424; color: #fff; }
+.submission-heading .actions { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.submission-heading .actions .button { text-align: center; }
 .messages .notice{position:relative;padding-right:44px}.account-main .notice-dismiss{position:absolute;top:6px;right:8px;padding:2px 7px;font-size:20px;line-height:1;color:var(--muted)}.account-main .notice-dismiss:hover{color:var(--ink)}
