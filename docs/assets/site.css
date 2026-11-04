@@ -130,6 +130,9 @@ a:hover, a:focus-visible,
   text-decoration-color: currentColor;
 }
 
+/* Align the About introduction and sections within one reading column. */
+.about-main { max-width: 830px; }
+
 /* Keep the About introduction, paragraphs and lists at one reading size. */
 .about-main .lede, .about-main .prose p, .about-main .prose li {
   font-size: 16px;
