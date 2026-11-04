@@ -28,3 +28,8 @@
 .submission-heading .actions { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
 .submission-heading .actions .button { text-align: center; }
 .messages .notice{position:relative;padding-right:44px}.account-main .notice-dismiss{position:absolute;top:6px;right:8px;padding:2px 7px;font-size:20px;line-height:1;color:var(--muted)}.account-main .notice-dismiss:hover{color:var(--ink)}
+
+/* Match the empty-state action to the compact navigation button on mobile. */
+@media (max-width: 620px) {
+  .empty-submissions .button-small { font-size: 12px; padding: 4px 7px; }
+}

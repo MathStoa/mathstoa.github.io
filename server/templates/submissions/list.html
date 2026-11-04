@@ -3,7 +3,6 @@
 {% block content %}
   <div class="submission-heading">
     <h1>My submissions</h1>
-    <a href="{% url 'submissions:create' %}" class="button">New submission</a>
   </div>
   {% if submissions %}
     <div class="submission-list">
@@ -22,7 +21,7 @@
     <div class="empty-submissions">
       <h2>Your first project starts here</h2>
       <p>Introduce your project with its repository link, a short description and contributor details, then submit it for moderation.</p>
-      <a href="{% url 'submissions:create' %}" class="button">Create a submission</a>
+      <a href="{% url 'submissions:create' %}" class="button button-small">Submit a project</a>
     </div>
   {% endif %}
 {% endblock %}
