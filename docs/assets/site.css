@@ -76,7 +76,6 @@
 .contributor-link { font-family: var(--sans); font-weight: 500; }
 .orcid-link { margin-left: 1px; padding: 4px; vertical-align: -7px; border-radius: 50%; text-decoration: none; }
 .orcid-link img { filter: none; }
-.orcid-link:hover { outline: 1px solid var(--muted); outline-offset: 1px; }
 .project-credit .contributor-link { font-size: 15px; }
 .project-credits { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 16px 0 12px; }
 .project-credit { min-width: 0; max-width: 100%; margin: 0; line-height: 1.5; }
