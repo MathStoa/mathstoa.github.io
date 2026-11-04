@@ -295,6 +295,34 @@ archive for the public project data and announcement feed. Editing a draft or
 requesting changes to an update leaves the previously approved revision public.
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the moderation workflow.
 
+Requesting changes attempts a separate email to every listed contributor after
+the decision's transaction commits, using the exact submitted revision's frozen
+contributor contacts. These are the same recipients and rules as the submission
+confirmations: each listed contributor with an email receives a separate message.
+Later draft changes do not change the recipients. Account emails, provider
+profiles and account-email verification are not involved. The admin action warns
+when the submitted revision has no contributor emails or sending configuration
+is missing.
+
+These notices use the existing email backend and `DEFAULT_FROM_EMAIL`; SMTP also
+needs `EMAIL_HOST`. In production, a configured SMTP host requires exactly one of
+`EMAIL_USE_TLS` or `EMAIL_USE_SSL`, even when `EMAIL_LOGIN_ENABLED=false`.
+Startup rejects an unencrypted configuration, and all submission notification
+paths also refuse insecure SMTP at send time. Console and in-memory backends
+remain available for development and tests. `MODERATION_NOTIFY_EMAIL` controls
+only the moderator's submission notices. Change-request emails contain the frozen
+title, revision number and a general submissions link explicitly for the owner.
+Only the owner can read feedback and edit the private submission. A contributor
+is asked to coordinate with the person who submitted the project; being listed
+grants no account access. Neither moderation notes nor contributor addresses
+appear in message bodies, and recipients do not see other recipients' addresses.
+Failed sends are logged by revision ID without addresses or SMTP exception
+details, do not undo moderation, and do not prevent delivery to the remaining
+contributors. There is no delivery queue or automatic retry: repeating a
+completed moderation action does not send again. A process exit after commit can
+lose a notice; the submission page remains the authoritative record. Confirm
+delivery through the provider's logs when investigating a reported missing email.
+
 Back up PostgreSQL to access-controlled storage, test restoration, and define a
 retention period for backups and operational logs. The supplied Gunicorn access
 log omits request paths, query strings, and client IP addresses; check the reverse

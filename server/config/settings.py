@@ -154,8 +154,8 @@ if EMAIL_USE_TLS and EMAIL_USE_SSL:
     raise ImproperlyConfigured("Choose either EMAIL_USE_TLS or EMAIL_USE_SSL, not both.")
 if not DEBUG and EMAIL_LOGIN_ENABLED and (not EMAIL_HOST or not DEFAULT_FROM_EMAIL):
     raise ImproperlyConfigured("Email sign-in needs EMAIL_HOST and DEFAULT_FROM_EMAIL in production.")
-if not DEBUG and EMAIL_LOGIN_ENABLED and not (EMAIL_USE_TLS or EMAIL_USE_SSL):
-    raise ImproperlyConfigured("Production email sign-in requires SMTP encryption: enable EMAIL_USE_TLS or EMAIL_USE_SSL.")
+if not DEBUG and (EMAIL_LOGIN_ENABLED or EMAIL_HOST) and not (EMAIL_USE_TLS or EMAIL_USE_SSL):
+    raise ImproperlyConfigured("Production email requires SMTP encryption: enable EMAIL_USE_TLS or EMAIL_USE_SSL.")
 
 LOGIN_URL = "account_login"
 LOGIN_REDIRECT_URL = "/submissions/"

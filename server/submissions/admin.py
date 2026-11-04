@@ -7,6 +7,7 @@ import json
 from repository_verification.models import RepositoryVerification
 
 from .models import Submission, SubmissionRevision
+from .notifications import can_send, contributor_contacts
 
 
 class AbstractPreviewMedia:
@@ -102,5 +103,10 @@ class SubmissionRevisionAdmin(AbstractPreviewMedia, admin.ModelAdmin):
             try:
                 revision.review(request.user, approve=approve, note=revision.review_note)
                 self.message_user(request, f"Revision {revision.number}: {'published' if approve else 'changes requested'}.")
+                if not approve:
+                    if not contributor_contacts(revision):
+                        self.message_user(request, "No email notification: this submitted revision has no contributor email addresses. The owner can read the decision on their submission page.", level=messages.WARNING)
+                    elif not can_send():
+                        self.message_user(request, "No email notification: email delivery is not configured. The owner can read the decision on their submission page.", level=messages.WARNING)
             except ValidationError as error:
                 self.message_user(request, "; ".join(error.messages), level=messages.ERROR)

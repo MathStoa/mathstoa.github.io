@@ -40,6 +40,7 @@ required (no large-scale monitoring or special category data).
 | Repository verification | Submitters | GitHub user id, login, permission level, commit SHA, connected ORCID, dates | Art. 6(1)(f) authorised submissions | Render; GitHub (independent controller, API queries) | With the submission's records |
 | Moderation and publication | Submitters, moderators, named contributors | Immutable revision snapshots, moderation notes, moderator identity; public listing of names and ORCID iDs | Art. 6(1)(f) scholarly attribution and accountable moderation | Public (listing only); Render | While listed or under moderation; never-accepted projects until removal is requested |
 | Moderation notices | Submitters (by project) | Project title and link in an email to moderators | Art. 6(1)(f) | SMTP provider when configured (processor) | Moderators' mailboxes |
+| Change-request notices | Named contributors | Each contributor's submitted email, frozen project title and revision number; separate messages to the same contacts as submission confirmations, without moderation feedback, account identifiers or other contributors' emails | Art. 6(1)(f), accountable moderation | SMTP provider when configured (processor) | Recipients' mailboxes; the provider's sending logs |
 | Contributor confirmations | Named contributors | Name, institutional email, project title and the other contributors' names, sent to each contributor separately when a revision is submitted; also gives the Art. 14 information by linking the notice | Art. 6(1)(f) | SMTP provider (processor) | Recipients' mailboxes; the provider's sending logs |
 | Legacy GitHub issue submissions | Submitters, named contributors | Whatever the issue contains | Art. 6(1)(f) | Public on GitHub (independent controller) | GitHub's |
 | Privacy requests and breach records | Requesters | Request file, reply address, correspondence, outcome | Art. 6(1)(c) legal obligation | Email forwarding (Porkbun), controllers' mailboxes | Request files and exports deleted at closure; date, action and outcome kept two years |
@@ -54,7 +55,7 @@ decision-making or profiling.
 | Render | Hosting, database, backups | Data in Frankfurt; company and sub-processors (AWS, Google Cloud, Cloudflare and others listed on Render's trust page) in the US | EU–US Data Privacy Framework with UK Extension | Render DPA: **confirm it is in force and record the date and version here** |
 | Cloudflare | Network edge in front of Render | Global; US company | Data Privacy Framework | Via Render |
 | Porkbun | Email forwarding for contact@math-stoa.org | US | **to check** | Porkbun terms |
-| SMTP provider (Brevo, planned) | Moderation notices | EU | Not a restricted transfer | Brevo DPA, to accept when configured |
+| SMTP provider (Brevo, planned) | Moderation notices, change-request notices and contributor confirmations | EU | Not a restricted transfer | Brevo DPA, to accept when configured |
 
 Simon Gabriel's access from the United States is access by a joint
 controller, not a processor. **Open:** decide and record the transfer basis

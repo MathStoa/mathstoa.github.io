@@ -141,3 +141,31 @@ class RenderSettingsTests(SimpleTestCase):
         )
         self.assertFalse(configured["EMAIL_LOGIN_ENABLED"])
         self.assertEqual(configured["EMAIL_HOST"], "")
+
+    def test_notification_only_production_smtp_requires_encryption(self):
+        for mailbox in ("", "moderators@example.org"):
+            with self.subTest(mailbox=mailbox), self.assertRaisesMessage(ImproperlyConfigured, "SMTP encryption"):
+                self.load_settings(
+                    DJANGO_ALLOWED_HOSTS="math-stoa.org", EMAIL_LOGIN_ENABLED="false",
+                    EMAIL_HOST="smtp.example.org", DEFAULT_FROM_EMAIL="notices@example.org",
+                    MODERATION_NOTIFY_EMAIL=mailbox, EMAIL_USE_TLS="false", EMAIL_USE_SSL="false",
+                )
+
+    def test_notification_only_production_accepts_tls_or_ssl(self):
+        for use_tls, use_ssl, port in (("true", "false", "587"), ("false", "true", "465")):
+            with self.subTest(use_tls=use_tls, use_ssl=use_ssl):
+                configured = self.load_settings(
+                    DJANGO_ALLOWED_HOSTS="math-stoa.org", EMAIL_LOGIN_ENABLED="false",
+                    EMAIL_HOST="smtp.example.org", DEFAULT_FROM_EMAIL="notices@example.org",
+                    EMAIL_USE_TLS=use_tls, EMAIL_USE_SSL=use_ssl, EMAIL_PORT=port,
+                )
+                self.assertFalse(configured["EMAIL_LOGIN_ENABLED"])
+                self.assertNotEqual(configured["EMAIL_USE_TLS"], configured["EMAIL_USE_SSL"])
+
+    def test_notification_only_production_rejects_conflicting_tls_and_ssl(self):
+        with self.assertRaisesMessage(ImproperlyConfigured, "not both"):
+            self.load_settings(
+                DJANGO_ALLOWED_HOSTS="math-stoa.org", EMAIL_LOGIN_ENABLED="false",
+                EMAIL_HOST="smtp.example.org", DEFAULT_FROM_EMAIL="notices@example.org",
+                EMAIL_USE_TLS="true", EMAIL_USE_SSL="true",
+            )

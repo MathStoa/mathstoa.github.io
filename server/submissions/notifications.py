@@ -1,10 +1,12 @@
-"""Notices sent when a revision is submitted for moderation.
+"""Private submission and moderation notices.
 
 Moderators get one notice naming the project and linking to its administration page.
 Each listed contributor gets a separate confirmation at their private email,
 which also tells them how to object to being listed. Neither carries anything
 about the submitter's account. A missing mailbox or SMTP setting disables
 them, and a failed send is logged and never blocks the submission.
+Change requests go to the same frozen contributor contacts as submission
+confirmations. Feedback stays on the owner's private draft page.
 """
 import logging
 
@@ -13,7 +15,7 @@ from django.core.mail import EmailMessage, send_mail
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import display_name
+from .models import SubmissionRevision, display_name
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +23,15 @@ logger = logging.getLogger(__name__)
 def can_send():
     if not settings.DEFAULT_FROM_EMAIL:
         return False
-    # The production backend cannot send without a host.
-    return not (settings.EMAIL_BACKEND.endswith("smtp.EmailBackend") and not settings.EMAIL_HOST)
+    if settings.EMAIL_BACKEND.endswith("smtp.EmailBackend"):
+        if not settings.EMAIL_HOST:
+            return False
+        # Notification emails can be enabled independently of email sign-in.
+        # Enforce this here too, for all three notification paths, even when
+        # settings are overridden after the production startup validation.
+        if not settings.DEBUG and bool(settings.EMAIL_USE_TLS) == bool(settings.EMAIL_USE_SSL):
+            return False
+    return True
 
 
 def moderation_address():
@@ -32,6 +41,51 @@ def moderation_address():
 
 def _title(revision):
     return " ".join(str(revision.snapshot.get("title") or revision.submission.title).split()) or "Untitled submission"
+
+
+def contributor_contacts(revision):
+    """Use the submitted contacts for both confirmation and change notices."""
+    return [person for person in revision.snapshot.get("collaborators", []) if person.get("email")]
+
+
+def notify_changes_requested(revision_id):
+    """Called once, after the pending-to-rejected decision commits; no retries."""
+    revision = SubmissionRevision.objects.select_related("submission").filter(pk=revision_id, status="rejected").first()
+    if revision is None:
+        return 0
+    people = contributor_contacts(revision)
+    if not people:
+        logger.warning("Change-request notices for revision %s skipped: no contributor emails.", revision.pk)
+        return 0
+    if not can_send():
+        logger.warning("Change-request notices for revision %s skipped: email delivery is not configured.", revision.pk)
+        return 0
+    title = _title(revision)
+    base = settings.PUBLIC_BASE_URL.rstrip("/")
+    subject = f"{settings.ACCOUNT_EMAIL_SUBJECT_PREFIX}Changes requested: {title}"
+    body = (
+        f'A moderator has requested changes to revision {revision.number} of "{title}" on math-stoa.\n\n'
+        "You are receiving this notice because you are listed as a contributor in this submitted version.\n\n"
+        "Only the project's owner can read the moderation feedback on the private submission page. "
+        "The owner should sign in to their submissions, edit and save a new draft, then submit it again for moderation:\n"
+        f"{base}{reverse('submissions:list')}\n\n"
+        "Being listed as a contributor does not grant access to the submission or account. "
+        "If you are not the owner, please coordinate any changes with the person who submitted the project.\n\n"
+        f"How we handle your information: {base}{reverse('privacy')}\n"
+    )
+    contact = settings.PUBLIC_CONTACT_EMAIL
+    sent = 0
+    for person in people:
+        try:
+            delivered = EmailMessage(subject, body, settings.DEFAULT_FROM_EMAIL, [person["email"]], reply_to=[contact] if contact else None).send()
+            if not delivered:
+                raise RuntimeError("Email backend did not accept the message.")
+            sent += 1
+        except Exception:
+            # Do not expose addresses or SMTP errors, and continue to the next
+            # contributor even if this delivery failed.
+            logger.warning("A change-request notice for revision %s could not be sent.", revision.pk)
+    return sent
 
 
 def notify_moderators(revision):
@@ -63,7 +117,7 @@ def notify_contributors(revision):
     """Send one message per listed contributor; no recipient sees another's address."""
     if not can_send():
         return 0
-    people = [person for person in revision.snapshot.get("collaborators", []) if person.get("email")]
+    people = contributor_contacts(revision)
     if not people:
         return 0
     title = _title(revision)

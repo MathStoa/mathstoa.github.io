@@ -137,6 +137,11 @@ class SubmissionRevision(models.Model):
             if approve:
                 submission.published_revision = revision
                 submission.save(update_fields=["published_revision"])
+            else:
+                from .notifications import notify_changes_requested
+                # The row locks and pending-state check above allow one decision
+                # only. An enclosing transaction must also commit before email.
+                transaction.on_commit(lambda: notify_changes_requested(revision.pk), robust=True)
         self.refresh_from_db()
 
     def public_project(self):
