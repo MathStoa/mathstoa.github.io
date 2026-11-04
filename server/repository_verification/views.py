@@ -2,7 +2,6 @@
 
 from allauth.core import ratelimit
 from allauth.socialaccount.adapter import get_adapter
-from allauth.socialaccount.models import SocialAccount
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist, ValidationError
@@ -90,8 +89,6 @@ def overview(request, pk):
         "verified": has_current_verification(submission) and not submission.revisions.filter(
             number=submission.revision, status="unverified",
         ).exists(),
-        "github_available": _github_provider(request) is not None,
-        "orcid": SocialAccount.objects.filter(user=request.user, provider="orcid").values_list("uid", flat=True).first(),
         "file_attempt": attempt,
         "file_content": file_state.get("content", "") if attempt else "",
     })
@@ -157,7 +154,7 @@ def github_start(request, pk):
         return limited
     provider = _github_provider(request)
     if provider is None:
-        messages.error(request, "GitHub verification is not configured yet. You can verify with a file instead.")
+        messages.error(request, "GitHub verification is not configured yet. You can verify by file instead.")
         return redirect("verification:overview", pk=submission.pk)
     try:
         attempt, nonce = start_attempt(submission, request.user, "github")

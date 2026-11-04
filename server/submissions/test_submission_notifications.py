@@ -241,7 +241,7 @@ class SubmissionNotificationTests(TestCase):
         verification.assert_called_once()
         self.assertRedirects(response, reverse("verification:overview", args=[submission.pk]))
         self.assertFalse(response.context["verified"])
-        self.assertContains(response, "Repository access must be verified before moderation.")
+        self.assertContains(response, "Verify by file")
         self.assertNotContains(response, "Repository authorization verified.")
         submission.refresh_from_db()
         published.refresh_from_db()

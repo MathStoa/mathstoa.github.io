@@ -1,52 +1,32 @@
 {% extends "base.html" %}
-{% block head_title %}Verify repository authorization{% endblock %}
+{% block head_title %}Verify by file{% endblock %}
 {% block content %}
 <section class="account-panel submission-form-panel">
   <p><a href="{% url 'submissions:detail' submission.pk %}">Back to {{ submission.title }}</a></p>
-  <h1>Verify repository authorization</h1>
-  <p>Confirm that this repository authorizes your <span class="brand">math<span lang="el">Στοά</span></span> submission. Choose either method below.</p>
-  <p><strong>Repository:</strong> {{ submission.repository_url|default:"Add a repository URL to your submission first." }}</p>
-  {% if orcid %}<p><strong>Your connected ORCID:</strong> {{ orcid }}</p>{% endif %}
+  <h1>Verify by file</h1>
   {% if verified %}
     <p class="notice" role="status"><strong>Repository authorization verified.</strong> Submitted versions proceed automatically to moderation.</p>
     <p><a class="button" href="{% url 'submissions:detail' submission.pk %}">Return to submission</a></p>
-  {% else %}
-    <p class="notice">Repository access must be verified before moderation. Your submitted version proceeds automatically once verification succeeds.</p>
   {% endif %}
 
-  <section class="account-section" aria-labelledby="github-verification">
-    <h2 id="github-verification">Verify with GitHub</h2>
-    <p>Authorize a one-time check using your GitHub account. For a personal repository, you must be its owner. For an organization repository, you must have administrator or maintainer access.</p>
-    <form method="post" action="{% url 'verification:github_start' submission.pk %}">
-      {% csrf_token %}
-      <button type="submit" {% if not github_available or not submission.repository_url %}disabled{% endif %}>Verify with GitHub</button>
+  <p>Add a temporary authorization file to the repository. You can do this yourself or ask a repository maintainer to add it for you.</p>
+  {% if not submission.repository_url %}<p class="notice">Add a repository URL to your submission first.</p>{% endif %}
+  <form method="post" action="{% url 'verification:issue_file' submission.pk %}">
+    {% csrf_token %}
+    <button type="submit" {% if not submission.repository_url %}disabled{% endif %}>{% if file_attempt %}Generate a new verification file{% else %}Generate verification file{% endif %}</button>
+  </form>
+  {% if file_attempt %}
+    <ol>
+      <li>Create a file named <code>.mathstoa-verification</code> in the root of <strong>{{ file_attempt.full_name }}</strong>.</li>
+      <li>Copy all the text below into it, then commit it to that repository's default branch. A file in a different fork, another branch or an unmerged pull request will not verify this repository.</li>
+      <li>Return here and select <strong>Verify by file</strong>.</li>
+    </ol>
+    <label for="verification-content">Verification file contents</label>
+    <textarea id="verification-content" rows="15" readonly spellcheck="false">{{ file_content }}</textarea>
+    <p class="helptext">This code expires {{ file_attempt.expires_at|date:"j F Y, H:i T" }}. Generating a new code invalidates the previous one. After verification succeeds, you can remove the file.</p>
+    <form method="post" action="{% url 'verification:verify_file' submission.pk %}">
+      {% csrf_token %}<button type="submit">Verify by file</button>
     </form>
-    {% if not github_available %}<p class="helptext">GitHub verification is awaiting configuration. The verification file option is available below.</p>{% endif %}
-    <p class="privacy-note"><span class="brand">math<span lang="el">Στοά</span></span> records the GitHub account identifier and the result of this check. It does not retain the authorization token or gain permission to edit your repository. To use GitHub for future sign-ins, connect it separately in <a href="{% url 'socialaccount_connections' %}">Account settings</a>.</p>
-  </section>
-
-  <section class="account-section" aria-labelledby="file-verification">
-    <h2 id="file-verification">Verify with a file</h2>
-    <p>Add a temporary authorization file to the repository. You can do this yourself or ask a repository maintainer to add it for you.</p>
-    <form method="post" action="{% url 'verification:issue_file' submission.pk %}">
-      {% csrf_token %}
-      <button type="submit" {% if not submission.repository_url %}disabled{% endif %}>{% if file_attempt %}Generate a new verification file{% else %}Generate verification file{% endif %}</button>
-    </form>
-    {% if file_attempt %}
-      <ol>
-        <li>Create a file named <code>.mathstoa-verification</code> in the root of <strong>{{ file_attempt.full_name }}</strong>.</li>
-        <li>Copy all the text below into it, then commit it to that repository's default branch. A file in a different fork, another branch or an unmerged pull request will not verify this repository.</li>
-        <li>Return here and select <strong>Check verification file</strong>.</li>
-      </ol>
-      <label for="verification-content">Verification file contents</label>
-      <textarea id="verification-content" rows="15" readonly spellcheck="false">{{ file_content }}</textarea>
-      <p class="helptext">This code expires {{ file_attempt.expires_at|date:"j F Y, H:i T" }}. Generating a new code invalidates the previous one. After verification succeeds, you can remove the file.</p>
-      <form method="post" action="{% url 'verification:verify_file' submission.pk %}">
-        {% csrf_token %}<button type="submit">Check verification file</button>
-      </form>
-    {% endif %}
-  </section>
-
-  <p class="privacy-note">Both methods currently support public GitHub repositories. Verification establishes repository authorization at the time of the check; it does not establish authorship or ownership of the research. Changing the repository requires a new check.</p>
+  {% endif %}
 </section>
 {% endblock %}
