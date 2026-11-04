@@ -1,9 +1,16 @@
 import re
+from copy import copy
 
 from allauth.mfa.models import Authenticator
 from django.contrib import admin
 from django.contrib import messages
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
+from django.http import HttpResponseNotAllowed
+from django.template.response import TemplateResponse
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_protect
+from django.contrib.admin.utils import unquote
 
 from .models import OrganisationAccount
 from django.contrib.auth import get_user_model
@@ -91,7 +98,93 @@ class OrganisationAccountAdmin(admin.ModelAdmin):
         return False
 
     def has_delete_permission(self, request, obj=None):
-        return False
+        from .organisation_deletion import can_delete_organisation
+
+        if not can_delete_organisation(request.user):
+            return False
+        return obj is None or (
+            obj.user_id != request.user.pk and not obj.user.is_staff and not obj.user.is_superuser
+        )
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        # Every deletion needs its own account details and typed confirmation.
+        actions.pop("delete_selected", None)
+        return actions
+
+    def delete_queryset(self, request, queryset):
+        raise PermissionDenied("Organisation accounts must be deleted individually.")
+
+    def delete_model(self, request, obj):
+        from .organisation_deletion import delete_organisation
+
+        delete_organisation(obj, moderator=request.user)
+
+    @method_decorator(csrf_protect)
+    def delete_view(self, request, object_id, extra_context=None):
+        from .organisation_deletion import organisation_deletion_blockers
+
+        if request.method not in {"GET", "HEAD", "POST"}:
+            return HttpResponseNotAllowed(["GET", "HEAD", "POST"])
+        if not self.has_delete_permission(request):
+            raise PermissionDenied
+        obj = self.get_object(request, unquote(object_id))
+        if obj is None:
+            return self._get_obj_does_not_exist_redirect(request, self.opts, object_id)
+        if not self.has_delete_permission(request, obj):
+            raise PermissionDenied
+
+        errors = []
+        blockers = organisation_deletion_blockers(obj)
+        status = 200
+        if request.method == "POST":
+            try:
+                with transaction.atomic():
+                    # Re-read the exact identity being confirmed and serialize
+                    # against approval, deletion and decision-email delivery.
+                    obj = self.get_queryset(request).select_for_update().get(pk=obj.pk)
+                    if not self.has_delete_permission(request, obj):
+                        raise PermissionDenied
+                    if request.POST.get("confirm_name") != obj.name:
+                        raise ValidationError("Type the organisation name exactly as shown to confirm deletion.")
+                    blockers = organisation_deletion_blockers(obj)
+                    if blockers:
+                        raise ValidationError("This organisation account cannot be deleted while the listed records or responsibilities remain.")
+                    obj_id, obj_display = obj.pk, str(obj)
+                    # Keep the audit record useful without retaining the
+                    # deleted organisation's name or contact email.
+                    audit_object = copy(obj)
+                    audit_object.name = f"Organisation account #{obj_id}"
+                    self.log_deletions(request, [audit_object])
+                    self.delete_model(request, obj)
+                return self.response_delete(request, obj_display, obj_id)
+            except self.model.DoesNotExist:
+                return self._get_obj_does_not_exist_redirect(request, self.opts, object_id)
+            except ValidationError as error:
+                errors = error.messages
+                status = 400
+                obj = self.get_object(request, unquote(object_id))
+                if obj is None:
+                    return self._get_obj_does_not_exist_redirect(request, self.opts, object_id)
+                blockers = organisation_deletion_blockers(obj)
+
+        request.current_app = self.admin_site.name
+        context = {
+            **self.admin_site.each_context(request),
+            **(extra_context or {}),
+            "title": "Delete organisation account",
+            "subtitle": None,
+            "opts": self.opts,
+            "object": obj,
+            "original": obj,
+            "media": self.media,
+            "blockers": blockers,
+            "errors": errors,
+            "confirm_name": request.POST.get("confirm_name", ""),
+        }
+        return TemplateResponse(
+            request, "admin/accounts/organisationaccount/delete_confirmation.html", context, status=status,
+        )
 
     @admin.action(description="Approve and activate selected organisation accounts", permissions=["change"])
     def approve_selected(self, request, queryset):

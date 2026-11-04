@@ -60,6 +60,8 @@ Users can use the sign-in methods enabled by the operator; an institutional acco
 
 Organisations can apply for a separate account at `/accounts/organisation/register/` when organisation sign-in and registration are enabled. A moderator reviews the organisation and the applicant's authority to represent it before activating the account. Approved organisations sign in at `/accounts/organisation/login/` using a code sent to their account email; completing this sign-in verifies control of the mailbox. Organisation approval does not replace repository verification or moderation of individual project submissions. Application details and decision records remain private.
 
+Authorised moderators can delete an organisation through its admin detail page after confirming its name. This removes the organisation and its sign-in account together. Owned projects and retained repository-verification evidence must be resolved first; account deletion does not remove projects or their public attribution. See [organisation account administration](SETUP.md#organisation-accounts).
+
 Account contact details, sign-in identifiers, and session records are private. Public collaborator attribution is supplied separately and does not grant editing access. Provider profile payloads and OAuth tokens are not retained. An authenticated ORCID links an account to that iD; it does not establish authorship, institutional endorsement, or mathematical correctness. Read the service's `/privacy/` notice and the [data-handling instructions](SETUP.md#data-handling-and-routine-operation) before operating it publicly.
 
 ## Credit and reuse

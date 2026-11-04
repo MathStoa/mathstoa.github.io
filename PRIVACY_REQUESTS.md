@@ -96,6 +96,15 @@ route without granting access to another person's private submissions.
   Do not silently transfer a project or remove collaborators' work. Agree any
   replacement steward and their repository authority separately.
 
+  Once an organisation's protected references have been resolved, an authorised
+  moderator can use **Admin → Organisation accounts → the organisation → Delete**
+  and confirm the exact organisation name. The operation removes the application
+  and underlying sign-in account together, and checks dependencies again when
+  confirmed. It does not delete projects or alter retained contributor snapshots.
+  The ordinary account-deactivation control remains available when closure needs
+  further review. Deletion from the live application does not erase backups or
+  external repository and GitHub records; apply the retention handling below.
+
 - For an objection (Article 21) to a use based on legitimate interests,
   including a public listing, stop that use unless there are compelling
   legitimate grounds that override the person's interests, rights and

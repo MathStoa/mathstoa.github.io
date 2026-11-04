@@ -155,6 +155,26 @@ personal account with organisation membership. Project submissions still require
 repository authorization and their own moderation. An approved organisation does
 not receive moderator privileges or authenticated ORCID credit.
 
+To delete an organisation, open **Admin → Organisation accounts → the organisation →
+Delete**. The moderator must be active staff with both **Can change organisation
+account** and **Can delete organisation account** permissions; superusers already
+have these permissions. The confirmation page identifies the organisation and
+its registered email and requires its name to be entered exactly. There is no
+bulk-delete action.
+
+Deletion removes the organisation application and its underlying sign-in account
+together, including email identities, connected sign-in methods, MFA credentials
+and matching active sign-in sessions. Pending decision emails are cancelled.
+Deletion is blocked while a decision email is being sent, while the account owns
+any projects, or while retained repository-verification evidence depends on it.
+Resolve project ownership and verification records separately before trying
+again. Accounts with staff or superuser privileges cannot be removed this way.
+
+Previously transferred projects and their submitted snapshots remain; public
+contributor attribution is not erased by deleting the account. Use the reviewed
+process in [PRIVACY_REQUESTS.md](PRIVACY_REQUESTS.md) for broader information-removal
+requests. The admin history records which moderator performed the deletion.
+
 ## Register sign-in providers
 
 Register a separate application with each provider you want to enable. The

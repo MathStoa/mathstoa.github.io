@@ -1,0 +1,38 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls %}
+
+{% block bodyclass %}{{ block.super }} app-{{ opts.app_label }} model-{{ opts.model_name }} delete-confirmation{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Home</a>
+  &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">Organisation accounts</a>
+  &rsaquo; <a href="{% url opts|admin_urlname:'change' object.pk|admin_urlquote %}">{{ object.name }}</a>
+  &rsaquo; Delete
+</div>
+{% endblock %}
+
+{% block content %}
+  <p>This permanently deletes both the organisation account and its sign-in account, including its sign-in methods and sessions.</p>
+  <p>Existing project records and contributor credit are retained.</p>
+  <dl>
+    <dt>Organisation</dt><dd>{{ object.name }}</dd>
+    <dt>Registered email</dt><dd>{{ object.email }}</dd>
+  </dl>
+  {% if errors %}<ul class="errorlist" role="alert">{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+  {% if blockers %}
+    <p>This organisation account cannot be deleted:</p>
+    <ul>{% for blocker in blockers %}<li>{{ blocker }}</li>{% endfor %}</ul>
+    <p><a href="{% url opts|admin_urlname:'change' object.pk|admin_urlquote %}">Return to organisation account</a></p>
+  {% else %}
+    <form method="post">
+      {% csrf_token %}
+      <p>
+        <label for="id_confirm_name">Type the organisation name exactly to confirm deletion:</label><br>
+        <input id="id_confirm_name" name="confirm_name" type="text" value="{{ confirm_name }}" maxlength="150" autocomplete="off" required>
+      </p>
+      <input type="submit" value="Delete organisation and sign-in account">
+      <a href="{% url opts|admin_urlname:'change' object.pk|admin_urlquote %}">Cancel</a>
+    </form>
+  {% endif %}
+{% endblock %}
