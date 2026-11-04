@@ -14,6 +14,7 @@ from django.utils.html import strip_tags
 
 from .forms import DOI_GUIDE_URL, SubmissionForm, normalize_doi, normalize_orcid
 from .models import Submission, SubmissionRevision, display_name
+from .publication import DECLARATION
 
 
 class SubmissionTests(TestCase):
@@ -50,11 +51,22 @@ class SubmissionTests(TestCase):
         self.assertEqual(response.status_code, 302)
         return submission.revisions.get(number=submission.revision)
 
-    def test_draft_page_offers_submission_then_states_the_outcome_without_mentioning_review(self):
+    def legacy_draft(self, payload=None):
+        """Records saved before direct submission retain the legacy backend gate."""
+        form = SubmissionForm(self.payload if payload is None else payload)
+        self.assertTrue(form.is_valid(), form.errors)
+        submission = form.save(commit=False)
+        submission.owner = self.owner
+        submission.save()
+        return submission
+
+    def test_form_submission_states_outcome_without_a_second_submit_step(self):
         submission = self.create_submission()
         url = reverse("submissions:detail", args=[submission.pk])
         pages = [self.client.get(url)]
-        self.assertContains(pages[0], "Submit saved draft")
+        self.assertEqual(submission.revisions.get().status, "pending")
+        self.assertContains(pages[0], "The repository details have been submitted and will undergo moderation before being made public.", count=1)
+        self.assertNotContains(pages[0], "Submit saved draft")
         self.submit(submission)
         pages.append(self.client.get(url))
         self.assertContains(pages[1], "The repository details have been submitted and will undergo moderation before being made public.", count=1)
@@ -66,7 +78,9 @@ class SubmissionTests(TestCase):
         self.assertNotContains(pages[2], "Submit saved draft")
         self.client.post(reverse("submissions:edit", args=[submission.pk]), self.payload)
         pages.append(self.client.get(url))
-        self.assertContains(pages[3], "Submit saved draft")
+        self.assertContains(pages[3], "The repository details have been submitted and will undergo moderation before being made public.", count=1)
+        self.assertNotContains(pages[3], "Submit saved draft")
+        self.assertEqual(submission.revisions.count(), 2)
         for page in pages:
             text = strip_tags(page.content.decode()).lower()
             self.assertNotIn("review", text)
@@ -121,7 +135,7 @@ class SubmissionTests(TestCase):
         self.assertEqual(submission.revision, 2)
 
     def test_others_cannot_read_or_change_submission_even_if_listed_as_contributor(self):
-        submission = self.create_submission({**self.payload, "collaborators-name": "other", "collaborators-orcid": ""})
+        submission = self.create_submission({**self.payload, "collaborators-name": "Other, Contributor", "collaborators-orcid": ""})
         self.client.force_login(self.other)
         self.assertNotContains(self.client.get(reverse("submissions:list")), submission.title)
         for name in ("detail", "edit"):
@@ -139,8 +153,12 @@ class SubmissionTests(TestCase):
         submission.refresh_from_db()
         self.assertEqual(submission.title, "First update")
 
-    def test_draft_can_be_incomplete_but_cannot_be_submitted(self):
-        submission = self.create_submission({"title": "Early draft", "revision": "1"})
+    def test_incomplete_form_cannot_create_submission_and_legacy_draft_cannot_bypass_gate(self):
+        incomplete = {"title": "Early draft", "revision": "1"}
+        response = self.client.post(reverse("submissions:create"), incomplete)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Submission.objects.exists())
+        submission = self.legacy_draft(incomplete)
         response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1, "publication_confirmed": "on"})
         self.assertEqual(response.status_code, 400)
         self.assertFalse(submission.revisions.exists())
@@ -154,6 +172,9 @@ class SubmissionTests(TestCase):
         self.assertContains(response, 'placeholder="Induced subgraphs of hypercubes and a proof of the Sensitivity Conjecture"')
         self.assertNotContains(response, "Required to save a draft")
         self.assertNotContains(response, "optional in a draft")
+        self.assertContains(response, ">Submit</button>", html=False)
+        self.assertNotContains(response, "Save draft")
+        self.assertContains(response, DECLARATION)
         self.assertContains(response, DOI_GUIDE_URL)
         self.assertContains(response, 'name="collaborators-name"')
         self.assertTrue(SubmissionForm({**self.payload, "doi": "", "reading_url": ""}, for_submission=True).is_valid())
@@ -263,22 +284,28 @@ class SubmissionTests(TestCase):
         self.assertNotIn("readingUrl", project)
         self.assertEqual(project["doi"], "https://doi.org/10.5281/zenodo.1234567")
 
-    def test_contributor_rows_keep_order_skip_blanks_and_can_all_be_removed(self):
-        rows = {"collaborators-name": ["Anna", "", "Ben"], "collaborators-orcid": ["https://orcid.org/0000-0002-1825-0097", "", ""]}
+    def test_contributor_rows_keep_order_skip_blanks_and_require_at_least_one(self):
+        rows = {
+            "collaborators-name": ["Anna, Example", "", "Ben, Example"],
+            "collaborators-orcid": ["https://orcid.org/0000-0002-1825-0097", "", ""],
+            "collaborators-email": ["anna@university.example", "", "ben@university.example"],
+        }
         submission = self.create_submission({**self.payload, **rows})
-        self.assertEqual(submission.collaborators, [{"name": "Anna", "orcid": "https://orcid.org/0000-0002-1825-0097", "email": "anna@university.example"}, {"name": "Ben", "orcid": "", "email": ""}])
+        expected = [{"name": "Anna, Example", "orcid": "https://orcid.org/0000-0002-1825-0097", "email": "anna@university.example"}, {"name": "Ben, Example", "orcid": "", "email": "ben@university.example"}]
+        self.assertEqual(submission.collaborators, expected)
         edit = self.client.get(reverse("submissions:edit", args=[submission.pk]))
-        self.assertContains(edit, 'value="Anna"')
+        self.assertContains(edit, 'value="Anna, Example"')
         self.assertContains(edit, 'value="0000-0002-1825-0097"')
         without_rows = {key: value for key, value in self.payload.items() if not key.startswith("collaborators")}
-        self.assertEqual(self.client.post(reverse("submissions:edit", args=[submission.pk]), without_rows).status_code, 302)
+        response = self.client.post(reverse("submissions:edit", args=[submission.pk]), without_rows)
+        self.assertContains(response, "Add at least one contributor.")
         submission.refresh_from_db()
-        self.assertEqual(submission.collaborators, [])
-        response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": submission.revision, "publication_confirmed": "on"})
-        self.assertContains(response, "Add at least one contributor.", status_code=400)
+        self.assertEqual(submission.collaborators, expected)
+        self.assertEqual(submission.revision, 1)
+        self.assertEqual(submission.revisions.count(), 1)
 
     def test_revision_submitted_before_the_doi_requirement(self):
-        submission = self.create_submission()
+        submission = self.legacy_draft()
         snapshot = {key: value for key, value in submission.snapshot().items() if key != "doi"}
         snapshot.update(kind="Research", stage="Exploration", collaboration="See repository", contribution_note="Old note", license_note="MIT",
                         collaborators=[{"name": "Anna", "role": "Author", "orcid": "", "affiliation": "Example University"}])
@@ -293,23 +320,38 @@ class SubmissionTests(TestCase):
         for removed in ("doi", "kind", "stage", "collaboration", "contributionNote", "licenseNote"):
             self.assertNotIn(removed, project)
 
-    def test_permission_confirmation_required_before_review_and_grants_licence(self):
+    def test_permission_confirmation_is_required_on_each_form_submission(self):
         payload = {key: value for key, value in self.payload.items() if key != "permission_confirmed"}
-        submission = self.create_submission(payload)
+        response = self.client.post(reverse("submissions:create"), payload)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Submission.objects.exists())
+        submission = self.create_submission()
+        self.assertTrue(submission.license_confirmed)
+        self.assertEqual(submission.revisions.get().snapshot["publication_declaration"]["text"], DECLARATION)
+        edit = self.client.get(reverse("submissions:edit", args=[submission.pk]))
+        self.assertNotIn("checked", str(edit.context["form"]["permission_confirmed"]))
+        response = self.client.post(reverse("submissions:edit", args=[submission.pk]), {**payload, "title": "Unaccepted changes"})
+        self.assertEqual(response.status_code, 200)
+        submission.refresh_from_db()
+        self.assertEqual(submission.title, self.payload["title"])
+        self.assertEqual(submission.revisions.count(), 1)
+
+    def test_legacy_draft_still_requires_permission_before_review(self):
+        payload = {key: value for key, value in self.payload.items() if key != "permission_confirmed"}
+        submission = self.legacy_draft(payload)
         self.assertFalse(submission.license_confirmed)
         response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1, "publication_confirmed": "on"})
         self.assertEqual(response.status_code, 400)
         self.assertFalse(submission.revisions.exists())
-        self.assertTrue(self.create_submission().license_confirmed)
 
-    def test_stale_submit_does_not_submit_unseen_draft(self):
+    def test_stale_legacy_submit_does_not_create_or_replace_revision(self):
         submission = self.create_submission()
         self.client.post(reverse("submissions:edit", args=[submission.pk]), self.payload)
         self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1, "publication_confirmed": "on"})
-        self.assertFalse(submission.revisions.exists())
+        self.assertEqual(list(submission.revisions.order_by("number").values_list("number", flat=True)), [1, 2])
 
-    def test_submission_requires_repository_verification(self):
-        submission = self.create_submission()
+    def test_legacy_submission_requires_repository_verification(self):
+        submission = self.legacy_draft()
         self.verification.side_effect = ValidationError("Verify this repository first.")
         response = self.client.post(reverse("submissions:submit", args=[submission.pk]), {"revision": 1, "publication_confirmed": "on"}, follow=True)
         self.assertContains(response, "Verify this repository first.")
@@ -425,7 +467,9 @@ class SubmissionTests(TestCase):
         for name, payload in (("edit", self.payload), ("submit", {"revision": 1})):
             self.assertEqual(client.post(reverse("submissions:" + name, args=[submission.pk]), payload).status_code, 403)
         self.assertEqual(client.get(reverse("submissions:submit", args=[submission.pk])).status_code, 405)
-        self.assertFalse(submission.revisions.exists())
+        self.assertEqual(submission.revisions.count(), 1)
+        submission.refresh_from_db()
+        self.assertEqual(submission.revision, 1)
 
     def test_private_pages_are_not_cached(self):
         submission = self.create_submission()

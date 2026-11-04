@@ -2,7 +2,7 @@
 
 Quotas suppress excess notices, rather than building a delayed flood. A delivery
 is attempted once: an interrupted or ambiguous SMTP send is never retried.
-Addresses are resolved from the current frozen revision, not copied into jobs.
+Addresses are resolved from the frozen submitted revision, not copied into jobs.
 """
 import logging
 from datetime import timedelta
@@ -20,7 +20,7 @@ from django.utils.crypto import salted_hmac
 from .models import NotificationDelivery, NotificationQueueLock, SubmissionRevision, display_name
 
 logger = logging.getLogger(__name__)
-RECIPIENT_HOURLY_LIMIT = 1  # Per notice kind; initial and change notices may both be sent.
+RECIPIENT_HOURLY_LIMIT = 1  # Per kind; creation, updates and changes requested are separate.
 RECIPIENT_DAILY_LIMIT = 5
 ACCOUNT_DAILY_LIMIT = 100
 GLOBAL_HOURLY_LIMIT = 100
@@ -62,8 +62,11 @@ def _digest(address):
 
 def contributor_contacts(revision):
     """Deduplicate and validate old as well as current snapshot contacts."""
+    return _contacts(revision.snapshot.get("collaborators", []))
+
+
+def _contacts(people):
     seen = set()
-    people = revision.snapshot.get("collaborators", [])
     if not isinstance(people, list):
         return []
     contacts = []
@@ -149,6 +152,11 @@ def _enqueue(revision_id, kind):
         return added
 
 
+def notify_submission_received(revision):
+    """One receipt per submitted version, including versions awaiting verification."""
+    return _enqueue(revision.pk, "created" if revision.number == 1 else "updated")
+
+
 def notify_contributors(revision):
     return _enqueue(revision.pk, "confirmation")
 
@@ -161,13 +169,34 @@ def _message(job, person):
     revision = job.revision
     title = " ".join(str(revision.snapshot.get("title") or "Untitled submission").split())[:120]
     base = settings.PUBLIC_BASE_URL.rstrip("/")
-    if job.kind == "changes":
+    if job.kind in {"created", "updated"}:
+        if job.kind == "created":
+            subject = f"{settings.ACCOUNT_EMAIL_SUBJECT_PREFIX.rstrip()}: Submitted — {title}"
+            introduction = f'A submission for “{title}” has been created on mathStoa. '
+            moderation = ""
+        else:
+            subject = f"{settings.ACCOUNT_EMAIL_SUBJECT_PREFIX.rstrip()}: Revision — {title}"
+            introduction = f'Changes to the submission for “{title}” have been saved as revision {revision.number}. '
+            moderation = (
+                "Changes must be moderated and approved before appearing publicly. "
+                "Any previously published version remains unchanged in the meantime.\n\n"
+            )
+        body = (
+            f"Dear {display_name(person['name'])},\n\n"
+            f"{introduction}You’re receiving this confirmation because you’re listed as a contributor.\n\n"
+            f"{moderation}"
+            "The owner can review the submission through My submissions:\n"
+            f"{base}{reverse('submissions:list')}\n\n"
+            "If you should not be listed, or your details are incorrect, please reply to this email.\n\n"
+            "The math-stoa team\n"
+        )
+    elif job.kind == "changes":
         subject = f"{settings.ACCOUNT_EMAIL_SUBJECT_PREFIX}Changes requested: {title}"
         body = (
             f'A moderator has requested changes to revision {revision.number} of "{title}" on math-stoa.\n\n'
             "You are receiving this notice because you are listed as a contributor in this submitted version.\n\n"
             "Only the project's owner can read the moderation feedback on the private submission page. "
-            "The owner should sign in to their submissions, edit and save a new draft, then submit it again for moderation:\n"
+            "The owner should sign in to their submissions, edit the submission and submit the changes for moderation:\n"
             f"{base}{reverse('submissions:list')}\n\n"
             "Being listed as a contributor does not grant access to the submission or account. "
             "If you are not the owner, please coordinate any changes with the person who submitted the project.\n\n"
@@ -199,7 +228,8 @@ def _claim():
         job = NotificationDelivery.objects.filter(status="queued").select_related("revision", "revision__submission").order_by("created_at", "pk").first()
         if job is None:
             return None, None, None
-        person = next((p for p in contributor_contacts(job.revision) if _digest(p["email"]) == job.recipient_digest), None)
+        contacts = contributor_contacts(job.revision)
+        person = next((p for p in contacts if _digest(p["email"]) == job.recipient_digest), None)
         if person is None or (job.kind == "changes" and job.revision.status != "rejected"):
             job.status = "cancelled"
         elif not _quota_available(digest=job.recipient_digest, account_id=job.account_id, kind=job.kind, now=now, attempted=True):

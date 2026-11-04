@@ -56,12 +56,14 @@ class PublicationDeclarationTests(TestCase):
         self.assertNotIn("summaryLicense", revision.public_project())
 
     def test_submit_screen_offers_unchecked_declaration_and_license_link(self):
-        with patch("repository_verification.services.has_current_verification", return_value=True):
-            response = self.client.get(reverse("submissions:detail", args=[self.submission.pk]))
-        self.assertContains(response, 'name="publication_confirmed" required')
+        response = self.client.get(reverse("submissions:edit", args=[self.submission.pk]))
+        declaration = response.context["form"]["permission_confirmed"]
+        self.assertTrue(declaration.field.required)
+        self.assertFalse(declaration.value())
+        self.assertContains(response, 'name="permission_confirmed"')
         self.assertContains(response, ABSTRACT_LICENSE)
         self.assertContains(response, "licence is irrevocable")
-        self.assertNotContains(response, 'name="publication_confirmed" checked')
+        self.assertNotContains(response, 'name="publication_confirmed"')
 
 
 class AuthenticatedContributorTests(TestCase):

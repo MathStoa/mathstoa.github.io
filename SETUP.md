@@ -135,8 +135,9 @@ and [django-allauth OpenID Connect](https://docs.allauth.org/en/latest/socialacc
 ## Verify control of a submitted repository
 
 Sign-in identifies a mathStoa account; it does not prove that the account can
-manage the repository named in a submission. Before submission and approval,
-the service requires repository-control verification. The initial verification
+manage the repository named in a submission. A submitted revision waits for
+repository-control verification when needed, then proceeds automatically to
+moderation. Approval checks repository control again. The initial verification
 implementation supports public GitHub repositories, using a verification file
 committed to the repository or a separate GitHub authorisation check. Any token
 used for that check is transient, not retained as an account credential.
@@ -282,24 +283,35 @@ empty, anonymously under GitHub's per-address limit. On a shared host such as
 Render that limit is usually exhausted by other tenants, and submissions then
 fail with "GitHub could not allow this check". A token with no scopes is
 enough. `REPOSITORY_VERIFICATION_VALID_DAYS` sets the validity of evidence
-to 1–30 days (default 30). Repository and owner identities are rechecked before
-submission and approval; continuing individual collaborator permissions require
+to 1–30 days (default 30). Repository and owner identities are checked before
+a submitted revision enters moderation and again at approval; continuing individual collaborator permissions require
 a new authorization check after the evidence expires.
+
+The creation and edit forms each have one **Submit** action. Complete project
+fields and a fresh licence/permission declaration are required. A successful
+submission creates an immutable revision; if repository access is not yet
+verified, its status is `unverified`. Successful repository verification moves
+that revision automatically into the moderation queue. An edit with current
+verification enters moderation directly; an earlier unverified revision becomes
+`superseded`. There is no separate draft-save or second submission action. Older
+incomplete records remain available through **Complete submission**.
 
 Staff moderate fixed submitted revisions in `/admin/`, using the approval or
 request-changes action. Approved revisions are merged with the existing static
-archive for the public project data. Editing a draft or
-requesting changes to an update leaves the previously approved revision public.
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the moderation workflow.
+archive for the public project data. Submitting an edit or requesting changes
+leaves any previously approved revision public. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for the moderation workflow.
 
-Submission confirmations and change-request notices enter a durable database
-queue in the same transaction as the submission or moderation decision. A rollback
-creates no notice. The container's `run_web` supervisor starts a separate delivery
-process at startup and roughly every minute, independently of hourly retention
-cleanup. Each run handles at most 20 notices and has a six-minute deadline. SMTP
-is never contacted from a web request. For a local preview or an alternative
-process manager, run `python server/manage.py process_notification_queue` once per
-minute. A custom launch command that runs Gunicorn alone does not run this worker.
+Creation and revision confirmations enter a durable database queue in the same
+transaction as their submitted revision. Change-request notices enter the same
+queue with the moderation decision. A rollback creates no notice. Verification
+does not queue another confirmation. The container's `run_web` supervisor starts
+a separate delivery process at startup and roughly every minute, independently
+of hourly retention cleanup. Each run handles at most 20 notices and has a
+six-minute deadline. SMTP is never contacted from a web request. For a local
+preview or an alternative process manager, run
+`python server/manage.py process_notification_queue` once per minute. A custom
+launch command that runs Gunicorn alone does not run this worker.
 
 Recipients come from the submitted revision's frozen contributor contacts;
 account emails and provider profiles are not used. Addresses are validated and
@@ -315,19 +327,24 @@ per hour, five combined per recipient per day, 100 per submitting account per
 day, and 100 per hour / 500 per day for the service. These are rolling windows,
 reserved under a shared database lock both at enqueue and before delivery. Excess
 notices are suppressed, not held for a later burst. The queue also has hard limits
-of 500 outstanding and 5,000 retained delivery records. Initial confirmation and
-a moderator's change notice can both be sent within the same hour. No moderator
+of 500 outstanding and 5,000 retained delivery records. Creation, revision and a
+moderator's change notice are separate kinds, so each can be sent within the same
+hour. Further revisions in that hour are suppressed for the same recipient. The
+legacy confirmation kind remains supported for older clients. No moderator
 submission-alert emails are sent, regardless of legacy environment settings.
 
 Contributor notices use the existing email backend and `DEFAULT_FROM_EMAIL`;
 SMTP also needs `EMAIL_HOST`. Production requires exactly one of `EMAIL_USE_TLS`
 or `EMAIL_USE_SSL`, including when email sign-in is disabled. Missing delivery
-configuration suppresses new notices. Change-request messages include the frozen
-title, revision number and a general submissions link for the owner. Only the
-owner can read feedback and edit the private submission; being listed grants no
-account access. No moderation feedback or other recipients' addresses appear in
-messages. The administration interface warns about missing contacts or delivery
-configuration.
+configuration suppresses new notices. Creation confirmations identify the project
+title; revision confirmations also give the revision number and explain that
+changes need moderation and approval before appearing publicly. Both link the
+owner to My submissions and invite contributors to reply about incorrect details.
+Change-request messages include the frozen title, revision number and a general
+submissions link for the owner. Only the owner can read feedback and edit the
+private submission; being listed grants no account access. No moderation feedback
+or other recipients' addresses appear in messages. The administration interface
+warns about missing contacts or delivery configuration.
 
 Each queued notice is attempted at most once. Failed or interrupted sends are
 not retried automatically because the mail server may already have accepted the
@@ -367,7 +384,7 @@ credentials, institutional agreements, DNS, certificates, or mail delivery work.
 ## Security review and launch gate
 
 Keep `PUBLIC_REGISTRATION_ENABLED=false` until the live sign-in and recovery
-checks are complete. The code enforces owner-only draft access, fixed submitted
+checks are complete. The code enforces owner-only submission access, fixed submitted
 revisions, repository authorization, CSRF and OAuth state, mandatory staff MFA,
 fresh authentication for account changes, encrypted session/MFA contents,
 minimal provider scopes and profile retention, and the approved cleanup rules.

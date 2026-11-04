@@ -10,7 +10,9 @@ from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.utils import timezone
 
-from submissions.models import Submission
+from submissions.models import NotificationDelivery, Submission, SubmissionRevision
+from submissions.notifications import notify_submission_received
+from submissions.publication import accepted_declaration
 from .github import FileEvidence, GitHubError, PermissionEvidence, Repository
 from .models import RepositoryVerification, VerificationAttempt
 from .services import (VerificationError, challenge_document, check_file, check_github,
@@ -40,6 +42,75 @@ class VerificationServicesTests(TestCase):
         attempt, token = self.issue()
         self.file_evidence(attempt, token)
         return check_file(attempt, self.user, client=self.api)
+
+    def submitted_revision(self, *, number=None, status="unverified", repository_url=None):
+        snapshot = {
+            **self.submission.snapshot(),
+            "publication_declaration": accepted_declaration(),
+            "collaborators": [{"name": "A, Contributor", "email": "author@example.invalid"}],
+        }
+        if repository_url is not None:
+            snapshot["repository_url"] = repository_url
+        return SubmissionRevision.objects.create(
+            submission=self.submission, number=number or self.submission.revision,
+            snapshot=snapshot, submitted_by=self.user, status=status,
+        )
+
+    def test_file_verification_enters_moderation_without_another_submission_or_email(self):
+        revision = self.submitted_revision()
+        notify_submission_received(revision)
+        jobs = list(NotificationDelivery.objects.values_list("pk", "kind"))
+        self.assertEqual(len(jobs), 1)
+        self.verify_file()
+        revision.refresh_from_db()
+        self.assertEqual(revision.status, "pending")
+        self.assertEqual(self.submission.revisions.count(), 1)
+        self.assertEqual(list(NotificationDelivery.objects.values_list("pk", "kind")), jobs)
+
+    def test_github_verification_also_enters_moderation_without_a_second_submission(self):
+        revision = self.submitted_revision()
+        attempt, nonce = self.issue("github")
+        check_github(attempt, self.user, nonce, "transient-github-secret", "201", client=self.api)
+        revision.refresh_from_db()
+        self.assertEqual(revision.status, "pending")
+        self.assertEqual(self.submission.revisions.count(), 1)
+        self.assertFalse(NotificationDelivery.objects.exists())
+
+    def test_verification_does_not_promote_an_older_unverified_revision(self):
+        older = self.submitted_revision()
+        self.submission.revision = 2
+        self.submission.save(update_fields=["revision"])
+        current = self.submitted_revision()
+        self.verify_file()
+        older.refresh_from_db()
+        current.refresh_from_db()
+        self.assertEqual(older.status, "unverified")
+        self.assertEqual(current.status, "pending")
+
+    def test_verification_does_not_promote_snapshot_for_another_repository(self):
+        revision = self.submitted_revision(repository_url="https://github.com/other/project")
+        self.verify_file()
+        revision.refresh_from_db()
+        self.assertEqual(revision.status, "unverified")
+
+    def test_verification_does_not_reopen_a_moderated_revision(self):
+        revision = self.submitted_revision(status="rejected")
+        self.verify_file()
+        revision.refresh_from_db()
+        self.assertEqual(revision.status, "rejected")
+
+    def test_failed_proof_write_cannot_advance_submission_or_consume_challenge(self):
+        revision = self.submitted_revision()
+        attempt, token = self.issue()
+        self.file_evidence(attempt, token)
+        with patch.object(RepositoryVerification.objects, "create", side_effect=RuntimeError("database failed")):
+            with self.assertRaisesRegex(RuntimeError, "database failed"):
+                check_file(attempt, self.user, client=self.api)
+        revision.refresh_from_db()
+        attempt.refresh_from_db()
+        self.assertEqual(revision.status, "unverified")
+        self.assertIsNone(attempt.consumed_at)
+        self.assertFalse(RepositoryVerification.objects.exists())
 
     def test_file_happy_path_and_evidence(self):
         proof = self.verify_file()

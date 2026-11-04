@@ -85,7 +85,11 @@ def overview(request, pk):
             file_state = None
     return render(request, "repository_verification/overview.html", {
         "submission": submission,
-        "verified": has_current_verification(submission),
+        # A cached proof can still exist after its live recheck failed. The
+        # received version remains blocked until verification succeeds again.
+        "verified": has_current_verification(submission) and not submission.revisions.filter(
+            number=submission.revision, status="unverified",
+        ).exists(),
         "github_available": _github_provider(request) is not None,
         "orcid": SocialAccount.objects.filter(user=request.user, provider="orcid").values_list("uid", flat=True).first(),
         "file_attempt": attempt,
@@ -135,7 +139,7 @@ def verify_file(request, pk):
         )
         check_file(attempt, request.user)
         request.session.pop(key, None)
-        messages.success(request, "Repository authorization verified. You can now submit this project.")
+        messages.success(request, "Repository authorization verified. Any submitted revision awaiting this check is now ready for moderation.")
         return redirect("submissions:detail", pk=submission.pk)
     except (ValidationError, GitHubError) as error:
         _error(request, error)

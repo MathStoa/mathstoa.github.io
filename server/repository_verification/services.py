@@ -15,7 +15,7 @@ from django.db import connection, transaction
 from django.utils import timezone
 from django.views.decorators.debug import sensitive_variables
 
-from submissions.models import Submission
+from submissions.models import Submission, SubmissionRevision
 from .github import GitHubClient, GitHubError
 from .models import RepositoryVerification, VerificationAttempt
 
@@ -133,13 +133,21 @@ def _complete(attempt, user, repository, **evidence):
         ).update(consumed_at=now)
         if changed != 1:
             raise VerificationError("This verification was already used. Start a new verification.")
-        return RepositoryVerification.objects.create(
+        proof = RepositoryVerification.objects.create(
             attempt=locked, submission=submission, user=user, method=locked.method,
             repository_url=locked.repository_url, repository_id=locked.repository_id,
             repository_owner_id=locked.repository_owner_id, full_name=locked.full_name, orcid=locked.orcid,
             valid_until=now + timedelta(days=getattr(settings, "REPOSITORY_VERIFICATION_VALID_DAYS", 30)),
             **evidence,
         )
+        # The owner already submitted and accepted the frozen version. Both
+        # verification methods complete that same request without another POST
+        # or a second contributor email. Older versions stay superseded.
+        SubmissionRevision.objects.filter(
+            submission=submission, number=submission.revision, status="unverified",
+            snapshot__repository_url=proof.repository_url,
+        ).update(status="pending")
+        return proof
 
 
 def check_file(attempt, user, client=None):
@@ -202,7 +210,7 @@ def _current_proof(submission, *, lock=False):
 
 
 def has_current_verification(submission):
-    """Local display hint only; submission/publication MUST call require_verified."""
+    """Local hint only; reusing a proof for moderation/publication requires a live check."""
     return _current_proof(submission) is not None
 
 

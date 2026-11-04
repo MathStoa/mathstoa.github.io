@@ -14,8 +14,8 @@ from accounts.middleware import limit_action
 
 from .forms import SubmissionForm, review_form
 from .models import Submission, SubmissionRevision
-from .notifications import notify_contributors
-from .publication import ABSTRACT_LICENSE, DECLARATION, accepted_declaration
+from .notifications import notify_contributors, notify_submission_received
+from .publication import accepted_declaration
 
 
 def accessible(user):
@@ -27,32 +27,62 @@ def submission_list(request):
     return render(request, "submissions/list.html", {"submissions": accessible(request.user).select_related("published_revision")})
 
 
+def _record_submission(submission, user):
+    """Freeze a complete, explicitly accepted form in the surrounding save transaction."""
+    from repository_verification.services import has_current_verification, require_verified
+
+    status = "unverified"
+    if has_current_verification(submission):
+        try:
+            require_verified(submission, actor=user)
+        except ValidationError:
+            # Keep the submitted details, but do not admit them to moderation
+            # when proof has expired, the repository changed or its host is down.
+            pass
+        else:
+            status = "pending"
+    submission.revisions.filter(status="unverified").update(status="superseded")
+    snapshot = submission.snapshot()
+    snapshot["publication_declaration"] = accepted_declaration()
+    revision = SubmissionRevision.objects.create(
+        submission=submission, number=submission.revision, snapshot=snapshot,
+        submitted_by=user, status=status,
+    )
+    notify_submission_received(revision)
+    return revision
+
+
+def _submitted_response(request, revision):
+    if revision.status == "unverified":
+        messages.success(request, "Submission received. Verify repository access to send this revision for moderation.")
+        return redirect("verification:overview", pk=revision.submission_id)
+    return redirect("submissions:detail", pk=revision.submission_id)
+
+
 @login_required
 def create(request):
     if request.method == "POST":
         limited = limit_action(request, action="submission_create", user=request.user, retry_after=300)
         if limited:
             return limited
-    form = SubmissionForm(request.POST or None, user=request.user)
+    form = SubmissionForm(request.POST or None, user=request.user, for_submission=True)
     if request.method == "POST" and form.is_valid():
-        submission = form.save(commit=False)
-        submission.owner = request.user
-        submission.save()
-        messages.success(request, "Draft saved. Complete the details, then submit it for moderation.")
-        return redirect("submissions:detail", pk=submission.pk)
+        with transaction.atomic():
+            submission = form.save(commit=False)
+            submission.owner = request.user
+            submission.save()
+            revision = _record_submission(submission, request.user)
+        return _submitted_response(request, revision)
     return render(request, "submissions/form.html", {"form": form})
 
 
 @login_required
 def detail(request, pk):
-    from repository_verification.services import has_current_verification
     submission = get_object_or_404(accessible(request.user).select_related("published_revision"), pk=pk)
     context = {
         "submission": submission, "revisions": submission.revisions.all(),
-        "repository_verified": has_current_verification(submission),
-        # Once this draft revision has been submitted, the page states the outcome instead of offering submission.
+        # The detail page reports the state; the form itself submits each version.
         "current_revision": submission.revisions.filter(number=submission.revision).first(),
-        "publication_declaration": DECLARATION, "abstract_license": ABSTRACT_LICENSE,
     }
     return render(request, "submissions/detail.html", context)
 
@@ -65,16 +95,16 @@ def edit(request, pk):
             limited = limit_action(request, action="submission_edit", user=request.user, key=str(submission.pk), retry_after=300)
             if limited:
                 return limited
-        form = SubmissionForm(request.POST or None, instance=submission, user=request.user)
+        form = SubmissionForm(request.POST or None, instance=submission, user=request.user, for_submission=True)
         if request.method == "POST" and form.is_valid():
             if form.cleaned_data["revision"] != submission.revision:
-                form.add_error(None, "Someone saved a newer draft. Reload this page before editing so their changes are not overwritten.")
+                form.add_error(None, "A newer revision has been submitted. Reload this page before editing so those changes are not overwritten.")
                 return render(request, "submissions/form.html", {"form": form, "submission": submission}, status=409)
             submission = form.save(commit=False)
             submission.revision += 1
             submission.save()
-            messages.success(request, "Draft changes saved. Published details stay unchanged until this revision is approved.")
-            return redirect("submissions:detail", pk=submission.pk)
+            revision = _record_submission(submission, request.user)
+            return _submitted_response(request, revision)
     return render(request, "submissions/form.html", {"form": form, "submission": submission})
 
 
@@ -84,12 +114,12 @@ def submit(request, pk):
     with transaction.atomic():
         submission = get_object_or_404(accessible(request.user).select_for_update(), pk=pk)
         if request.POST.get("revision") != str(submission.revision):
-            messages.error(request, "The draft changed. Please check the current details and submit again.")
+            messages.error(request, "The submission changed. Please check the current details and submit again.")
             return redirect("submissions:detail", pk=pk)
         existing = submission.revisions.filter(number=submission.revision).first()
         if existing:
             if existing.status == "rejected":
-                messages.info(request, "Please edit and save a new draft before resubmitting.")
+                messages.info(request, "Please edit the submission and submit your changes.")
             else:
                 messages.info(request, "This revision has already been submitted.")
             return redirect("submissions:detail", pk=pk)
@@ -117,9 +147,9 @@ def submit(request, pk):
         if created:
             # The durable outbox commits with the revision; the worker sends later.
             notify_contributors(revision)
-            # The draft page itself states that the details were submitted; no message repeats it.
+            # The submission page states the outcome; no message repeats it.
         elif revision.status == "rejected":
-            messages.info(request, "Please edit and save a new draft before resubmitting.")
+            messages.info(request, "Please edit the submission and submit your changes.")
         else:
             messages.info(request, "This revision has already been submitted.")
     return redirect("submissions:detail", pk=pk)

@@ -65,7 +65,7 @@ class SubmissionMutationLimitTests(TestCase):
         self.assertEqual(self.submission.revisions.count(), 2)
 
     @override_settings(ACCOUNT_RATE_LIMITS={"submission_create": "2/5m/user"})
-    def test_draft_creation_is_limited_per_user_not_shared_ip(self):
+    def test_direct_submission_creation_is_limited_per_user_not_shared_ip(self):
         url = reverse("submissions:create")
         self.assertEqual(self.client.post(url, self.payload).status_code, 302)
         self.assertEqual(self.client.post(url, self.payload).status_code, 302)
@@ -74,11 +74,12 @@ class SubmissionMutationLimitTests(TestCase):
         self.assertEqual(response["Retry-After"], "300")
         self.assertIn("no-store", response["Cache-Control"])
         self.assertEqual(Submission.objects.filter(owner=self.owner).count(), 3)
+        self.assertEqual(sum(item.revisions.count() for item in Submission.objects.filter(owner=self.owner)), 2)
         self.client.force_login(self.other)
         self.assertEqual(self.client.post(url, self.payload).status_code, 302)
 
     @override_settings(ACCOUNT_RATE_LIMITS={"submission_edit": "1/5m/user,1/5m/key"})
-    def test_edit_throttle_preserves_the_latest_draft(self):
+    def test_edit_throttle_preserves_latest_submission_and_revision(self):
         url = reverse("submissions:edit", args=[self.submission.pk])
         self.assertEqual(self.client.post(url, {**self.payload, "title": "Saved update"}).status_code, 302)
         response = self.client.post(url, {**self.payload, "revision": "2", "title": "Blocked update"})
@@ -86,3 +87,4 @@ class SubmissionMutationLimitTests(TestCase):
         self.submission.refresh_from_db()
         self.assertEqual(self.submission.title, "Saved update")
         self.assertEqual(self.submission.revision, 2)
+        self.assertEqual(list(self.submission.revisions.values_list("number", flat=True)), [2])

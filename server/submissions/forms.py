@@ -10,6 +10,7 @@ from django.utils.html import format_html
 from django.utils import timezone
 
 from .models import CATEGORIES, MAX_SECONDARY_CATEGORIES, Submission
+from .publication import ABSTRACT_LICENSE, DECLARATION
 
 DOI_GUIDE_URL = "https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content#issuing-a-persistent-identifier-for-your-repository-with-zenodo"
 
@@ -153,8 +154,11 @@ class SubmissionForm(forms.ModelForm):
         help_text=f"If the project spans several areas, tick up to {MAX_SECONDARY_CATEGORIES} more.",
     )
     revision = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
-    permission_confirmed = forms.BooleanField(required=False, label="I maintain this project or have permission to submit it and its contributor details, and have the right to publish its abstract under CC BY 4.0.")
-    # Everything else is required before a draft can be submitted for moderation.
+    permission_confirmed = forms.BooleanField(
+        required=False, label=DECLARATION,
+        help_text=format_html('<a href="{}" target="_blank" rel="noopener noreferrer">Read the CC BY 4.0 licence</a>.', ABSTRACT_LICENSE),
+    )
+    # Everything else is required for submission.
     optional_fields = ("doi", "reading_url", "secondary_categories")
 
     class Meta:
@@ -190,6 +194,8 @@ class SubmissionForm(forms.ModelForm):
         self.fields["collaborators"].expected_own_orcids = expected_own_orcids
         self.initial.setdefault("revision", self.instance.revision)
         if for_submission:
+            # Acceptance belongs to this POST, never an earlier saved version.
+            self.initial["permission_confirmed"] = False
             for name, field in self.fields.items():
                 field.required = name not in self.optional_fields
 
@@ -217,8 +223,8 @@ class SubmissionForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
-        # This draft flag records claimed permission. The explicit public licence
-        # is accepted separately at the final submission step.
+        # Direct form submissions record the declaration in their immutable
+        # revision. Legacy drafts still require explicit acceptance at submission.
         self.instance.license_confirmed = bool(cleaned.get("permission_confirmed"))
         for field, value in list(cleaned.items()):
             if isinstance(value, str) and any(ord(char) < 32 and char not in "\n\r\t" for char in value):

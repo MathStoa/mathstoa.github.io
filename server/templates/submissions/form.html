@@ -6,7 +6,7 @@
     <a class="back-link" href="{% if submission %}{% url 'submissions:detail' pk=submission.pk %}{% else %}{% url 'submissions:list' %}{% endif %}">← {% if submission %}Back to submission{% else %}My submissions{% endif %}</a>
     <h1>{% if submission %}Edit your submission{% else %}Submit a project{% endif %}</h1>
     <p class="lede">Introduce the mathematical work and link to its public repository.</p>
-    {% if submission.published_revision %}<p class="notice">Your accepted listing stays public while you edit this draft. Changes appear in the archive after moderation.</p>{% endif %}
+    {% if submission.published_revision %}<p class="notice">Your accepted listing stays public while you edit this submission. Changes appear in the archive after moderation.</p>{% endif %}
     <form method="post" action="{% if submission %}{% url 'submissions:edit' pk=submission.pk %}{% else %}{% url 'submissions:create' %}{% endif %}" class="submission-form" novalidate>
       {% csrf_token %}
       <p class="form-note">All fields are required for submission unless marked optional.</p>
@@ -16,7 +16,7 @@
         {% if field.name == "collaborators" %}
           <fieldset class="contributors-field">
             <legend>{{ field.label }}</legend>
-            {% if not form.connected_orcid %}<p class="private-note">If you want to include your own ORCID iD, <a href="{% url 'socialaccount_connections' %}">connect your ORCID account</a>, then return here and select “Use my connected ORCID”. Save your draft before leaving this page.</p>{% endif %}
+            {% if not form.connected_orcid %}<p class="private-note">To include your own ORCID iD, <a href="{% url 'socialaccount_connections' %}">connect your ORCID account</a> before completing this form, then return here and select “Use my connected ORCID”.</p>{% endif %}
             {% with rows=field.value %}
               <div class="contributor-rows" data-contributor-rows>
                 {% for person in rows %}
@@ -54,9 +54,10 @@
         {% endif %}
       {% endfor %}
       <p class="private-note">Contributor names and any supplied ORCID links will be public if this submission is accepted.</p>
-      {% if submission.owner_id == user.pk %}<p class="private-note">Before submitting the project, <a href="{% url 'verification:overview' submission.pk %}">verify repository access</a>.</p>{% endif %}
+      <p class="private-note">When you submit, we email a confirmation to each contributor, subject to delivery limits. To limit repeated emails, each contributor receives at most one revision confirmation per hour.</p>
+      <p class="private-note">If repository access needs verification, you’ll be asked to complete it after submitting. Your submission then proceeds automatically to moderation.</p>
       <div class="actions">
-        <button class="button" type="submit">Save draft</button>
+        <button class="button button-submit" type="submit">Submit</button>
         <a href="{% if submission %}{% url 'submissions:detail' pk=submission.pk %}{% else %}{% url 'submissions:list' %}{% endif %}">Cancel</a>
       </div>
     </form>

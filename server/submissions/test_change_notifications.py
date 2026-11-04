@@ -81,7 +81,7 @@ class ChangeNoticeTests(ChangeNoticeFixtures, TestCase):
         self.assertIn("Only the project's owner can read the moderation feedback", message.body)
         self.assertIn("Being listed as a contributor does not grant access", message.body)
         self.assertIn("coordinate any changes with the person who submitted the project", message.body)
-        self.assertIn("edit and save a new draft", message.body)
+        self.assertIn("edit the submission and submit the changes", message.body)
         self.assertIn("/privacy/", message.body)
         for secret in (self.owner.email, self.contact.email, "other@example.invalid", "contributor@example.invalid", self.reviewer.email,
                        self.owner.username, self.other.username, self.reviewer.username, str(self.submission.pk), self.submission.pk.hex,

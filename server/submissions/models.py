@@ -1,4 +1,4 @@
-"""Private drafts and immutable, explicitly moderated public revisions."""
+"""Private submissions and immutable, explicitly moderated public revisions."""
 import uuid
 
 from django.conf import settings
@@ -60,12 +60,16 @@ class Submission(models.Model):
 
     @property
     def status(self):
-        if self.revisions.filter(number=self.revision, status="pending").exists():
+        latest = self.revisions.filter(number=self.revision).first()
+        if latest and latest.status == "unverified":
+            return "Awaiting repository verification"
+        if latest and latest.status == "pending":
             return "Awaiting moderation"
         if self.published_revision_id:
-            return "Published" if self.published_revision.number == self.revision else "Published; draft changes"
-        latest = self.revisions.filter(number=self.revision).first()
-        return "Changes requested" if latest and latest.status == "rejected" else "Draft"
+            if self.published_revision.number == self.revision:
+                return "Published"
+            return "Published; changes requested" if latest and latest.status == "rejected" else "Published; incomplete changes"
+        return "Changes requested" if latest and latest.status == "rejected" else "Incomplete submission"
 
     @property
     def secondary_category_labels(self):
@@ -80,10 +84,10 @@ class SubmissionRevision(models.Model):
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name="revisions")
     number = models.PositiveIntegerField()
     snapshot = models.JSONField(editable=False)
-    # At most two notice kinds × 100 contributor digests; no addresses or message copies.
+    # At most four notice kinds × 100 contributor digests; no addresses or message copies.
     notification_keys = models.JSONField(default=list, editable=False)
     submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="submitted_revisions")
-    status = models.CharField(max_length=12, choices=[("pending", "Pending"), ("approved", "Approved"), ("rejected", "Changes requested")], default="pending")
+    status = models.CharField(max_length=12, choices=[("unverified", "Awaiting repository verification"), ("pending", "Pending"), ("approved", "Approved"), ("rejected", "Changes requested"), ("superseded", "Replaced by a newer revision")], default="pending")
     review_note = models.TextField("moderation note", max_length=3000, blank=True)
     reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="reviewed_revisions", verbose_name="moderated by")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -100,7 +104,7 @@ class SubmissionRevision(models.Model):
         if self.pk:
             previous = type(self).objects.get(pk=self.pk)
             if (self.snapshot != previous.snapshot or self.number != previous.number or self.submission_id != previous.submission_id or self.submitted_by_id != previous.submitted_by_id):
-                raise ValidationError("A submitted revision is immutable. Edit the draft and submit a new revision.")
+                raise ValidationError("A submitted revision is immutable. Edit the submission and submit a new revision.")
         super().save(*args, **kwargs)
 
     def review(self, reviewer, *, approve, note=""):
@@ -109,6 +113,8 @@ class SubmissionRevision(models.Model):
         with transaction.atomic():
             submission = Submission.objects.select_for_update().get(pk=self.submission_id)
             revision = type(self).objects.select_for_update().get(pk=self.pk)
+            if revision.status == "unverified":
+                raise ValidationError("Verify repository authorization before this submission can be moderated.")
             if revision.status != "pending":
                 raise ValidationError("This revision has already been moderated.")
             # An authorised moderator may approve a revision they own or submitted; reviewed_by records who decided.
@@ -117,7 +123,7 @@ class SubmissionRevision(models.Model):
             if approve:
                 from repository_verification.services import require_verified
                 if submission.repository_url != revision.snapshot["repository_url"]:
-                    raise ValidationError("The repository changed after this revision was submitted. Submit the new draft for moderation and verify that repository first.")
+                    raise ValidationError("The repository changed after this revision was submitted. Submit the updated details and verify that repository first.")
                 require_verified(submission, actor=reviewer)
                 # Validate the frozen material, never the author's potentially newer draft.
                 from .forms import review_form
@@ -186,7 +192,7 @@ class NotificationDelivery(models.Model):
     """Bounded, private outbox; resolve the address from the current revision at send time."""
     revision = models.ForeignKey(SubmissionRevision, on_delete=models.CASCADE, related_name="notification_deliveries")
     account = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="notification_deliveries")
-    kind = models.CharField(max_length=12, choices=[("confirmation", "Submission confirmation"), ("changes", "Changes requested")])
+    kind = models.CharField(max_length=12, choices=[("created", "Submission created"), ("updated", "Submission updated"), ("confirmation", "Legacy submission confirmation"), ("changes", "Changes requested")])
     recipient_digest = models.CharField(max_length=64)
     status = models.CharField(max_length=12, default="queued", choices=[(value, value.title()) for value in ("queued", "sending", "sent", "failed", "suppressed", "cancelled", "expired")])
     created_at = models.DateTimeField(default=timezone.now, db_index=True)

@@ -1,21 +1,21 @@
 {% extends "base.html" %}
-{% block head_title %}{{ submission.title|default:"Untitled draft" }}{% endblock %}
+{% block head_title %}{{ submission.title|default:"Untitled submission" }}{% endblock %}
 {% block content %}
   <a class="back-link" href="{% url 'submissions:list' %}">← My submissions</a>
   <div class="submission-heading">
     <div>
-      <h1>{{ submission.title|default:"Untitled draft" }}</h1>
-      <div class="submission-meta"><span class="status">{{ submission.get_status_display|default:submission.status }}</span><span>Draft revision {{ submission.revision }}</span></div>
+      <h1>{{ submission.title|default:"Untitled submission" }}</h1>
+      <div class="submission-meta"><span class="status">{{ submission.get_status_display|default:submission.status }}</span><span>Revision {{ submission.revision }}</span></div>
     </div>
-    <a class="button" href="{% url 'submissions:edit' pk=submission.pk %}">Edit submission</a>
+    <a class="button" href="{% url 'submissions:edit' pk=submission.pk %}">{% if current_revision %}Edit submission{% else %}Complete submission{% endif %}</a>
   </div>
   {% if submission.published_revision %}
-    <p class="notice">An accepted version is public. Your current draft is shown below. <a href="/project.html?id={{ submission.public_id|urlencode }}">View the published listing</a>.</p>
+    <p class="notice">An accepted version is public. Your current submission is shown below. <a href="/project.html?id={{ submission.public_id|urlencode }}">View the published listing</a>.</p>
   {% endif %}
   <div class="submission-detail">
     <article class="submission-details">
       <section>
-        <h2>Current draft</h2>
+        <h2>Current submission</h2>
         <div class="preserve-lines" data-abstract>{{ submission.abstract|default:"Add an abstract to describe the project." }}</div>
         <ul class="contributors">
           {% for person in submission.collaborators %}
@@ -35,27 +35,18 @@
       </section>
       <hr class="section-divider">
       <section>
-        {% if current_revision.status == "pending" %}
+        {% if current_revision.status == "unverified" %}
+          <p class="notice" role="status">Your submission has been received. <a href="{% url 'verification:overview' submission.pk %}">Verify repository access</a> to proceed to moderation. It will proceed automatically once verification succeeds.</p>
+        {% elif current_revision.status == "pending" %}
           <p class="verification-status" role="status">The repository details have been submitted and will undergo moderation before being made public.</p>
         {% elif current_revision.status == "approved" %}
-          <p class="verification-status">This version is public in the archive. Edit and save a new draft to submit changes.</p>
+          <p class="verification-status">This version is public in the archive. Use Edit submission to submit changes.</p>
+        {% elif current_revision.status == "rejected" %}
+          <p class="notice">Changes were requested for this version. Read the feedback below, then use Edit submission to submit your changes.</p>
         {% elif current_revision %}
-          <p class="notice">Changes were requested for this version. Edit and save a new draft, then submit it again.</p>
+          <p class="notice">This version has been replaced by a newer submission.</p>
         {% else %}
-          <h2>Submit this version</h2>
-          <p><span class="brand">math<span lang="el">Στοά</span></span> staff check scope, clarity and attribution before a listing is made public. A listing is an introduction, not a mathematical endorsement.</p>
-          {% if repository_verified %}
-            <p id="verification-status" class="verification-status">Repository access is verified. <a href="{% url 'verification:overview' submission.pk %}">View verification</a>.</p>
-          {% else %}
-            <p id="verification-status" class="notice">Please <a href="{% url 'verification:overview' submission.pk %}">verify repository access</a> before submitting this project.</p>
-          {% endif %}
-          <form method="post" action="{% url 'submissions:submit' pk=submission.pk %}">
-            {% csrf_token %}
-            <input type="hidden" name="revision" value="{{ submission.revision }}">
-            <label class="checkbox-field"><input type="checkbox" name="publication_confirmed" required><span>{{ publication_declaration }} <a href="{{ abstract_license }}" target="_blank" rel="noopener noreferrer">Read the CC BY 4.0 licence</a>.</span></label>
-            <button type="submit" class="button" aria-describedby="verification-status"{% if not repository_verified %} disabled{% endif %}>Submit saved draft</button>
-          </form>
-          <p class="private-note">The saved version is sent for moderation. Later edits stay in your draft until you submit them again.</p>
+          <p class="notice">This older submission is incomplete. <a href="{% url 'submissions:edit' pk=submission.pk %}">Complete the details and submit it</a> to proceed.</p>
         {% endif %}
       </section>
       <hr class="section-divider">

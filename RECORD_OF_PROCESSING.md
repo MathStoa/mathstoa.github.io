@@ -42,12 +42,12 @@ required (no large-scale monitoring or special category data).
 |---|---|---|---|---|---|
 | Accounts and sign-in | Account holders | Provider identifier, random username, creation and sign-in dates, encrypted MFA secret and recovery-code data, session data | Art. 6(1)(b) contract | Render (processor) | 365 days without sign-in if no responsibilities; otherwise until closure (`server/accounts/retention.py`) |
 | Security and abuse prevention | Visitors, account holders | IP-derived keyed digests in rate-limit cache; request log without URLs or IPs; Render and Cloudflare platform logs | Art. 6(1)(f) security | Render, Cloudflare (processors) | Counters ≤ 1 hour; platform logs per provider (OPERATIONS.md retention table) |
-| Drafts | Account holders, named contributors | Draft fields, contributor names, ORCID iDs and institutional emails (required for moderation, never public) | Art. 6(1)(b) for the account holder; 6(1)(f) for contributors | Render | Unused drafts 90 days |
+| Older incomplete submissions | Account holders, named contributors | Legacy draft fields, contributor names, ORCID iDs and institutional emails (never public) | Art. 6(1)(b) for the account holder; 6(1)(f) for contributors | Render | Unused drafts 90 days |
 | Repository verification | Submitters | GitHub user id, login, permission level, commit SHA, connected ORCID, dates | Art. 6(1)(f) authorised submissions | Render; GitHub (independent controller, API queries) | With the submission's records |
 | Moderation and publication | Submitters, moderators, named contributors | Immutable revision snapshots, moderation notes, moderator identity; public listing of names and ORCID iDs | Art. 6(1)(f) scholarly attribution and accountable moderation | Public (listing only); Render | While needed for publication/moderation; never-accepted records reviewed monthly after six calendar months without activity, with 30 days’ notice before removal; justified exceptions reviewed within three months (RETENTION.md) |
 | Moderation queue | Submitters, moderators | Pending revision and status; no submission-alert emails to moderators | Art. 6(1)(f) | Render | With submission records |
 | Change-request notices | Named contributors | Each contributor's submitted email, frozen project title and revision number; separate messages to the same contacts as submission confirmations, without moderation feedback, account identifiers or other contributors' emails | Art. 6(1)(f), accountable moderation | SMTP provider when configured (processor) | Recipients' mailboxes; the provider's sending logs |
-| Contributor confirmations | Named contributors | Name, institutional email, project title and the other contributors' names, separately queued when a revision is submitted, subject to delivery and abuse limits; links the notice, with required failed/suppressed notices needing operator follow-up | Art. 6(1)(f) | SMTP provider (processor) | Recipients' mailboxes; the provider's sending logs |
+| Contributor confirmations | Named contributors | Name, institutional email and frozen project title for submission confirmations, plus the revision number for revision confirmations. Separate messages to distinct contributor addresses in the submitted revision, subject to delivery and abuse limits; verification sends no additional confirmation. Required failed/suppressed notices need operator follow-up | Art. 6(1)(f) | SMTP provider (processor) | Recipients' mailboxes; the provider's sending logs |
 | Contributor email delivery controls | Contributors, submitters | Keyed recipient digests, account/revision reference and delivery status; limited repeat-prevention digests on revisions | Art. 6(1)(f), security and delivery accountability | Render; outgoing mail provider for actual delivery | Queued notices expire in 24 hours; delivery rows seven days; repeat-prevention digests with revision |
 | Legacy GitHub issue submissions | Submitters, named contributors | Whatever the issue contains | Art. 6(1)(f) | Public on GitHub (independent controller) | GitHub's |
 | Privacy requests and breach records | Requesters | Request file, reply address, correspondence, outcome | Art. 6(1)(c) legal obligation | Email forwarding (Porkbun), controllers' mailboxes | Request files and exports deleted at closure; date, action and outcome kept two years |
@@ -68,7 +68,7 @@ contract scope, transfer-assessment steps and remaining verification.
 | Cloudflare | Render network subprocessor; global | Covered through Render’s subprocessor arrangements, unless separately contracted | Confirm actual chain; do not invent a separate MathStoa DPA |
 | Porkbun | Domain contact-email forwarding; US | Published DPA revised 13 October 2026 covers forwarding; Product Terms incorporate it; Schedule 3 includes UK IDTA | Confirm effective account version, scope for all UK GDPR-covered data and transfer assessment; message/backup retention |
 | Contact mailbox providers | Receive forwarded correspondence for the controllers | Provider/product and contractual roles not yet confirmed | Complete private provider/transfer/retention inventory; do not publish destination addresses |
-| Outgoing email provider | Contributor confirmations and change-request notices only | Brevo was previously described as planned; verify actual deployment and terms | Confirm provider, DPA, regions/onward access and logs; EU headquarters alone does not prove absence of transfers |
+| Outgoing email provider | Contributor submission and revision confirmations and change-request notices only | Brevo was previously described as planned; verify actual deployment and terms | Confirm provider, DPA, regions/onward access and logs; EU headquarters alone does not prove absence of transfers |
 
 Simon’s US access covers website moderation and shared contact correspondence.
 Prepare and execute the controller-to-controller UK IDTA and complete the
@@ -101,10 +101,10 @@ are private evidence attached to the corresponding submission revision.
 
 **Balancing.** The data is professional, not sensitive, and of the kind
 researchers expect to see attached to their work. Contributors named by
-someone else did not supply it themselves; a separate notice is queued when a project
+someone else did not supply it themselves; a separate confirmation is queued when a project
 listing them is submitted, subject to delivery and abuse limits. Required
 notices that fail, expire or are suppressed need operator follow-up, and
-draft collection has its own Article 14 deadline. This is further mitigated
+older draft collection has its own Article 14 deadline. This is further mitigated
 by the submitter's confirmation that they may list them, the
 notice's dedicated section, the right to object without an account, and the
 `erase_submission --remove-contributor` command. Private records are visible

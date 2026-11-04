@@ -10,3 +10,5 @@
 .account-main button:not(.text-button):not(:disabled):hover,
 .account-main button:not(.text-button):not(:disabled):focus-visible { background: var(--link); border-color: var(--link); color: #fff; }
 .account-main button:not(.text-button):disabled:hover { background: var(--soft); }
+.account-main button.button-submit:not(.text-button):not(:disabled):hover,
+.account-main button.button-submit:not(.text-button):not(:disabled):focus-visible { background: #28713f; border-color: #28713f; color: #fff; }

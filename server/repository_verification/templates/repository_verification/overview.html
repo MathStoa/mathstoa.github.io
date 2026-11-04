@@ -5,13 +5,13 @@
   <p><a href="{% url 'submissions:detail' submission.pk %}">Back to {{ submission.title }}</a></p>
   <h1>Verify repository authorization</h1>
   <p>Confirm that this repository authorizes your <span class="brand">math<span lang="el">Στοά</span></span> submission. Choose either method below.</p>
-  <p><strong>Repository:</strong> {{ submission.repository_url|default:"Add a repository URL to your draft first." }}</p>
+  <p><strong>Repository:</strong> {{ submission.repository_url|default:"Add a repository URL to your submission first." }}</p>
   {% if orcid %}<p><strong>Your connected ORCID:</strong> {{ orcid }}</p>{% endif %}
   {% if verified %}
-    <p class="notice" role="status"><strong>Repository authorization verified.</strong> You can submit this project.</p>
+    <p class="notice" role="status"><strong>Repository authorization verified.</strong> Submitted versions proceed automatically to moderation.</p>
     <p><a class="button" href="{% url 'submissions:detail' submission.pk %}">Return to submission</a></p>
   {% else %}
-    <p class="notice">Verification is required before submitting this project. You can continue editing your draft.</p>
+    <p class="notice">Repository access must be verified before moderation. Your submitted version proceeds automatically once verification succeeds.</p>
   {% endif %}
 
   <section class="account-section" aria-labelledby="github-verification">
