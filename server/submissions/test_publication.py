@@ -140,6 +140,7 @@ class AuthenticatedContributorTests(TestCase):
         draft = self.save_draft()
         response = self.client.get(reverse("submissions:edit", args=[draft.pk]))
         self.assertContains(response, 'value="1" data-own-orcid="https://orcid.org/0000-0002-1825-0097" checked')
+        self.assertNotContains(response, "connect your ORCID account")
         self.identity.delete()
         response = self.client.get(reverse("submissions:edit", args=[draft.pk]))
         self.assertNotContains(response, 'data-own-orcid=')

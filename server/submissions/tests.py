@@ -12,7 +12,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import strip_tags
 
-from .forms import DOI_GUIDE_URL, ORCID_REGISTER_URL, SubmissionForm, normalize_doi, normalize_orcid
+from .forms import DOI_GUIDE_URL, SubmissionForm, normalize_doi, normalize_orcid
 from .models import Submission, SubmissionRevision, display_name
 
 
@@ -155,7 +155,6 @@ class SubmissionTests(TestCase):
         self.assertNotContains(response, "Required to save a draft")
         self.assertNotContains(response, "optional in a draft")
         self.assertContains(response, DOI_GUIDE_URL)
-        self.assertContains(response, f'<a href="{ORCID_REGISTER_URL}"')
         self.assertContains(response, 'name="collaborators-name"')
         self.assertTrue(SubmissionForm({**self.payload, "doi": "", "reading_url": ""}, for_submission=True).is_valid())
         for field in ("repository_url", "abstract", "category", "collaborators"):

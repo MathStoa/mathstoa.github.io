@@ -12,7 +12,6 @@ from django.utils import timezone
 from .models import CATEGORIES, MAX_SECONDARY_CATEGORIES, Submission
 
 DOI_GUIDE_URL = "https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content#issuing-a-persistent-identifier-for-your-repository-with-zenodo"
-ORCID_REGISTER_URL = "https://orcid.org/register"
 
 
 def public_https_url(value):
@@ -150,10 +149,7 @@ class ContributorsField(forms.Field):
 
 
 class SubmissionForm(forms.ModelForm):
-    collaborators = ContributorsField(
-        label="Contributors", required=False,
-        help_text=format_html('Add everyone who contributed to the project, including yourself, with their ORCID iD and institutional email. Write each name as first names, a comma, then the surname. Anyone can <a href="{}" target="_blank" rel="noopener noreferrer">register for an ORCID iD</a> free of charge. Email addresses are never published; a confirmation is queued for each contributor when the project is submitted; delivery is not guaranteed.', ORCID_REGISTER_URL),
-    )
+    collaborators = ContributorsField(label="Contributors", required=False)
     secondary_categories = forms.MultipleChoiceField(
         label="Further subjects", required=False, choices=CATEGORIES,
         widget=forms.CheckboxSelectMultiple,
