@@ -200,7 +200,7 @@ class AbstractMathBrowserTests(unittest.TestCase):
         self.assertEqual(self.page.evaluate('window.styleWrites'), [])
         self.assertEqual(self.page.evaluate('window.cspViolations'), [])
 
-    def test_archive_project_and_filter_rerender(self):
+    def test_archive_cards_omit_abstracts_and_project_page_renders_math(self):
         data = {'version': 1, 'projects': [{
             'id': 'math-test', 'title': 'Math test project',
             'categories': [{'code': 'math.NT', 'label': 'Number theory'}],
@@ -211,11 +211,20 @@ class AbstractMathBrowserTests(unittest.TestCase):
         project['summary'] = 'Before $x^2$ then $$\\frac{1}{2}$$ after <img src=x onerror=alert(1)>.'
         self.page.route('**/data/projects.json', lambda route: route.fulfill(json=data))
         self.page.goto(self.origin + '/index.html')
-        self.page.wait_for_selector('.card-summary math')
-        self.assertEqual(self.page.locator('.card-summary math').count(), 2)
-        self.assertEqual(self.page.locator('.card-summary img').count(), 0)
+        self.page.wait_for_selector('.project-card')
+        self.assertEqual(self.page.locator('.project-card h3').text_content(), project['title'])
+        self.assertEqual(self.page.locator('.project-card .card-summary, .project-card math, .project-card img').count(), 0)
+        self.assertNotIn('Before', self.page.locator('.project-card').text_content())
         self.page.locator('#sort').select_option('newest')
-        self.assertEqual(self.page.locator('.card-summary math').count(), 2)
+        self.assertEqual(self.page.locator('.project-card').count(), 1)
+        self.assertEqual(self.page.locator('.card-summary').count(), 0)
+        # The abstract stays searchable even though the card no longer shows it.
+        self.page.locator('#search').fill('Before')
+        self.page.locator('#filters button[type=submit]').click()
+        self.assertEqual(self.page.locator('.project-card').count(), 1)
+        self.page.locator('#search').fill('absent')
+        self.page.locator('#filters button[type=submit]').click()
+        self.assertEqual(self.page.locator('.project-card').count(), 0)
         self.page.goto(self.origin + '/project.html?id=' + project['id'])
         self.page.wait_for_selector('.project-intro math')
         self.assertEqual(self.page.locator('.project-intro math').count(), 2)

@@ -1,4 +1,3 @@
-import {renderAbstract} from './abstract-math.js';
 import {element as el, loadArchive, tagList, projectLink} from './common.js';
 const search = document.querySelector('#search');
 const subject = document.querySelector('#subject');
@@ -89,7 +88,6 @@ function card(project) {
   });
   return el('article', {className:'project-card'},
     el('h3', {}, el('a', {href:projectLink(project)}, project.title)),
-    renderAbstract(el('div', {className:'card-summary'}), project.summary),
     credits,
     tagList(project.categories));
 }
