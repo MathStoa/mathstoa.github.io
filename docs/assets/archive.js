@@ -1,13 +1,11 @@
 import {element as el, loadArchive, tagList, projectLink} from './common.js';
 const search = document.querySelector('#search');
-const field = document.querySelector('#field');
 const subject = document.querySelector('#subject');
 const sort = document.querySelector('#sort');
 const projects = document.querySelector('#projects');
 const count = document.querySelector('#result-count');
 const reset = document.querySelector('#reset');
-const fields = new Set(['all', 'title', 'author', 'abstract']);
-const defaults = () => ({q:'', field:'all', author:'', subject:'', sort:'title'});
+const defaults = () => ({q:'', author:'', subject:'', sort:'title'});
 let state = defaults();
 let archive = [];
 let status = 'loading';
@@ -20,10 +18,8 @@ function nameKey(name) {
 }
 function readState() {
   const params = new URLSearchParams(location.search);
-  const selectedField = params.get('field') || (params.get('view') === 'authors' ? 'author' : 'all');
   return {
     q:params.get('q') || '',
-    field:fields.has(selectedField) ? selectedField : 'all',
     author:cleanName(params.get('author') || ''),
     subject:params.get('subject') || '',
     sort:params.get('sort') === 'newest' ? 'newest' : 'title',
@@ -32,31 +28,20 @@ function readState() {
 function stateURL(next = state, hash = location.hash) {
   const params = new URLSearchParams();
   if (next.q.trim()) params.set('q', next.q.trim());
-  if (next.field !== 'all') params.set('field', next.field);
   if (next.author) params.set('author', next.author);
   if (next.subject) params.set('subject', next.subject);
   if (next.sort !== 'title') params.set('sort', next.sort);
   const suffix = params.toString();
   return location.pathname + (suffix ? '?' + suffix : '') + hash;
 }
-function updatePlaceholder() {
-  search.placeholder = {
-    all:'Search projects, contributors, subjects, or repositories',
-    title:'Search project titles',
-    author:'Search contributor names, e.g. Noether, Emmy',
-    abstract:'Search project abstracts',
-  }[field.value] || 'Search the archive';
-}
 function updateReset() {
-  const applied = state.q.trim() || state.field !== 'all' || state.author || state.subject || state.sort !== 'title';
-  reset.hidden = !applied && !search.value.trim() && field.value === 'all' && !subject.value && sort.value === 'title';
+  const applied = state.q.trim() || state.author || state.subject || state.sort !== 'title';
+  reset.hidden = !applied && !search.value.trim() && !subject.value && sort.value === 'title';
 }
 function syncControls() {
   search.value = state.q;
-  field.value = state.field;
   subject.value = state.subject;
   sort.value = state.sort;
-  updatePlaceholder();
 }
 function isPlainClick(event) {
   return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
@@ -69,7 +54,7 @@ function apply(next, {sync = true, hash = location.hash} = {}) {
   render();
 }
 function contributorLink(name) {
-  const next = {...state, q:'', field:'author', author:cleanName(name)};
+  const next = {...state, q:'', author:cleanName(name)};
   const link = el('a', {href:stateURL(next, '#archive')}, cleanName(name));
   link.addEventListener('click', event => {
     if (!isPlainClick(event)) return;
@@ -108,12 +93,8 @@ function card(project) {
     tagList(project.categories));
 }
 function matchesQuery(project, words) {
-  if (state.field === 'author') return project.credits.some(credit => words.every(word => folded(credit.name).includes(word)));
-  const values = state.field === 'title' ? [project.title]
-    : state.field === 'abstract' ? [project.summary]
-    : [project.title, project.summary, project.repositoryUrl, project.doi,
-      ...project.categories.flatMap(category => [category.code, category.label]), ...project.credits.map(credit => credit.name)];
-  const text = folded(values.join(' '));
+  const text = folded([project.title, project.summary, project.repositoryUrl, project.doi,
+    ...project.categories.flatMap(category => [category.code, category.label]), ...project.credits.map(credit => credit.name)].join(' '));
   return words.every(word => text.includes(word));
 }
 function render() {
@@ -142,10 +123,9 @@ function render() {
 }
 document.querySelector('#filters').addEventListener('submit', event => {
   event.preventDefault();
-  apply({q:search.value.trim(), field:field.value, author:'', subject:subject.value, sort:sort.value});
+  apply({q:search.value.trim(), author:'', subject:subject.value, sort:sort.value});
 });
 search.addEventListener('input', updateReset);
-field.addEventListener('change', () => { updatePlaceholder(); updateReset(); });
 subject.addEventListener('change', () => apply({...state, subject:subject.value}, {sync:false}));
 sort.addEventListener('change', () => apply({...state, sort:sort.value}, {sync:false}));
 reset.addEventListener('click', () => { apply(defaults()); search.focus(); });
@@ -166,5 +146,4 @@ try {
 }
 state = readState();
 syncControls();
-if (new URLSearchParams(location.search).get('view') === 'authors') history.replaceState(null, '', stateURL());
 render();
