@@ -17,22 +17,21 @@
       <section>
         <h2>Current draft</h2>
         <div class="preserve-lines" data-abstract>{{ submission.abstract|default:"Add an abstract to describe the project." }}</div>
-        <dl>
-          <dt>Repository</dt><dd>{% if submission.repository_url %}<a href="{{ submission.repository_url }}" target="_blank" rel="noopener noreferrer" title="Open repository in a new tab">{{ submission.repository_url }}</a>{% else %}Not supplied{% endif %}</dd>
-          <dt>DOI</dt><dd>{% if submission.doi %}<a href="{{ submission.doi }}" rel="noopener noreferrer">{{ submission.doi }}</a>{% else %}None (optional){% endif %}</dd>
-          <dt>Project website</dt><dd>{% if submission.reading_url %}<a href="{{ submission.reading_url }}" target="_blank" rel="noopener noreferrer" title="Open project website in a new tab">{{ submission.reading_url }}</a>{% else %}None (optional){% endif %}</dd>
-          <dt>Main subject</dt><dd>{{ submission.get_category_display|default:submission.category|default:"Not supplied" }}</dd>
-          <dt>Further subjects</dt><dd>{{ submission.secondary_category_labels|join:", "|default:"None (optional)" }}</dd>
-        </dl>
-        <h3>Contributors</h3>
         <ul class="contributors">
           {% for person in submission.collaborators %}
             <li><strong>{{ person.name }}</strong>
-              {% if person.orcid %}<small>ORCID: {{ person.orcid }} · {% if person.orcid_authentication %}collected from your connected ORCID account{% else %}supplied attribution (unauthenticated){% endif %}</small>{% else %}<small>ORCID iD not supplied yet</small>{% endif %}
+              {% if person.orcid %}<a class="orcid-link" href="{{ person.orcid }}" target="_blank" rel="noopener noreferrer" title="View ORCID record" aria-label="ORCID record of {{ person.name }}"><img src="/assets/orcid.svg" alt="" width="16" height="16"></a>{% else %}<small>ORCID iD not supplied yet</small>{% endif %}
               {% if person.email %}<small>Email (private): {{ person.email }}</small>{% else %}<small>Institutional email not supplied yet</small>{% endif %}
             </li>
           {% empty %}<li>No contributors supplied yet.</li>{% endfor %}
         </ul>
+        <dl>
+          <dt>Repository</dt><dd>{% if submission.repository_url %}<a href="{{ submission.repository_url }}" target="_blank" rel="noopener noreferrer" title="Open repository in a new tab">{{ submission.repository_url }}</a>{% else %}Not supplied{% endif %}</dd>
+          <dt>DOI</dt><dd>{% if submission.doi %}<a href="{{ submission.doi }}" target="_blank" rel="noopener noreferrer">{{ submission.doi }}</a>{% else %}None (optional){% endif %}</dd>
+          <dt>Project website</dt><dd>{% if submission.reading_url %}<a href="{{ submission.reading_url }}" target="_blank" rel="noopener noreferrer" title="Open project website in a new tab">{{ submission.reading_url }}</a>{% else %}None (optional){% endif %}</dd>
+          <dt>Main subject</dt><dd>{{ submission.get_category_display|default:submission.category|default:"Not supplied" }}</dd>
+          <dt>Further subjects</dt><dd>{{ submission.secondary_category_labels|join:", "|default:"None (optional)" }}</dd>
+        </dl>
       </section>
       <hr class="section-divider">
       <section>

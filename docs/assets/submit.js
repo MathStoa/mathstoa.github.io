@@ -1,4 +1,4 @@
-import {element as el, REPOSITORY, safeURL} from './common.js?v=30b3f113a369';
+import {element as el, REPOSITORY, safeURL} from './common.js?v=3e4b890dc1e8';
 const form=document.querySelector('#submission-form');
 const result=document.querySelector('#submission-result');
 const subjectBoxes=[...form.querySelectorAll('input[name="secondary"]')];

@@ -84,6 +84,8 @@
 .orcid-link img { filter: none; }
 .orcid-link:hover { outline: 1px solid var(--muted); outline-offset: 1px; }
 .project-credit .contributor-link { font-size: 15px; text-decoration: underline; text-decoration-thickness: 1px; }
+.project-credits { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 16px 0 12px; }
+.project-credit { min-width: 0; max-width: 100%; margin: 0; line-height: 1.5; }
 .project-credit .contributor-link:hover { text-decoration-thickness: 2px; }
 .project-sidebar .button:hover, .project-sidebar .button:focus-visible {
   background: var(--link);
@@ -160,9 +162,3 @@ select:not(:disabled), input[type=checkbox]:not(:disabled), input[type=radio]:no
   .results-toolbar { align-items: flex-start; }
   .footer-wordmark { font-size: 12px; }
 }
-
-/* Identifier provenance and abstract reuse information. */
-.supplied-orcid { display: inline-flex; align-items: baseline; gap: .3rem; flex-wrap: wrap; font-size: .85em; }
-.supplied-orcid .orcid-link { display: inline-flex; align-items: center; gap: .3rem; }
-.supplied-orcid img { flex-shrink: 0; vertical-align: middle; }
-.abstract-license { font-size: .9rem; color: var(--muted, #5b6472); line-height: 1.6; }

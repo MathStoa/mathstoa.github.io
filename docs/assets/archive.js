@@ -1,4 +1,4 @@
-import {element as el, loadArchive, tagList, projectLink, suppliedOrcidLink} from './common.js?v=30b3f113a369';
+import {element as el, loadArchive, tagList, projectLink, suppliedOrcidLink} from './common.js?v=3e4b890dc1e8';
 const search = document.querySelector('#search');
 const subject = document.querySelector('#subject');
 const sort = document.querySelector('#sort');

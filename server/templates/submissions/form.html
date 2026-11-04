@@ -17,7 +17,7 @@
           <fieldset class="contributors-field" aria-describedby="{{ field.auto_id }}_helptext">
             <legend>{{ field.label }}</legend>
             <small id="{{ field.auto_id }}_helptext">{{ field.help_text }}</small>
-            <p class="private-note">For your own contributor row, {% if form.connected_orcid %}select “Use my connected ORCID” to use the iD supplied by ORCID when you connected your account.{% else %}<a href="{% url 'socialaccount_connections' %}">connect your ORCID account</a>, then return here and select “Use my connected ORCID”. Save your draft before leaving this page.{% endif %} Other contributors’ iDs are supplied attribution and will be labelled unauthenticated.</p>
+            <p class="private-note">For your own contributor row, {% if form.connected_orcid %}select “Use my connected ORCID” to use the iD supplied by ORCID when you connected your account.{% else %}<a href="{% url 'socialaccount_connections' %}">connect your ORCID account</a>, then return here and select “Use my connected ORCID”. Save your draft before leaving this page.{% endif %}</p>
             {% with rows=field.value %}
               <div class="contributor-rows" data-contributor-rows>
                 {% for person in rows %}
@@ -54,7 +54,7 @@
           </div>
         {% endif %}
       {% endfor %}
-      <p class="private-note">Contributor names, ORCID iDs and whether each iD was authenticated will be public if this submission is accepted. Email addresses stay private: the project's owner and <span class="brand">math<span lang="el">Στοά</span></span> staff can see them, and they are used to confirm the submission to each contributor. Manually entered iDs are unauthenticated. Authenticating an iD does not verify authorship or the contributor’s name. Adding a contributor does not give them editing access.</p>
+      <p class="private-note">Contributor names and ORCID links will be public if this submission is accepted. Email addresses stay private: the project's owner and <span class="brand">math<span lang="el">Στοά</span></span> staff can see them, and they are used to confirm the submission to each contributor. Adding a contributor does not give them editing access.</p>
       {% if submission.owner_id == user.pk %}<p class="private-note">Before submitting the project, <a href="{% url 'verification:overview' submission.pk %}">verify repository access</a>.</p>{% endif %}
       <div class="actions">
         <button class="button" type="submit">Save draft</button>

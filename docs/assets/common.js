@@ -5,6 +5,10 @@ export function element(tag, attrs = {}, ...children) {
     if (key === 'className') node.className = value;
     else node.setAttribute(key, value);
   }
+  if (tag === 'a' && attrs.href && /^https?:$/.test(node.protocol) && node.origin !== location.origin) {
+    node.target = '_blank';
+    node.rel = 'noopener noreferrer';
+  }
   for (const child of children.flat(Infinity)) {
     if (child !== null && child !== undefined) node.append(child instanceof Node ? child : document.createTextNode(String(child)));
   }
@@ -15,20 +19,9 @@ export function safeURL(value) {
   catch { return '#'; }
 }
 export function suppliedOrcidLink(credit) {
-  // Only server-recorded OAuth-account selection yields authenticated metadata.
-  const authenticated = credit.orcidAuthenticated === true;
-  return element('span', {className:'supplied-orcid'},
-    element('a', {href:safeURL(credit.orcid), 'aria-label':'ORCID record of ' + credit.name + (authenticated ? '' : ' (unauthenticated)')},
-      element('img', {src:authenticated ? 'assets/orcid.svg' : 'assets/orcid-unauthenticated.svg', alt:'ORCID iD', width:'16', height:'16'}),
-      ' ' + credit.orcid.slice('https://orcid.org/'.length)), authenticated ? '' : ' (unauthenticated)');
-}
-export function abstractLicense(project) {
-  if (project.summaryLicense === 'https://creativecommons.org/licenses/by/4.0/' && Array.isArray(project.summaryAttribution) && project.summaryAttribution.length) {
-    return element('p', {className:'abstract-license'}, 'Abstract: ',
-      element('a', {href:project.summaryLicense}, 'CC BY 4.0'),
-      '. Attribution: ' + project.summaryAttribution.join('; ') + '. Linked repositories retain their own terms.');
-  }
-  return element('p', {className:'abstract-license'}, 'The abstract’s reuse terms have not been recorded for this listing. Check with the contributor before reusing it. Linked repositories retain their own terms.');
+  return element('a', {className:'orcid-link', href:safeURL(credit.orcid),
+    'aria-label':'ORCID record of ' + credit.name, title:'Open ORCID record in a new tab'},
+    element('img', {src:'assets/orcid.svg', alt:'', width:'16', height:'16'}));
 }
 export async function loadArchive() {
   const response = await fetch('data/projects.json');

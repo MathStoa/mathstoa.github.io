@@ -56,12 +56,12 @@ def render_feed(data: dict) -> str:
         # licence and attribution. Historical entries still announce a link.
         if project.get("summaryLicense"):
             element(entry, "summary", project["summary"], type="text")
-            element(entry, "rights", "Abstract: CC BY 4.0. Attribution: " + "; ".join(project["summaryAttribution"]) + ". Linked repositories retain their own terms.")
+            element(entry, "rights", "Abstract: CC BY 4.0. Attribution: " + "; ".join(project["summaryAttribution"]) + ".")
             element(entry, "link", href=project["summaryLicense"], rel="license")
             for name in project["summaryAttribution"]:
                 element(element(entry, "author"), "name", name)
         else:
-            element(entry, "summary", "View the project listing for its abstract, contributors and reuse terms.", type="text")
+            element(entry, "summary", "View the project listing.", type="text")
         for category in project["categories"]:
             element(entry, "category", term=category["code"], label=category["label"])
     ET.indent(feed, space="  ")
