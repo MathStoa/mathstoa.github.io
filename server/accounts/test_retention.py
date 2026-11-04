@@ -226,7 +226,7 @@ class RetentionTests(RetentionFixtures, TestCase):
         self.client.force_login(draft.owner)
         self.assertContains(self.client.get("/submissions/"), "90 days")
         self.client.logout()
-        self.assertContains(self.client.get("/accounts/login/"), "365 days")
+        self.assertContains(self.client.get("/accounts/login/"), 'href="/privacy/"')
         self.assertContains(self.client.get("/accounts/signup/"), "seven days")
         self.assertContains(self.client.get("/accounts/github/login/"), "365 days")
 

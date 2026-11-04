@@ -2,10 +2,7 @@
 {% load socialaccount %}
 {% block head_title %}Sign in{% endblock %}
 {% block content %}
-  <p class="eyebrow">Your research, your submissions</p>
   <h1>Sign in to <span class="brand">math<span lang="el">Στοά</span></span></h1>
-  <p class="lede">Submit a project, return to update it, and manage who can edit it.</p>
-  {% if registration_open %}{% include "account/retention_notice.html" %}{% endif %}
   {% if not registration_open %}<p class="notice">New account registration is currently closed. Existing accounts can still sign in using their connected methods.</p>{% endif %}
   {{ form.non_field_errors }}
   {% get_providers as providers %}
