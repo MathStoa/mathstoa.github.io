@@ -21,8 +21,9 @@
   <main id="main" tabindex="-1" class="wrap account-main">
     {% if messages %}
       <div class="messages" aria-live="polite">
-        {% for message in messages %}<p class="notice{% if message.tags %} {{ message.tags }}{% endif %}">{{ message }}</p>{% endfor %}
+        {% for message in messages %}<p class="notice{% if message.tags %} {{ message.tags }}{% endif %}">{{ message }} <button type="button" class="text-button notice-dismiss" aria-label="Dismiss this message" hidden>&times;</button></p>{% endfor %}
       </div>
+      <script type="module" src="{% static 'notices.js' %}?v={{ notices_js_version }}"></script>
     {% endif %}
     {% block body %}{% block content %}{% endblock %}{% endblock %}
   </main>

@@ -2,13 +2,9 @@
 {% block head_title %}My submissions{% endblock %}
 {% block content %}
   <div class="submission-heading">
-    <div>
-      <h1>My submissions</h1>
-      <p class="lede">Your projects.</p>
-    </div>
+    <h1>My submissions</h1>
     <a href="{% url 'submissions:create' %}" class="button">New submission</a>
   </div>
-  <p class="notice">Older incomplete submissions are removed after 90 days without an edit or a repository check. Opening this page does not extend that period. <a href="/privacy/#retention">Read the retention rules.</a></p>
   {% if submissions %}
     <div class="submission-list">
       {% for submission in submissions %}
@@ -29,5 +25,4 @@
       <a href="{% url 'submissions:create' %}" class="button">Create a submission</a>
     </div>
   {% endif %}
-  <p class="private-note">Unpublished submissions stay private to you and <span class="brand">math<span lang="el">Στοά</span></span> staff. Only accepted versions appear in the archive.</p>
 {% endblock %}

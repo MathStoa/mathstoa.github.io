@@ -222,10 +222,7 @@ class RetentionTests(RetentionFixtures, TestCase):
         self.assertFalse(User.objects.filter(pk=user.pk).exists())
 
     def test_user_notices_are_visible(self):
-        draft = self.draft(age=100)
-        self.client.force_login(draft.owner)
-        self.assertContains(self.client.get("/submissions/"), "90 days")
-        self.client.logout()
+        self.assertContains(self.client.get("/privacy/"), "90 days")
         self.assertContains(self.client.get("/accounts/login/"), 'href="/privacy/"')
         self.assertContains(self.client.get("/accounts/signup/"), "seven days")
         self.assertContains(self.client.get("/accounts/github/login/"), "365 days")
