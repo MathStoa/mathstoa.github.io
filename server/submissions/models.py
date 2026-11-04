@@ -80,6 +80,8 @@ class SubmissionRevision(models.Model):
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name="revisions")
     number = models.PositiveIntegerField()
     snapshot = models.JSONField(editable=False)
+    # At most two notice kinds × 100 contributor digests; no addresses or message copies.
+    notification_keys = models.JSONField(default=list, editable=False)
     submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="submitted_revisions")
     status = models.CharField(max_length=12, choices=[("pending", "Pending"), ("approved", "Approved"), ("rejected", "Changes requested")], default="pending")
     review_note = models.TextField("moderation note", max_length=3000, blank=True)
@@ -139,9 +141,8 @@ class SubmissionRevision(models.Model):
                 submission.save(update_fields=["published_revision"])
             else:
                 from .notifications import notify_changes_requested
-                # The row locks and pending-state check above allow one decision
-                # only. An enclosing transaction must also commit before email.
-                transaction.on_commit(lambda: notify_changes_requested(revision.pk), robust=True)
+                # Persist the outbox in this decision transaction; rollback cancels both.
+                notify_changes_requested(revision.pk)
         self.refresh_from_db()
 
     def public_project(self):
@@ -166,3 +167,24 @@ class SubmissionRevision(models.Model):
             "example": False,
         }
 
+
+class NotificationQueueLock(models.Model):
+    """One database row serializes quota reservations across web and worker processes."""
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    version = models.PositiveBigIntegerField(default=0)
+
+
+class NotificationDelivery(models.Model):
+    """Bounded, private outbox; resolve the address from the current revision at send time."""
+    revision = models.ForeignKey(SubmissionRevision, on_delete=models.CASCADE, related_name="notification_deliveries")
+    account = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="notification_deliveries")
+    kind = models.CharField(max_length=12, choices=[("confirmation", "Submission confirmation"), ("changes", "Changes requested")])
+    recipient_digest = models.CharField(max_length=64)
+    status = models.CharField(max_length=12, default="queued", choices=[(value, value.title()) for value in ("queued", "sending", "sent", "failed", "suppressed", "cancelled", "expired")])
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    attempted_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["revision", "kind", "recipient_digest"], name="unique_revision_notice_recipient")]
+        indexes = [models.Index(fields=["status", "created_at"], name="notification_pending"), models.Index(fields=["recipient_digest", "created_at"], name="notification_recipient")]

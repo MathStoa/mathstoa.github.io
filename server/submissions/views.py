@@ -14,7 +14,7 @@ from accounts.middleware import limit_action
 
 from .forms import SubmissionForm, review_form
 from .models import Submission, SubmissionRevision
-from .notifications import notify_contributors, notify_moderators
+from .notifications import notify_contributors
 
 
 def accessible(user):
@@ -106,8 +106,8 @@ def submit(request, pk):
             return redirect("submissions:detail", pk=pk)
         revision, created = SubmissionRevision.objects.get_or_create(submission=submission, number=submission.revision, defaults={"snapshot": submission.snapshot(), "submitted_by": request.user})
         if created:
-            transaction.on_commit(lambda: notify_moderators(revision))
-            transaction.on_commit(lambda: notify_contributors(revision))
+            # The durable outbox commits with the revision; the worker sends later.
+            notify_contributors(revision)
             # The draft page itself states that the details were submitted; no message repeats it.
         elif revision.status == "rejected":
             messages.info(request, "Please edit and save a new draft before resubmitting.")

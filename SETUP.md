@@ -86,14 +86,11 @@ registration does not disable existing accounts' configured sign-in methods.
 Local `DJANGO_DEBUG=1` development defaults to open registration without requiring
 a contact address.
 
-Set `MODERATION_NOTIFY_EMAIL` to the moderators' mailbox to receive one email per
-submitted revision, carrying the project title and a link to its administration page and
-nothing about the submitter's account. Sending needs the SMTP settings above and
-`DEFAULT_FROM_EMAIL`, even while email sign-in stays disabled; without them the
-notice is skipped, and the **Moderation queue** count in the site header and the
-pending filter in the admin remain the way to find submissions. A failed send is
-logged and never blocks a submission. A role address on the site's domain,
-forwarded to every moderator, suits both this setting and `PUBLIC_CONTACT_EMAIL`.
+Moderators receive no submission-alert emails. Use the **Moderation queue** count
+in the site header and the pending filter in the administration interface. Any
+legacy `MODERATION_NOTIFY_EMAIL` environment variable is ignored and may be
+removed from the host. `PUBLIC_CONTACT_EMAIL` remains the public contact address;
+it does not subscribe the mailbox to submission alerts.
 
 ## Register sign-in providers
 
@@ -295,33 +292,50 @@ archive for the public project data and announcement feed. Editing a draft or
 requesting changes to an update leaves the previously approved revision public.
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the moderation workflow.
 
-Requesting changes attempts a separate email to every listed contributor after
-the decision's transaction commits, using the exact submitted revision's frozen
-contributor contacts. These are the same recipients and rules as the submission
-confirmations: each listed contributor with an email receives a separate message.
-Later draft changes do not change the recipients. Account emails, provider
-profiles and account-email verification are not involved. The admin action warns
-when the submitted revision has no contributor emails or sending configuration
-is missing.
+Submission confirmations and change-request notices enter a durable database
+queue in the same transaction as the submission or moderation decision. A rollback
+creates no notice. The container's `run_web` supervisor starts a separate delivery
+process at startup and roughly every minute, independently of hourly retention
+cleanup. Each run handles at most 20 notices and has a six-minute deadline. SMTP
+is never contacted from a web request. For a local preview or an alternative
+process manager, run `python server/manage.py process_notification_queue` once per
+minute. A custom launch command that runs Gunicorn alone does not run this worker.
 
-These notices use the existing email backend and `DEFAULT_FROM_EMAIL`; SMTP also
-needs `EMAIL_HOST`. In production, a configured SMTP host requires exactly one of
-`EMAIL_USE_TLS` or `EMAIL_USE_SSL`, even when `EMAIL_LOGIN_ENABLED=false`.
-Startup rejects an unencrypted configuration, and all submission notification
-paths also refuse insecure SMTP at send time. Console and in-memory backends
-remain available for development and tests. `MODERATION_NOTIFY_EMAIL` controls
-only the moderator's submission notices. Change-request emails contain the frozen
-title, revision number and a general submissions link explicitly for the owner.
-Only the owner can read feedback and edit the private submission. A contributor
-is asked to coordinate with the person who submitted the project; being listed
-grants no account access. Neither moderation notes nor contributor addresses
-appear in message bodies, and recipients do not see other recipients' addresses.
-Failed sends are logged by revision ID without addresses or SMTP exception
-details, do not undo moderation, and do not prevent delivery to the remaining
-contributors. There is no delivery queue or automatic retry: repeating a
-completed moderation action does not send again. A process exit after commit can
-lose a notice; the submission page remains the authoritative record. Confirm
-delivery through the provider's logs when investigating a reported missing email.
+Recipients come from the submitted revision's frozen contributor contacts;
+account emails and provider profiles are not used. Addresses are validated and
+deduplicated ignoring case. Removed contributor contacts are checked again before
+claiming a queued notice, so an erased contact is not sent a pending message. The
+queue stores keyed recipient digests and revision references, not another copy
+of the address or message body. Delivery records expire after seven days;
+unattempted notices expire after 24 hours. Bounded per-revision digest markers
+prevent repeat delivery after queue cleanup and disappear with the revision.
+
+To prevent email abuse, notices are limited to one of each kind per recipient
+per hour, five combined per recipient per day, 100 per submitting account per
+day, and 100 per hour / 500 per day for the service. These are rolling windows,
+reserved under a shared database lock both at enqueue and before delivery. Excess
+notices are suppressed, not held for a later burst. The queue also has hard limits
+of 500 outstanding and 5,000 retained delivery records. Initial confirmation and
+a moderator's change notice can both be sent within the same hour. No moderator
+submission-alert emails are sent, regardless of legacy environment settings.
+
+Contributor notices use the existing email backend and `DEFAULT_FROM_EMAIL`;
+SMTP also needs `EMAIL_HOST`. Production requires exactly one of `EMAIL_USE_TLS`
+or `EMAIL_USE_SSL`, including when email sign-in is disabled. Missing delivery
+configuration suppresses new notices. Change-request messages include the frozen
+title, revision number and a general submissions link for the owner. Only the
+owner can read feedback and edit the private submission; being listed grants no
+account access. No moderation feedback or other recipients' addresses appear in
+messages. The administration interface warns about missing contacts or delivery
+configuration.
+
+Each queued notice is attempted at most once. Failed or interrupted sends are
+not retried automatically because the mail server may already have accepted the
+message. Failed worker runs restart, but previously claimed notices are never
+resent. The submission page is the authoritative record if delivery is suppressed
+or fails. Check aggregate worker counts and the email provider's delivery logs
+when investigating a missing notice; application logs omit addresses and SMTP
+exception details.
 
 Back up PostgreSQL to access-controlled storage, test restoration, and define a
 retention period for backups and operational logs. The supplied Gunicorn access

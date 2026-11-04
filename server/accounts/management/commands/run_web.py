@@ -1,4 +1,4 @@
-"""Container entry point: Gunicorn plus automatic transient-data cleanup."""
+"""Container entry point: web server, retention cleanup and queued email delivery."""
 import sys
 from pathlib import Path
 
@@ -8,7 +8,7 @@ from accounts.supervisor import WebSupervisor
 
 
 class Command(BaseCommand):
-    help = "Run Gunicorn and clean expired transient data at startup and hourly."
+    help = "Run Gunicorn, hourly retention cleanup and notification delivery every minute."
     requires_system_checks = []
 
     def handle(self, *args, **options):
@@ -20,6 +20,8 @@ class Command(BaseCommand):
             "--access-logformat", '%(t)s "%(m)s" %(s)s %(b)s',
         ]
         cleanup_command = [sys.executable, str(server / "manage.py"), "purge_transient_data", "--skip-checks"]
-        status = WebSupervisor(web_command, cleanup_command, log=self.stdout.write).run()
+        notification_command = [sys.executable, str(server / "manage.py"), "process_notification_queue", "--batch-size", "20", "--skip-checks"]
+        status = WebSupervisor(web_command, cleanup_command, notification_command=notification_command,
+                               log=self.stdout.write).run()
         if status:
             raise SystemExit(status)

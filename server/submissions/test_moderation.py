@@ -18,7 +18,7 @@ from django.utils import timezone
 from repository_verification.models import RepositoryVerification, VerificationAttempt
 from .admin import SubmissionRevisionAdmin
 from .models import Submission, SubmissionRevision
-from .notifications import notify_contributors, notify_moderators
+from .notifications import notify_contributors, process_notification_queue
 
 
 NOTIFY = {"MODERATION_NOTIFY_EMAIL": "reviewers@example.invalid", "DEFAULT_FROM_EMAIL": "mathStoa <noreply@example.invalid>"}
@@ -180,19 +180,13 @@ class SubmitNoticeTests(TestCase):
         return response
 
     @override_settings(**NOTIFY, PUBLIC_CONTACT_EMAIL="contact@example.invalid")
-    def test_submitting_a_revision_emails_the_moderation_mailbox(self):
+    def test_submitting_a_revision_uses_the_queue_without_emailing_moderators(self):
         response = self.submit()
         self.assertContains(response, "The repository details have been submitted and will undergo moderation before being made public.", count=1)
         self.assertNotContains(response, "Submit saved draft")
-        revision = self.submission.revisions.get()
-        self.assertEqual(len(mail.outbox), 1)
-        message = mail.outbox[0]
-        self.assertEqual(message.to, ["reviewers@example.invalid"])
-        self.assertEqual(message.subject, f"{settings.ACCOUNT_EMAIL_SUBJECT_PREFIX}Submission awaiting moderation: Notice test project")
-        self.assertIn(reverse("admin:submissions_submissionrevision_change", args=[revision.pk]), message.body)
-        self.assertIn("status__exact=pending", message.body)
-        for private in ("notice-owner", str(self.submission.pk), self.submission.pk.hex):
-            self.assertNotIn(private, message.body)
+        self.assertTrue(self.submission.revisions.filter(status="pending").exists())
+        process_notification_queue()
+        self.assertEqual(mail.outbox, [])
 
     def test_without_a_mailbox_nothing_is_sent(self):
         with override_settings(MODERATION_NOTIFY_EMAIL=""):
@@ -201,24 +195,25 @@ class SubmitNoticeTests(TestCase):
         self.assertTrue(self.submission.revisions.filter(status="pending").exists())
 
     @override_settings(**NOTIFY)
-    def test_mail_failure_never_blocks_the_submission(self):
-        with patch("submissions.notifications.send_mail", side_effect=OSError("smtp down")):
-            with self.assertLogs("submissions.notifications", level="WARNING"):
-                self.submit()
+    def test_submission_never_attempts_smtp(self):
+        with patch("submissions.notifications.EmailMessage.send", side_effect=OSError("smtp down")) as send:
+            self.submit()
+        send.assert_not_called()
         self.assertTrue(self.submission.revisions.filter(status="pending").exists())
         self.assertEqual(mail.outbox, [])
 
     @override_settings(**NOTIFY)
-    def test_notice_is_sent_once_per_revision_and_not_for_repeats(self):
+    def test_repeated_submission_does_not_duplicate_queue_or_email_moderators(self):
         self.submit()
         self.submit()
-        self.assertEqual(len(mail.outbox), 1)
+        process_notification_queue()
+        self.assertEqual(mail.outbox, [])
         self.assertEqual(self.submission.revisions.count(), 1)
 
     @override_settings(**NOTIFY, EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend", EMAIL_HOST="")
     def test_production_without_smtp_skips_the_notice(self):
-        revision = revision_for(self.submission, self.owner)
-        self.assertFalse(notify_moderators(revision))
+        self.submit()
+        process_notification_queue()
         self.assertEqual(mail.outbox, [])
 
 
@@ -236,7 +231,9 @@ class ContributorConfirmationTests(TestCase):
     @override_settings(**NOTIFY, PUBLIC_CONTACT_EMAIL="contact@example.invalid")
     def test_each_contributor_gets_their_own_confirmation(self):
         self.submit()
-        confirmations = [message for message in mail.outbox if message.to != ["reviewers@example.invalid"]]
+        self.assertEqual(mail.outbox, [])
+        process_notification_queue()
+        confirmations = mail.outbox
         self.assertEqual(sorted(message.to[0] for message in confirmations), ["anna@university.example", "ben@institute.example"])
         for message in confirmations:
             self.assertEqual(len(message.to), 1)
@@ -258,16 +255,24 @@ class ContributorConfirmationTests(TestCase):
     def test_confirmations_are_not_repeated(self):
         self.submit()
         self.submit()
-        self.assertEqual(len(mail.outbox), 3)
+        self.assertEqual(mail.outbox, [])
+        process_notification_queue()
+        process_notification_queue()
+        self.assertEqual(len(mail.outbox), 2)
 
     @override_settings(**NOTIFY, EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend", EMAIL_HOST="")
     def test_production_without_smtp_sends_no_confirmation(self):
-        self.assertEqual(notify_contributors(revision_for(self.submission, self.owner)), 0)
+        notify_contributors(revision_for(self.submission, self.owner))
+        with patch("submissions.notifications.EmailMessage.send") as send:
+            process_notification_queue()
+        send.assert_not_called()
         self.assertEqual(mail.outbox, [])
 
     @override_settings(**NOTIFY)
     def test_a_failed_confirmation_never_blocks_the_submission(self):
-        with patch("submissions.notifications.EmailMessage.send", side_effect=OSError("smtp down")):
+        with patch("submissions.notifications.EmailMessage.send", side_effect=OSError("smtp down")) as send:
+            self.submit()
+            send.assert_not_called()
             with self.assertLogs("submissions.notifications", level="WARNING"):
-                self.submit()
+                process_notification_queue()
         self.assertTrue(self.submission.revisions.filter(status="pending").exists())

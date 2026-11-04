@@ -12,8 +12,9 @@ Dashboard names as of November 2026. Owner of every row: the operator.
 |---|---|---|---|---|
 | Weekly | Service and deploys | Render → web service → **Events**, **Logs**; `https://math-stoa.org/health/` | Last deploy live, no health-check failures or restarts; `/health/` returns `{"status": "ok"}` (`server/accounts/views.py`). Set it as the Health Check Path under **Settings**. | Failed deploy, repeated restarts, non-200 health response. |
 | Weekly | Cleanup runs | Render → **Logs**, filter `Transient cleanup` | `server/accounts/supervisor.py` logs one line per run: `completed or another instance holds the cleanup lock` on success; `failed (exit N)`, `timed out` or `could not start` on failure. The command's own output is discarded. | Any failure line, or no success line for several hours while the service is up. |
+| Weekly | Contributor notification worker | Render → **Logs**, filter `Notification delivery`; `python server/manage.py process_notification_queue` for aggregate counts | Worker completes roughly every minute and outstanding count stays small. Moderator submission alerts are disabled; use the moderation queue. | Worker failures/timeouts, a growing backlog, or no successful run for several minutes. SMTP failures and rate limits may suppress notices; inspect provider delivery logs. |
 | Weekly | Backups | Render → database → **Recovery**, **Backups** | Point-in-time window present (observed: 3 days) and latest export recent; export retention is per the Render plan, recorded below. | Shorter window, missing export, database not "Available". |
-| Weekly | Pending submissions | `/admin/submissions/submissionrevision/?status__exact=pending`; the **Moderation queue** count in the site header; the `MODERATION_NOTIFY_EMAIL` mailbox when set | Moderate each pending revision following CONTRIBUTING.md's maintainer workflow: approve, or request changes with a note. A moderator may approve their own project; the decision records who made it. | A revision pending for more than a week, or a notice with no matching pending revision. |
+| Weekly | Pending submissions | `/admin/submissions/submissionrevision/?status__exact=pending`; the **Moderation queue** count in the site header | Moderate each pending revision following CONTRIBUTING.md's maintainer workflow: approve, or request changes with a note. A moderator may approve their own project; the decision records who made it. | A revision pending for more than a week, or a queue count that does not match pending records. |
 | Weekly | Privacy mailbox | `PUBLIC_CONTACT_EMAIL` mailbox | Log receipt date, action and deadline in the restricted correspondence record; verify files at `/admin/privacy-requests/verify/` (PRIVACY_REQUESTS.md). UK GDPR: one month from receipt, extendable by two months for complex requests if the requester is told. | A request unacknowledged after a week, or within a week of its deadline. |
 | Weekly | CI and dependencies | GitHub → **Actions**, **Security** | Latest run on `main` green, including `pip-audit --strict` (`.github/workflows/test.yml`). It runs only on push and there is no Dependabot configuration; proposed: enable Dependabot alerts or add a weekly `schedule` trigger. | Red run on `main`, open alert, or a Django/allauth security release not deployed within a week. |
 | Monthly | Cleanup preview | Render → **Shell** | `python server/manage.py purge_transient_data --dry-run` prints counts. "Skipped" means the hourly run holds the lock; retry. | Hundreds of `sessions` or `cache_entries` (hourly cleanup failing), or unexpected account or draft counts. |
@@ -52,6 +53,13 @@ last three, and restore one in each six-monthly re-test. Leave the GitHub
 Actions variant until a second operator needs automation.
 
 ## Incident checklist
+
+**Restoring a database backup.** Keep contributor email delivery disabled while
+restoring or testing a backup. A restored queue may contain notices that were
+already delivered after the backup was taken. Before enabling the worker on the
+restored service, mark restored `queued` and `sending` notification records as
+`cancelled`; retain their per-revision deduplication markers. Never let an isolated
+restoration test send messages to real contributors.
 
 **Suspected key or hosting compromise (Render, GitHub or `DJANGO_SECRET_KEY`).**
 
@@ -113,6 +121,7 @@ recovery codes are the root of trust and belong in the password manager. Nobody 
 |---|---|---|
 | Sessions | 14 days from sign-in; expired rows removed hourly | `SESSION_COOKIE_AGE`; `purge_transient_data` |
 | Rate-limit counters | Expire with their window, at most an hour; expired rows removed hourly | `server/accounts/security_cache.py`; cleanup |
+| Contributor notification records | Pending notices expire after 24 hours; delivery records after seven days; bounded deduplication digests stay with revisions | Notification worker; records cascade when a revision is erased |
 | Verification attempts | Challenge valid 24 h (file) or 10 min (GitHub); unused expired attempts removed after 30 days | `server/repository_verification/management/commands/purge_repository_verification_attempts.py` |
 | Verification evidence | Valid 30 days; kept with submission history; removed only with an unused draft | `server/accounts/retention.py` |
 | Unverified sign-ups | 7 days with no sign-in, verified email or provider identity | `retention.py` |

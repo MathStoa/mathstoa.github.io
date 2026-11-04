@@ -7,8 +7,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 import dj_database_url
-from django.core.exceptions import ImproperlyConfigured, ValidationError
-from django.core.validators import validate_email
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 REPO_ROOT = BASE_DIR.parent
@@ -62,13 +61,8 @@ CSRF_TRUSTED_ORIGINS = [u.strip() for u in os.environ.get("DJANGO_CSRF_TRUSTED_O
 if render_origin and render_origin not in CSRF_TRUSTED_ORIGINS:
     CSRF_TRUSTED_ORIGINS.append(render_origin)
 PUBLIC_CONTACT_EMAIL = os.environ.get("PUBLIC_CONTACT_EMAIL", "").strip()
-# Moderators' mailbox for one notice per submitted revision; blank disables the notice.
-MODERATION_NOTIFY_EMAIL = os.environ.get("MODERATION_NOTIFY_EMAIL", "").strip()
-if MODERATION_NOTIFY_EMAIL:
-    try:
-        validate_email(MODERATION_NOTIFY_EMAIL)
-    except ValidationError:
-        raise ImproperlyConfigured("MODERATION_NOTIFY_EMAIL must be a single email address.")
+# Moderators use the moderation queue. Legacy MODERATION_NOTIFY_EMAIL values
+# are deliberately ignored; contributor notifications are handled separately.
 PUBLIC_REGISTRATION_ENABLED = flag("PUBLIC_REGISTRATION_ENABLED", DEBUG)
 
 INSTALLED_APPS = [

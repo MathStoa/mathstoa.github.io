@@ -16,8 +16,8 @@ from django.db import close_old_connections, transaction
 from django.test import RequestFactory, TestCase, TransactionTestCase, override_settings, skipUnlessDBFeature
 from django.urls import reverse
 
-from .models import Submission, SubmissionRevision
-from .notifications import can_send, notify_changes_requested, notify_contributors, notify_moderators
+from .models import NotificationDelivery, Submission, SubmissionRevision
+from .notifications import can_send, notify_changes_requested, notify_contributors, process_notification_queue
 
 
 MAIL_SETTINGS = {
@@ -52,12 +52,15 @@ class ChangeNoticeFixtures:
 
 @override_settings(**MAIL_SETTINGS)
 class ChangeNoticeTests(ChangeNoticeFixtures, TestCase):
-    def test_rejection_sends_only_after_commit_callback(self):
+    def test_rejection_queues_atomically_and_only_the_worker_sends(self):
         with self.captureOnCommitCallbacks(execute=True) as callbacks:
             self.reject()
             self.assertEqual(mail.outbox, [])
             self.assertEqual(self.revision.status, "rejected")
-        self.assertEqual(len(callbacks), 1)
+            self.assertEqual(NotificationDelivery.objects.filter(revision=self.revision, kind="changes", status="queued").count(), 1)
+        self.assertEqual(callbacks, [])
+        self.assertEqual(mail.outbox, [])
+        process_notification_queue()
         self.assertEqual(len(mail.outbox), 1)
 
     def test_content_uses_frozen_title_and_explains_owner_only_access_without_feedback(self):
@@ -65,6 +68,7 @@ class ChangeNoticeTests(ChangeNoticeFixtures, TestCase):
         self.submission.save()
         with self.captureOnCommitCallbacks(execute=True):
             self.reject()
+        process_notification_queue()
         message = mail.outbox[0]
         self.assertEqual(message.to, ["contributor@example.invalid"])
         self.assertEqual(message.cc + message.bcc, [])
@@ -92,10 +96,15 @@ class ChangeNoticeTests(ChangeNoticeFixtures, TestCase):
         ]
         SubmissionRevision.objects.filter(pk=self.revision.pk).update(snapshot=self.revision.snapshot)
         self.assertEqual(notify_contributors(self.revision), 2)
+        self.assertEqual(mail.outbox, [])
+        process_notification_queue()
         confirmation_recipients = [message.to for message in mail.outbox]
         mail.outbox = []
         with self.captureOnCommitCallbacks(execute=True):
             self.reject()
+        # A genuine change notice may follow a confirmation; each kind has its
+        # own hourly limit and both share the daily recipient budget.
+        process_notification_queue()
         self.assertEqual([message.to for message in mail.outbox], confirmation_recipients)
         self.assertEqual(confirmation_recipients, [["contributor@example.invalid"], ["second@example.invalid"]])
         for message in mail.outbox:
@@ -110,6 +119,7 @@ class ChangeNoticeTests(ChangeNoticeFixtures, TestCase):
             self.submission.revision = 2
             self.submission.save()
             SubmissionRevision.objects.create(submission=self.submission, number=2, snapshot=self.submission.snapshot())
+        process_notification_queue()
         self.assertEqual(mail.outbox[0].to, ["contributor@example.invalid"])
 
     def test_missing_contributor_contacts_never_fall_back_to_account_emails(self):
@@ -117,10 +127,10 @@ class ChangeNoticeTests(ChangeNoticeFixtures, TestCase):
             with self.subTest(contributors=contributors):
                 self.revision.snapshot["collaborators"] = contributors
                 SubmissionRevision.objects.filter(pk=self.revision.pk).update(snapshot=self.revision.snapshot, status="pending")
-                with self.assertLogs("submissions.notifications", level="WARNING") as logs:
-                    with self.captureOnCommitCallbacks(execute=True):
-                        self.reject()
-                self.assertIn("no contributor emails", logs.output[0])
+                with self.captureOnCommitCallbacks(execute=True):
+                    self.reject()
+                process_notification_queue()
+                self.assertFalse(NotificationDelivery.objects.filter(revision=self.revision).exists())
                 self.assertEqual(mail.outbox, [])
                 self.assertEqual(self.revision.status, "rejected")
 
@@ -130,6 +140,7 @@ class ChangeNoticeTests(ChangeNoticeFixtures, TestCase):
         self.owner.save()
         with self.captureOnCommitCallbacks(execute=True):
             self.reject()
+        process_notification_queue()
         self.assertEqual(mail.outbox[0].to, ["contributor@example.invalid"])
         self.assertEqual(self.revision.status, "rejected")
 
@@ -137,6 +148,7 @@ class ChangeNoticeTests(ChangeNoticeFixtures, TestCase):
     def test_notifications_do_not_require_email_signin_enabled(self):
         with self.captureOnCommitCallbacks(execute=True):
             self.reject()
+        process_notification_queue()
         self.assertEqual(mail.outbox[0].to, ["contributor@example.invalid"])
 
     def test_partial_delivery_failure_does_not_stop_remaining_contributors(self):
@@ -145,9 +157,13 @@ class ChangeNoticeTests(ChangeNoticeFixtures, TestCase):
             {"name": "C, Contributor", "email": "third@example.invalid"},
         ]
         SubmissionRevision.objects.filter(pk=self.revision.pk).update(snapshot=self.revision.snapshot, status="rejected")
+        self.assertEqual(notify_changes_requested(self.revision.pk), 3)
+        self.assertEqual(mail.outbox, [])
         with patch("submissions.notifications.EmailMessage.send", side_effect=[OSError("private@example.invalid credential"), 0, 1]) as send:
             with self.assertLogs("submissions.notifications", level="WARNING") as logs:
-                self.assertEqual(notify_changes_requested(self.revision.pk), 1)
+                result = process_notification_queue()
+        self.assertEqual(result["sent"], 1)
+        self.assertEqual(result["failed"], 2)
         self.assertEqual(send.call_count, 3)
         self.assertEqual(len(logs.output), 2)
         self.assertNotIn("private@example.invalid", " ".join(logs.output))
@@ -156,29 +172,35 @@ class ChangeNoticeTests(ChangeNoticeFixtures, TestCase):
     def test_legacy_header_injection_address_cannot_add_recipients_or_stop_other_deliveries(self):
         self.revision.snapshot["collaborators"].insert(0, {"name": "Bad, Contact", "email": "bad@example.invalid\r\nBcc: victim@example.invalid"})
         SubmissionRevision.objects.filter(pk=self.revision.pk).update(snapshot=self.revision.snapshot, status="rejected")
-        with self.assertLogs("submissions.notifications", level="WARNING") as logs:
-            self.assertEqual(notify_changes_requested(self.revision.pk), 1)
+        self.assertEqual(notify_changes_requested(self.revision.pk), 1)
+        self.assertEqual(NotificationDelivery.objects.filter(revision=self.revision).count(), 1)
+        process_notification_queue()
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, ["contributor@example.invalid"])
         self.assertEqual(mail.outbox[0].cc + mail.outbox[0].bcc, [])
-        self.assertNotIn("victim@example.invalid", " ".join(logs.output))
+        self.assertNotIn("victim@example.invalid", mail.outbox[0].body)
 
     @override_settings(PUBLIC_CONTACT_EMAIL="")
     def test_missing_public_contact_does_not_prevent_notice_or_add_reply_recipients(self):
         with self.captureOnCommitCallbacks(execute=True):
             self.reject()
+        process_notification_queue()
         self.assertEqual(mail.outbox[0].reply_to, [])
         self.assertEqual(mail.outbox[0].to, ["contributor@example.invalid"])
 
     def test_failed_or_zero_delivery_keeps_decision_and_logs_no_address_or_exception(self):
-        for failure in (OSError("credentials and verified@example.invalid"), None):
+        for index, failure in enumerate((OSError("credentials and verified@example.invalid"), None)):
             with self.subTest(failure=failure):
-                # Call the delivery function against an already committed-looking
-                # decision to exercise both backend outcomes independently.
-                SubmissionRevision.objects.filter(pk=self.revision.pk).update(status="rejected")
+                # Independent recipients exercise both backend outcomes without
+                # being suppressed by the per-recipient abuse limits.
+                snapshot = {**self.revision.snapshot, "collaborators": [{"name": "A, Contributor", "email": f"failure{index}@example.invalid"}]}
+                SubmissionRevision.objects.filter(pk=self.revision.pk).update(status="rejected", snapshot=snapshot)
+                self.assertEqual(notify_changes_requested(self.revision.pk), 1)
                 with patch("submissions.notifications.EmailMessage.send", side_effect=failure, return_value=0):
                     with self.assertLogs("submissions.notifications", level="WARNING") as logs:
-                        self.assertFalse(notify_changes_requested(self.revision.pk))
+                        result = process_notification_queue()
+                self.assertEqual(result["sent"], 0)
+                self.assertEqual(result["failed"], 1)
                 self.assertNotIn(self.contact.email, " ".join(logs.output))
                 self.assertNotIn("credentials", " ".join(logs.output))
                 self.revision.refresh_from_db()
@@ -186,9 +208,11 @@ class ChangeNoticeTests(ChangeNoticeFixtures, TestCase):
 
     def test_delivery_exception_never_unwinds_a_review(self):
         with patch("submissions.notifications.EmailMessage.send", side_effect=OSError("smtp down")):
+            with self.captureOnCommitCallbacks(execute=True):
+                self.reject()
+            self.assertEqual(mail.outbox, [])
             with self.assertLogs("submissions.notifications", level="WARNING"):
-                with self.captureOnCommitCallbacks(execute=True):
-                    self.reject()
+                process_notification_queue()
         self.revision.refresh_from_db()
         self.assertEqual(self.revision.status, "rejected")
         self.assertEqual(mail.outbox, [])
@@ -200,6 +224,7 @@ class ChangeNoticeTests(ChangeNoticeFixtures, TestCase):
                 with patch("submissions.notifications.EmailMessage.send") as send:
                     with self.assertLogs("submissions.notifications", level="WARNING"):
                         self.assertFalse(notify_changes_requested(self.revision.pk))
+                    process_notification_queue()
                 send.assert_not_called()
 
     def test_duplicate_stale_review_sends_once(self):
@@ -208,17 +233,24 @@ class ChangeNoticeTests(ChangeNoticeFixtures, TestCase):
             self.reject()
             with self.assertRaisesMessage(ValidationError, "already been moderated"):
                 stale.review(self.reviewer, approve=False)
-        self.assertEqual(len(callbacks), 1)
+        self.assertEqual(callbacks, [])
+        self.assertEqual(NotificationDelivery.objects.filter(revision=self.revision).count(), 1)
+        self.assertEqual(mail.outbox, [])
+        process_notification_queue()
         self.assertEqual(len(mail.outbox), 1)
 
     def test_failed_delivery_is_not_retried_by_repeating_the_action(self):
         with patch("submissions.notifications.EmailMessage.send", side_effect=OSError("smtp down")) as send:
+            with self.captureOnCommitCallbacks(execute=True):
+                self.reject()
+            send.assert_not_called()
             with self.assertLogs("submissions.notifications", level="WARNING"):
-                with self.captureOnCommitCallbacks(execute=True):
-                    self.reject()
+                process_notification_queue()
             with self.captureOnCommitCallbacks(execute=True) as callbacks:
                 with self.assertRaises(ValidationError):
                     self.reject()
+            self.assertEqual(notify_changes_requested(self.revision.pk), 0)
+            process_notification_queue()
         self.assertEqual(send.call_count, 1)
         self.assertEqual(callbacks, [])
 
@@ -230,6 +262,7 @@ class ChangeNoticeTests(ChangeNoticeFixtures, TestCase):
             with self.captureOnCommitCallbacks(execute=True) as callbacks:
                 self.revision.review(self.reviewer, approve=True)
         self.assertEqual(callbacks, [])
+        self.assertFalse(NotificationDelivery.objects.exists())
         self.assertEqual(mail.outbox, [])
 
     def test_pending_approved_and_deleted_revisions_do_not_send(self):
@@ -239,6 +272,8 @@ class ChangeNoticeTests(ChangeNoticeFixtures, TestCase):
         pk = self.revision.pk
         self.revision.delete()
         self.assertFalse(notify_changes_requested(pk))
+        process_notification_queue()
+        self.assertFalse(NotificationDelivery.objects.exists())
         self.assertEqual(mail.outbox, [])
 
     def test_unauthorized_reviewers_cannot_change_state_or_schedule_email(self):
@@ -256,17 +291,21 @@ class ChangeNoticeTests(ChangeNoticeFixtures, TestCase):
                 self.revision.refresh_from_db()
                 self.assertEqual(self.revision.status, "pending")
         self.assertEqual(mail.outbox, [])
+        self.assertFalse(NotificationDelivery.objects.exists())
 
     def test_staff_with_change_permission_can_notify(self):
         staff = get_user_model().objects.create_user(username="moderator", is_staff=True)
         staff.user_permissions.add(Permission.objects.get(codename="change_submissionrevision"))
         with self.captureOnCommitCallbacks(execute=True):
             self.revision.review(staff, approve=False)
+        process_notification_queue()
         self.assertEqual(mail.outbox[0].to, ["contributor@example.invalid"])
 
     def test_contributor_notification_grants_no_private_submission_access(self):
         with self.captureOnCommitCallbacks(execute=True):
             self.reject()
+        process_notification_queue()
+        self.assertEqual(mail.outbox[0].to, ["contributor@example.invalid"])
         contributor = get_user_model().objects.create_user(username="listed-contributor", email="contributor@example.invalid")
         EmailAddress.objects.create(user=contributor, email=contributor.email, verified=True, primary=True)
         self.client.force_login(contributor)
@@ -303,9 +342,12 @@ class ChangeNoticeTests(ChangeNoticeFixtures, TestCase):
         with self.captureOnCommitCallbacks(execute=True):
             response = self.admin_reject()
         self.assertEqual(response.status_code, 302)
+        self.assertEqual(mail.outbox, [])
+        process_notification_queue()
         self.assertEqual(len(mail.outbox), 1)
         with self.captureOnCommitCallbacks(execute=True):
             response = self.admin_reject()
+        process_notification_queue()
         self.assertEqual(len(mail.outbox), 1)
         self.assertTrue(any("already been moderated" in str(message) for message in get_messages(response.wsgi_request)))
 
@@ -318,6 +360,8 @@ class ChangeNoticeTests(ChangeNoticeFixtures, TestCase):
                 "action": "request_changes", "_selected_action": [self.revision.pk, other_revision.pk],
             })
         self.assertEqual(response.status_code, 302)
+        self.assertEqual(mail.outbox, [])
+        process_notification_queue()
         self.assertEqual(len(mail.outbox), 2)
         self.assertEqual(sorted(message.to[0] for message in mail.outbox), ["contributor@example.invalid", "second@example.invalid"])
         for message in mail.outbox:
@@ -352,6 +396,7 @@ class ChangeNoticeTests(ChangeNoticeFixtures, TestCase):
             response = self.admin_reject()
         self.assertEqual(response.status_code, 403)
         self.assertEqual(callbacks, [])
+        self.assertFalse(NotificationDelivery.objects.exists())
         self.revision.refresh_from_db()
         self.assertEqual(self.revision.status, "pending")
 
@@ -376,35 +421,40 @@ class NotificationTransportTests(ChangeNoticeFixtures, TestCase):
             with self.subTest(use_tls=use_tls, use_ssl=use_ssl):
                 with override_settings(EMAIL_USE_TLS=use_tls, EMAIL_USE_SSL=use_ssl):
                     self.assertFalse(can_send())
-                    with patch("submissions.notifications.send_mail") as send_mail, patch("submissions.notifications.EmailMessage.send") as send:
-                        self.assertFalse(notify_moderators(self.revision))
+                    with patch("submissions.notifications.EmailMessage.send") as send:
                         self.assertEqual(notify_contributors(self.revision), 0)
                         with self.assertLogs("submissions.notifications", level="WARNING"):
                             self.assertFalse(notify_changes_requested(self.revision.pk))
-                    send_mail.assert_not_called()
+                        process_notification_queue()
                     send.assert_not_called()
+                    self.assertFalse(NotificationDelivery.objects.exists())
 
-    def test_production_tls_and_ssl_preserve_all_existing_notification_paths(self):
+    def test_production_tls_and_ssl_allow_only_queued_contributor_notifications(self):
         for use_tls, use_ssl in ((True, False), (False, True)):
             with self.subTest(use_tls=use_tls, use_ssl=use_ssl):
                 with override_settings(EMAIL_USE_TLS=use_tls, EMAIL_USE_SSL=use_ssl):
                     self.assertTrue(can_send())
+                    self.revision.snapshot["collaborators"] = [{"name": "A, Contributor", "email": f"transport-{use_tls}@example.invalid"}]
+                    SubmissionRevision.objects.filter(pk=self.revision.pk).update(snapshot=self.revision.snapshot)
                     # SMTP is mocked: this verifies eligibility and dispatch,
                     # without contacting a server or sending a real message.
-                    with patch("submissions.notifications.send_mail", return_value=1) as send_mail, patch("submissions.notifications.EmailMessage.send", return_value=1) as send:
-                        self.assertTrue(notify_moderators(self.revision))
+                    with patch("submissions.notifications.EmailMessage.send", return_value=1) as send:
                         self.assertEqual(notify_contributors(self.revision), 1)
                         self.assertTrue(notify_changes_requested(self.revision.pk))
-                    self.assertEqual(send_mail.call_count, 1)
+                        send.assert_not_called()
+                        result = process_notification_queue()
+                    self.assertEqual(result["sent"], 2)
                     self.assertEqual(send.call_count, 2)
 
     @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend", EMAIL_USE_TLS=False, EMAIL_USE_SSL=False)
     def test_in_memory_backend_remains_usable_without_smtp_encryption(self):
         self.assertTrue(can_send())
-        self.assertTrue(notify_moderators(self.revision))
         self.assertEqual(notify_contributors(self.revision), 1)
         self.assertTrue(notify_changes_requested(self.revision.pk))
-        self.assertEqual(len(mail.outbox), 3)
+        self.assertEqual(mail.outbox, [])
+        process_notification_queue()
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertTrue(all(message.to == ["contributor@example.invalid"] for message in mail.outbox))
 
     @override_settings(DEBUG=True, EMAIL_BACKEND="django.core.mail.backends.console.EmailBackend", EMAIL_USE_TLS=False, EMAIL_USE_SSL=False)
     def test_development_console_backend_remains_available(self):
@@ -434,6 +484,9 @@ class ChangeNoticeTransactionTests(ChangeNoticeFixtures, TransactionTestCase):
         with ThreadPoolExecutor(max_workers=2) as pool:
             results = [future.result(timeout=10) for future in [pool.submit(review), pool.submit(review)]]
         self.assertEqual(sorted(results), [["This revision has already been moderated."], ["decided"]])
+        self.assertEqual(mail.outbox, [])
+        self.assertEqual(NotificationDelivery.objects.filter(revision=self.revision).count(), 1)
+        process_notification_queue()
         self.assertEqual(len(mail.outbox), 1)
 
     def test_outer_transaction_must_commit_before_delivery(self):
@@ -441,6 +494,9 @@ class ChangeNoticeTransactionTests(ChangeNoticeFixtures, TransactionTestCase):
             with transaction.atomic():
                 self.reject()
             self.assertEqual(mail.outbox, [])
+            self.assertEqual(NotificationDelivery.objects.filter(revision=self.revision, status="queued").count(), 1)
+        self.assertEqual(mail.outbox, [])
+        process_notification_queue()
         self.assertEqual(len(mail.outbox), 1)
         self.revision.refresh_from_db()
         self.assertEqual(self.revision.status, "rejected")
@@ -450,6 +506,8 @@ class ChangeNoticeTransactionTests(ChangeNoticeFixtures, TransactionTestCase):
             with transaction.atomic():
                 self.reject()
                 raise RuntimeError("rollback")
+        self.assertFalse(NotificationDelivery.objects.exists())
+        process_notification_queue()
         self.assertEqual(mail.outbox, [])
         self.revision.refresh_from_db()
         self.assertEqual(self.revision.status, "pending")
@@ -462,6 +520,8 @@ class ChangeNoticeTransactionTests(ChangeNoticeFixtures, TransactionTestCase):
                     raise RuntimeError("rollback")
             except RuntimeError:
                 pass
+        self.assertFalse(NotificationDelivery.objects.exists())
+        process_notification_queue()
         self.assertEqual(mail.outbox, [])
         self.revision.refresh_from_db()
         self.assertEqual(self.revision.status, "pending")
@@ -470,6 +530,8 @@ class ChangeNoticeTransactionTests(ChangeNoticeFixtures, TransactionTestCase):
         with patch.object(SubmissionRevision, "save", side_effect=RuntimeError("save failed")):
             with self.assertRaisesMessage(RuntimeError, "save failed"):
                 self.reject()
+        self.assertFalse(NotificationDelivery.objects.exists())
+        process_notification_queue()
         self.assertEqual(mail.outbox, [])
         self.revision.refresh_from_db()
         self.assertEqual(self.revision.status, "pending")
@@ -481,15 +543,19 @@ class ChangeNoticeTransactionTests(ChangeNoticeFixtures, TransactionTestCase):
             return 1
         with patch("submissions.notifications.EmailMessage.send", autospec=True, side_effect=send) as delivery:
             self.reject()
+            delivery.assert_not_called()
+            process_notification_queue()
         delivery.assert_called_once()
 
-    def test_unexpected_callback_failure_keeps_committed_decision_and_other_callbacks(self):
+    def test_queue_failure_rolls_back_decision_instead_of_losing_its_notice(self):
         later = []
         with patch("submissions.notifications.notify_changes_requested", side_effect=RuntimeError("unexpected")):
-            with self.assertLogs("django.db.backends.base", level="ERROR"):
+            with self.assertRaisesMessage(RuntimeError, "unexpected"):
                 with transaction.atomic():
-                    self.reject()
                     transaction.on_commit(lambda: later.append(True))
+                    self.reject()
         self.revision.refresh_from_db()
-        self.assertEqual(self.revision.status, "rejected")
-        self.assertEqual(later, [True])
+        self.assertEqual(self.revision.status, "pending")
+        self.assertFalse(NotificationDelivery.objects.exists())
+        self.assertEqual(mail.outbox, [])
+        self.assertEqual(later, [])
