@@ -84,10 +84,11 @@ class AccountPolicyMiddleware:
         path = request.path
         from django.contrib.auth import logout
         from .organisation_login import organisation_access_denied
+        from .approval import denied_approval_status
 
         # Revoke existing sessions on a moderation change as well as preventing
         # new logins. Do not rely solely on the editable auth-user active flag.
-        if organisation_access_denied(request.user):
+        if organisation_access_denied(request.user) or denied_approval_status(request.user):
             logout(request)
         provider = next((name for name in ("orcid", "github", "gitlab") if path.startswith(f"/accounts/{name}/")), None)
         if provider and provider not in {item.id for item in get_adapter(request).list_providers(request)}:

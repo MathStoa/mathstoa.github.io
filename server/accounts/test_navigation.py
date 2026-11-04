@@ -104,6 +104,7 @@ class NavigationFixtures:
         if role in {"moderator", "admin"}:
             links.append(reverse("admin:submissions_submissionrevision_changelist") + "?status__exact=pending")
         if role == "admin":
+            links.append(reverse("admin:accounts_accountapproval_changelist") + "?status__exact=pending")
             links.append(reverse("admin:accounts_organisationaccount_changelist") + "?status__exact=pending")
         return links + [reverse("submissions:create")]
 

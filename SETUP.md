@@ -124,6 +124,38 @@ legacy `MODERATION_NOTIFY_EMAIL` environment variable is ignored and may be
 removed from the host. `PUBLIC_CONTACT_EMAIL` remains the public contact address;
 it does not subscribe the mailbox to submission alerts.
 
+## Beta account approval
+
+`ACCOUNT_APPROVAL_REQUIRED` defaults to `true`. New personal accounts can verify
+their email or sign-in provider, but cannot establish a signed-in session or submit
+a project until a moderator approves them. Existing accounts retain access. This
+applies to every enabled personal sign-in method; organisation accounts use their
+separate application process below.
+
+Open **Account applications** in the account menu, or
+`/admin/accounts/accountapproval/?status__exact=pending`. Staff need
+`accounts.change_accountapproval` and the usual staff MFA to approve or reject
+applications. Review the verified email or connected identity before approving;
+an unverified email registration cannot be approved. The decision records its
+moderator, date and any note. Approval does not reactivate a disabled account or
+replace repository verification and project moderation.
+
+Applicants see an awaiting-approval message and can retry their original sign-in
+method after approval. No application or decision emails are sent for personal
+accounts; provider-only applicants may have no email address. The public contact
+mailbox remains available for questions or privacy requests before access is
+approved.
+
+To end beta moderation, set `ACCOUNT_APPROVAL_REQUIRED=false` and redeploy. This
+allows future personal registrations without approval. Pending applications still
+need approval and rejected accounts remain blocked. Turning moderation back on
+does not add an approval requirement to existing members.
+
+Personal approval records are included in the account data download, without
+the moderator's private identifiers. They follow the account's existing retention
+rules and disappear when that account is deleted; an application alone does not
+prevent seven-day unverified or twelve-month inactive-account cleanup.
+
 ## Organisation accounts
 
 Organisations apply for a separate account at `/accounts/organisation/register/`.

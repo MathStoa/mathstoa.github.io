@@ -157,8 +157,15 @@ def verify_request_bundle(raw):
 @sensitive_variables()
 def account_export(user):
     """Current account data only; broader historical access needs manual review."""
-    from .models import OrganisationAccount
+    from .models import AccountApproval, OrganisationAccount
     from submissions.publication import authenticated_orcid
+    approval = AccountApproval.objects.filter(user=user).first()
+    approval_data = None
+    if approval is not None:
+        approval_data = {
+            "status": approval.status, "review_note": approval.review_note,
+            "created_at": _date(approval.created_at), "reviewed_at": _date(approval.reviewed_at),
+        }
     organisation = OrganisationAccount.objects.filter(user=user).first()
     organisation_data = None
     if organisation is not None:
@@ -213,6 +220,7 @@ def account_export(user):
         "scope": "Account data and project drafts you can currently access. Historical snapshots, other people's information, and broader access requests are handled by the operator on request.",
         "account": {"id": str(user.pk), "username": user.username, "email": user.email, "created_at": _date(user.date_joined), "last_sign_in": _date(user.last_login)},
         "organisation_account": organisation_data,
+        "account_approval": approval_data,
         "sign_in_methods": [{"provider": row.provider, "account_id": row.uid, "connected_at": _date(row.date_joined), "last_sign_in": _date(row.last_login)} for row in SocialAccount.objects.filter(user=user).order_by("pk")],
         "email_addresses": list(EmailAddress.objects.filter(user=user).order_by("pk").values("email", "verified", "primary")),
         "authenticators": [{"type": row.type, "created_at": _date(row.created_at), "last_used_at": _date(row.last_used_at)} for row in Authenticator.objects.filter(user=user).order_by("pk")],

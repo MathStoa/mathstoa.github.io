@@ -73,6 +73,10 @@ route without granting access to another person's private submissions.
   status, applicant-facing decision note and decision date. Review organisation
   application and decision-delivery records for broader requests; the self-export
   does not include the moderator's private account identifiers.
+  Personal beta account approvals are also included in the self-export: status,
+  decision note, application date and decision date, without moderator identifiers.
+  Pending and rejected applicants cannot use signed-in export tools; handle their
+  requests through the public contact mailbox after verifying the requester.
   Search supplied collaborator attribution in drafts, revision snapshots and the
   static archive too; it is separate from account identity. Produce a scoped,
   human-readable export, reviewing other people's private data before delivery.
@@ -88,6 +92,10 @@ route without granting access to another person's private submissions.
 - For closure, first inventory protected references. `Submission.owner` and
   `RepositoryVerification.user` prevent blind user deletion; submitted and
   moderated revisions and staff logs also need checking.
+  Include any personal beta approval record and its decision note. This record
+  is deleted with its applicant account and does not itself prevent ordinary
+  unverified or inactive-account cleanup. A reference to an account as the
+  moderator of another application is still a responsibility requiring review.
   For organisation accounts, include the organisation application, representative
   details, decision and decision-delivery metadata in the closure plan. These
   records protect the account from automatic empty-account cleanup, even while

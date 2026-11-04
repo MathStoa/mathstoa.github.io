@@ -11,6 +11,7 @@
         {% if user.is_active and user.is_staff %}<a href="{% url 'admin:index' %}">Administration</a>{% endif %}
         {% if user.is_active and user.is_staff and perms.auth.view_user %}<a href="{% url 'privacy_request_verify' %}">Verify privacy request</a>{% endif %}
         {% if pending_reviews is not None %}<a href="{% url 'admin:submissions_submissionrevision_changelist' %}?status__exact=pending">Moderation queue{% if pending_reviews %} ({{ pending_reviews }}){% endif %}</a>{% endif %}
+        {% if pending_account_approvals is not None %}<a href="{% url 'admin:accounts_accountapproval_changelist' %}?status__exact=pending">Account applications{% if pending_account_approvals %} ({{ pending_account_approvals }}){% endif %}</a>{% endif %}
         {% if pending_organisation_reviews is not None %}<a href="{% url 'admin:accounts_organisationaccount_changelist' %}?status__exact=pending">Organisation applications{% if pending_organisation_reviews %} ({{ pending_organisation_reviews }}){% endif %}</a>{% endif %}
         <form method="post" action="{% url 'account_logout' %}" class="inline-form">
           {% csrf_token %}<button type="submit" class="text-button">Sign out</button>

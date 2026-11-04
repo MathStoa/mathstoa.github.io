@@ -24,17 +24,69 @@ record the activation date and verify an actual visit in the dashboard.
 | Weekly | Contributor notification worker | Render → **Logs**, filter `Notification delivery`; `python server/manage.py process_notification_queue` for aggregate counts | Worker completes roughly every minute and outstanding count stays small. Moderator submission alerts are disabled; use the moderation queue. | Worker failures/timeouts, a growing backlog, or no successful run for several minutes. SMTP failures and rate limits may suppress notices; inspect provider delivery logs. |
 | Weekly | Backups | Render → database → **Recovery**, **Backups** | Point-in-time window present (observed: 3 days) and latest export recent; export retention is per the Render plan, recorded below. | Shorter window, missing export, database not "Available". |
 | Weekly | Pending submissions | `/admin/submissions/submissionrevision/?status__exact=pending`; the **Moderation queue** count in the site header | Moderate each pending revision following CONTRIBUTING.md's maintainer workflow: approve, or request changes with a note. A moderator may approve their own project; the decision records who made it. | A revision pending for more than a week, or a queue count that does not match pending records. |
+| During beta, regularly | New personal accounts | **Account applications** in the account menu; `/admin/accounts/accountapproval/?status__exact=pending` | Review the verified email or connected identity and approve or reject each application. Staff require `accounts.change_accountapproval` and MFA. Existing members keep access; pending applicants cannot sign in or submit. No personal-account decision emails are sent. | Verified applications waiting longer than intended, or unexpected approval decisions. |
 | Weekly | Contributor information notices | Private draft/revision review and restricted notice record | Apply PRIVACY_REQUESTS.md Article 14 follow-up from first saved collection; resolve failed/suppressed/expired notices before the legal deadline or first disclosure. | Unrecorded delivery/exception, overdue draft notice, or publication with unresolved required information. |
 | Weekly | Privacy mailbox | `PUBLIC_CONTACT_EMAIL` mailbox | Log receipt date, action and deadline in the restricted correspondence record; apply COMPLAINTS.md to complaints (acknowledge within 30 days, investigate and give updates/outcome), separately from privacy-rights requests; verify files at `/admin/privacy-requests/verify/` (PRIVACY_REQUESTS.md). UK GDPR: one month from receipt, extendable by two months for complex requests if the requester is told. | A request unacknowledged after a week, or within a week of its deadline. |
 | Weekly | CI and dependencies | GitHub → **Actions**, **Security** | Latest run on `main` green, including `pip-audit --strict` (`.github/workflows/test.yml`). The dependency audit also runs on the weekly schedule; check its result alongside release checks. | Red run on `main`, open alert, or a Django/allauth security release not deployed within a week. |
+| Weekly | Automated traffic | Cloudflare → **Security → Analytics**, **AI Crawl Control** | Review unusual request patterns and blocked requests; use targeted rules for observed misuse. Keep the AI access policy below unless deliberately changed. | Sustained abuse, legitimate visitors blocked, or an unexpected policy change. |
 | Monthly | Never-accepted submission review | `python server/manage.py review_submission_retention` | Review six-month inactivity candidates under RETENTION.md, record necessity and next review, or give the owner 30 days’ notice of proposed removal. The report sends no notices and changes no records. | Review missed, unjustified retention, or expired notice with no decision. |
 | Monthly | Cleanup preview | Render → **Shell** | `python server/manage.py purge_transient_data --dry-run` prints counts. "Skipped" means the hourly run holds the lock; retry. | Hundreds of `sessions` or `cache_entries` (hourly cleanup failing), or unexpected account or draft counts. |
 | Monthly | Database storage | Render → database → **Metrics**; `psql` | Compare usage with the plan limit; `SELECT count(*) FILTER (WHERE expires >= now()), count(*) FROM mathstoa_cache;`. The security cache never evicts unexpired counters (`server/accounts/security_cache.py`), so a flood grows the table for up to an hour. | Usage above 70% of the plan, thousands of unexpired rows, or expired rows surviving an hour. |
-| Quarterly | MFA and recovery codes | `/accounts/2fa/` (recent MFA required); Render, GitHub, ORCID, GitLab, Porkbun and mailbox account settings | Regenerate at three or fewer unused codes; store offline (STAFF_SECURITY.md); confirm the authenticator app is backed up; once a year sign in with one code, then regenerate. MFA on for every platform account, with recovery codes in the password manager; Render team and GitHub collaborators are only the operator. | Fewer than three codes, codes kept only on the authenticator device, a rejected code, an account without MFA, or an unknown member. |
-| Quarterly | Certificate and domain | Render → web service → **Settings → Custom Domains**; Porkbun | Render renews certificates automatically once the domain is verified: check it shows verified and `openssl s_client -connect math-stoa.org:443 -servername math-stoa.org </dev/null` reports expiry over 30 days away. Porkbun: auto-renew and registrar lock on, DNS unchanged. | Browser warning, "pending" domain, expiry under 30 days, renewal under 60 days away, unexpected DNS record. |
+| Quarterly | MFA and recovery codes | `/accounts/2fa/` (recent MFA required); Render, Cloudflare, GitHub, ORCID, GitLab, Porkbun and mailbox account settings | Regenerate at three or fewer unused codes; store offline (STAFF_SECURITY.md); confirm the authenticator app is backed up; once a year sign in with one code, then regenerate. MFA on for every platform account, with recovery codes in the password manager; Render team and GitHub collaborators are only the operator. | Fewer than three codes, codes kept only on the authenticator device, a rejected code, an account without MFA, or an unknown member. |
+| Quarterly | Certificate and domain | Cloudflare → **Overview**, **DNS**, **SSL/TLS**; Render → **Settings → Custom Domains**; Porkbun | Cloudflare active, encryption **Full (strict)**, edge certificate valid; Render custom domains verified with certificates issued. After activation, `openssl s_client -connect math-stoa.org:443 -servername math-stoa.org </dev/null` checks the Cloudflare edge certificate, not Render's origin certificate. Compare DNS with the configuration below; Porkbun auto-renew and registrar lock on. | Browser warning, domain still pending after migration, invalid certificate, renewal under 60 days away, unexpected nameserver or DNS record. |
 | Quarterly; secrets yearly | Provider applications | ORCID developer tools; GitHub → Developer settings → OAuth Apps; GitLab → User Settings → Applications; Render → **Environment** | Callbacks match SETUP.md's production table; `python server/manage.py check_login_setup` prints them; sign in once with each provider. Yearly: new client secret (GitHub allows two active secrets), update Render, redeploy, test sign-in, delete the old one; same for `REPOSITORY_GITHUB_READ_TOKEN`. | Provider error, callback still on `onrender.com`, secret older than 12 months, or a rotation not rolled back within the hour. |
 | Yearly, and whenever processing changes | Privacy records | RECORD_OF_PROCESSING.md; `server/templates/privacy.html`; breach register | Activities, processors, transfer safeguards and the legitimate interests assessment still match the code and providers; update the notice's "Last updated" date with any change; both controllers agree. | A new provider, field or use not in the record, or a notice older than the code it describes. |
 | Six-monthly, and after a major upgrade, PostgreSQL version change, key rotation or plan/region change | Restoration re-test | Separate Render database and web service | Restore a Render backup or an off-platform dump into an isolated database and service with the same `DJANGO_SECRET_KEY`; `migrate --check`; sign in to `/admin/` with MFA (proves MFA data decrypts); delete the copy. | Restore fails, MFA cannot decrypt, copy left running. |
+
+## Cloudflare configuration
+
+**Status, 4 November 2026:** Cloudflare is active on the **Free ($0)** plan in a
+direct Cloudflare account. Its dashboard confirms web traffic is proxying
+through Cloudflare, and the account email is verified. Porkbun's authoritative
+nameservers were saved as
+`reese.ns.cloudflare.com` and `tegan.ns.cloudflare.com`, then checked again after
+reloading the registrar dashboard. No DS record existed at the `.org` registry
+before the change; DNSSEC has not been enabled as part of this setup.
+
+Cloudflare holds ten DNS records. The root (`@`) and `www` are configured as
+proxied CNAMEs to `math-stoa.onrender.com`. The two Brevo DKIM CNAMEs
+(`brevo1._domainkey` and `brevo2._domainkey`) are DNS-only. Porkbun's two mail
+forwarding MX records, SPF, DMARC, Brevo verification and GitHub Pages domain
+verification records are preserved. Domain registration and email forwarding
+remain with Porkbun; the application and database remain on Render.
+
+SSL/TLS is **Full (strict)**. Search, Training and Agents are initially **Allow
+(do not block)**, as chosen by the operator; use **Security → Settings → AI
+Crawler and Agent access policies** to change these after reviewing misuse.
+Bot Preference Sync, Bot Fight Mode and AI Labyrinth are off. Email Address
+Obfuscation remains on. No Cache Everything rule was added: respect the
+application's `private, no-store` headers on all HTML, including public pages
+with account navigation and CSRF tokens.
+
+Both Render custom domains are verified with certificates issued. After
+activation, the signed-in submission form loaded and the About contact link
+resolved to `mailto:contact@math-stoa.org` with email obfuscation enabled. Checks
+at **19:11 UTC on 4 November 2026** confirmed both authoritative nameservers
+return Cloudflare proxy IPv4 and IPv6 answers; mail, Brevo and GitHub records
+match the retained configuration. Home, login and privacy returned 200;
+`/health/` returned 200 with status `ok`; anonymous submission access redirected
+to login (302), and `www` redirected to the apex domain (301). HTML retained
+`private, no-store`, `Vary: Cookie` and Content Security Policy (CSP). The
+same-origin email decoding script returned 200 and is permitted by the CSP.
+End-to-end email delivery has not been tested.
+
+Default **Browser Integrity Check** remains on. A basic Python `urllib`
+user-agent received 403/error 1010 while ordinary curl and browser requests
+succeeded. The AI Allow policy does not exempt clients from security checks;
+if a legitimate integration fails, review the corresponding **Security Events**
+before adding a targeted exception.
+
+With the operator's explicit approval, the alternate
+`math-stoa.onrender.com` address was disabled in Render on 4 November 2026.
+An independent HTTPS check returned 404 with
+`x-render-routing: blocked-render-subdomain`. This closes
+the alternate-hostname route; complete origin access restriction has not been
+implemented.
 
 ## Additional encrypted off-platform backup
 

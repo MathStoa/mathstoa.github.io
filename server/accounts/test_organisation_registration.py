@@ -151,7 +151,8 @@ class OrganisationRegistrationTests(TestCase):
         self.assertFalse(application.user.is_active)
         self.assertTrue(other.is_active)
 
-    def test_organisation_approval_allows_its_own_login(self):
+    @override_settings(ACCOUNT_APPROVAL_REQUIRED=True)
+    def test_organisation_approval_alone_allows_its_own_login_during_beta(self):
         application = self.application()
         application.review(self.moderator, approve=True)
         with patch("allauth.account.adapter.DefaultAccountAdapter.generate_login_code", return_value="123456"):

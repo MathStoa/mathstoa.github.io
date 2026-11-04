@@ -11,6 +11,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         configured = settings.SOCIALACCOUNT_PROVIDERS
+        self.stdout.write("New personal accounts: " + ("moderator approval required" if settings.ACCOUNT_APPROVAL_REQUIRED else "approval not required (existing decisions still apply)"))
         missing = []
         for key, label, callback in (
             ("orcid", "ORCID", "/accounts/orcid/login/callback/"),

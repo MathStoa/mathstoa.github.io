@@ -4,6 +4,7 @@
   <h1>Create an account with email</h1>
   {% if email_login_enabled and registration_open %}
     <p>We will send a code to verify your email address. Your email stays private.</p>
+    {% if account_approval_required %}<p class="notice">During the beta, a moderator must approve your new account after you verify your email. You can sign in and submit projects once approved.</p>{% endif %}
     {% include "account/retention_notice.html" %}
     <form method="post" action="{% url 'account_signup' %}" class="account-form">
       {% csrf_token %}

@@ -4,6 +4,7 @@
 {% block content %}
   <h1>Sign in to <span class="brand">math<span lang="el">Στοά</span></span></h1>
   {% if not registration_open %}<p class="notice">New account registration is currently closed. Existing accounts can still sign in using their connected methods.</p>{% endif %}
+  {% if registration_open and account_approval_required %}<p class="notice">During the beta, new accounts need moderator approval before they can sign in and submit projects. Existing members can sign in as usual.</p>{% endif %}
   {{ form.non_field_errors }}
   {% get_providers as providers %}
     <div class="provider-options" aria-label="Sign-in options">

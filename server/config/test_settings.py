@@ -8,6 +8,9 @@ CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 EMAIL_LOGIN_ENABLED = True
 PUBLIC_REGISTRATION_ENABLED = True
+# Existing feature tests exercise admitted accounts. Approval-specific tests
+# explicitly enable the production-default beta admission policy.
+ACCOUNT_APPROVAL_REQUIRED = False
 PUBLIC_CONTACT_EMAIL = "privacy@example.invalid"
 ACCOUNT_LOGIN_BY_CODE_ENABLED = True
 ALLOWED_HOSTS = ["testserver", "localhost", "127.0.0.1"]

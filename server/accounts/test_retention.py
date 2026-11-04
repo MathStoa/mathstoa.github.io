@@ -221,7 +221,7 @@ class RetentionTests(RetentionFixtures, TestCase):
         self.assertTrue(response.url.startswith("/accounts/login/"))
         self.assertFalse(User.objects.filter(pk=user.pk).exists())
 
-    def test_user_notices_are_visible(self):
+    def test_privacy_and_registration_notices_are_visible(self):
         self.assertContains(self.client.get("/privacy/"), "90 days")
         self.assertContains(self.client.get("/accounts/login/"), 'href="/privacy/"')
         self.assertContains(self.client.get("/accounts/signup/"), "seven days")

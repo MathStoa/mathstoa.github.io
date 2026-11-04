@@ -1,9 +1,52 @@
-"""Organisation identities are inactive until an explicit moderator decision."""
+"""Private account applications and explicit moderator decisions."""
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models.functions import Lower
 from django.utils import timezone
+
+
+class AccountApproval(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="account_approval")
+    status = models.CharField(max_length=12, default="pending", choices=[("pending", "Awaiting approval"), ("approved", "Approved"), ("rejected", "Rejected")])
+    review_note = models.TextField("decision note", max_length=3000, blank=True)
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="reviewed_account_applications")
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "account application"
+
+    def __str__(self):
+        return str(self.user)
+
+    def review(self, reviewer, *, approve, note=""):
+        from allauth.account.models import EmailAddress
+        from allauth.socialaccount.models import SocialAccount
+
+        if not reviewer.is_active or not reviewer.is_staff or not reviewer.has_perm("accounts.change_accountapproval"):
+            raise ValidationError("Only an authorised moderator can review an account application.")
+        note = note.strip()
+        if len(note) > 3000:
+            raise ValidationError("The decision note must be at most 3000 characters.")
+        with transaction.atomic():
+            application = type(self).objects.select_for_update().get(pk=self.pk)
+            if reviewer.pk == application.user_id:
+                raise ValidationError("You cannot approve your own account application.")
+            if application.status != "pending":
+                raise ValidationError("This application has already been moderated.")
+            if approve and not (
+                EmailAddress.objects.filter(user_id=application.user_id, verified=True).exists()
+                or SocialAccount.objects.filter(user_id=application.user_id).exists()
+            ):
+                raise ValidationError("The applicant must verify their email or sign in with a provider before approval.")
+            application.status = "approved" if approve else "rejected"
+            application.review_note = note
+            application.reviewed_by = reviewer
+            application.reviewed_at = timezone.now()
+            application.save(update_fields=["status", "review_note", "reviewed_by", "reviewed_at"])
+        self.refresh_from_db()
 
 
 class OrganisationAccount(models.Model):

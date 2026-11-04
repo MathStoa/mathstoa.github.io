@@ -1,0 +1,17 @@
+{% extends "account/base_entrance.html" %}
+{% block head_title %}Account approval{% endblock %}
+{% block content %}
+  {% if account_approval_status == "rejected" %}
+    <h1>Account application not approved</h1>
+    <p>Your application has been reviewed and was not approved for beta access. You cannot sign in or submit projects with this account.</p>
+  {% else %}
+    <h1>Awaiting account approval</h1>
+    <p>Your account is awaiting a moderator's approval. During the beta, all new accounts are reviewed before they can sign in and submit projects.</p>
+    <p>You can try signing in again later using the same email address or connected provider. Once approved, you can sign in as usual.</p>
+  {% endif %}
+  {% if privacy_contact %}<p>For help with your application, contact <a href="mailto:{{ privacy_contact }}">{{ privacy_contact }}</a>.</p>{% endif %}
+  <div class="actions">
+    <a class="button" href="{% url 'home' %}">Browse the archive</a>
+    <a href="{% url 'account_login' %}">Return to sign in</a>
+  </div>
+{% endblock %}

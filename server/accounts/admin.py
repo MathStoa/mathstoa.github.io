@@ -12,7 +12,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
 from django.contrib.admin.utils import unquote
 
-from .models import OrganisationAccount
+from .models import AccountApproval, OrganisationAccount
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html, format_html_join
@@ -80,6 +80,57 @@ admin.site.register(User, AccountUserAdmin)
 # Authenticator material must not be viewed, replaced, or reset in ordinary admin.
 if admin.site.is_registered(Authenticator):
     admin.site.unregister(Authenticator)
+
+
+@admin.register(AccountApproval)
+class AccountApprovalAdmin(admin.ModelAdmin):
+    list_display = ("account_name", "verified_emails", "connected_identities", "status", "created_at", "reviewed_by")
+    list_filter = ("status",)
+    search_fields = ("user__username", "user__first_name", "user__last_name", "user__emailaddress__email", "user__socialaccount__provider", "user__socialaccount__uid")
+    search_help_text = "Search by account name, email address, sign-in provider or connected account ID."
+    fields = ("user", "verified_emails", "connected_identities", "status", "review_note", "created_at", "reviewed_by", "reviewed_at")
+    readonly_fields = tuple(field for field in fields if field != "review_note")
+    actions = ("approve_selected", "reject_selected")
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("user", "reviewed_by").prefetch_related("user__emailaddress_set", "user__socialaccount_set")
+
+    def get_readonly_fields(self, request, obj=None):
+        return self.readonly_fields + (("review_note",) if obj and obj.status != "pending" else ())
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description="Account", ordering="user__username")
+    def account_name(self, application):
+        return AccountUserAdmin.account_name(self, application.user)
+
+    @admin.display(description="Verified private email")
+    def verified_emails(self, application):
+        return AccountUserAdmin.verified_emails(self, application.user)
+
+    @admin.display(description="Connected identities")
+    def connected_identities(self, application):
+        return AccountUserAdmin.connected_identities(self, application.user)
+
+    @admin.action(description="Approve selected beta accounts", permissions=["change"])
+    def approve_selected(self, request, queryset):
+        self._review(request, queryset, approve=True)
+
+    @admin.action(description="Reject selected beta account applications", permissions=["change"])
+    def reject_selected(self, request, queryset):
+        self._review(request, queryset, approve=False)
+
+    def _review(self, request, queryset, *, approve):
+        for application in queryset.select_related("user").order_by("pk"):
+            try:
+                application.review(request.user, approve=approve, note=application.review_note)
+                self.message_user(request, f"{self.account_name(application)}: {'approved; the account can now sign in' if approve else 'rejected'}.")
+            except ValidationError as error:
+                self.message_user(request, "; ".join(error.messages), level=messages.ERROR)
 
 
 @admin.register(OrganisationAccount)

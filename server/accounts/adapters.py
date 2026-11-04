@@ -5,11 +5,22 @@ from allauth.account.models import EmailAddress
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.db import transaction
 
 from .policy import registration_is_open
 
 
 class AccountAdapter(DefaultAccountAdapter):
+    @transaction.atomic
+    def save_user(self, request, user, form, commit=True):
+        from .approval import register_for_approval
+
+        new_account = user.pk is None
+        user = super().save_user(request, user, form, commit=commit)
+        if new_account and commit:
+            register_for_approval(user)
+        return user
+
     def _organisation_denied(self, request, user):
         from allauth.account.internal.stagekit import clear_login
         from .organisation_login import organisation_access_denied
@@ -26,8 +37,11 @@ class AccountAdapter(DefaultAccountAdapter):
         # Recheck after a code/MFA stage, since moderation can change while the
         # browser is waiting for a challenge to be completed.
         from allauth.core.exceptions import ImmediateHttpResponse
+        from .approval import approval_denied_response
 
-        response = self._organisation_denied(request, user)
+        # Email/code/MFA stages must finish first. Pending applicants prove
+        # control of their identity but never receive an authenticated session.
+        response = self._organisation_denied(request, user) or approval_denied_response(request, user)
         if response is not None:
             raise ImmediateHttpResponse(response)
         return super().login(request, user)
@@ -57,6 +71,16 @@ class AccountAdapter(DefaultAccountAdapter):
 
 
 class MinimalSocialAccountAdapter(DefaultSocialAccountAdapter):
+    @transaction.atomic
+    def save_user(self, request, sociallogin, form=None):
+        from .approval import register_for_approval
+
+        new_account = sociallogin.user.pk is None
+        user = super().save_user(request, sociallogin, form=form)
+        if new_account:
+            register_for_approval(user)
+        return user
+
     def pre_social_login(self, request, sociallogin):
         from allauth.core.exceptions import ImmediateHttpResponse
         from allauth.socialaccount.providers.base import AuthProcess

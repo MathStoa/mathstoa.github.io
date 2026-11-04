@@ -33,6 +33,10 @@ def _has_responsibilities(user):
         model = relation.related_model
         if model._meta.app_label in AUTH_RECORD_APPS:
             continue
+        # A personal beta application follows the applicant's existing account
+        # retention and is deleted with it. Reviewer references remain protected.
+        if model._meta.label_lower == "accounts.accountapproval" and relation.field.name == "user":
+            continue
         if model._default_manager.filter(**{relation.field.name: user}).exists():
             return True
     return False

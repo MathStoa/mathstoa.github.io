@@ -68,6 +68,9 @@ if PLAUSIBLE_SCRIPT_ID and not re.fullmatch(r"pa-[A-Za-z0-9_-]{1,128}", PLAUSIBL
 # Moderators use the moderation queue. Legacy MODERATION_NOTIFY_EMAIL values
 # are deliberately ignored; contributor notifications are handled separately.
 PUBLIC_REGISTRATION_ENABLED = flag("PUBLIC_REGISTRATION_ENABLED", DEBUG)
+# Temporary beta admission. Only accounts created while enabled are queued;
+# existing members retain access and pending/rejected decisions remain binding.
+ACCOUNT_APPROVAL_REQUIRED = flag("ACCOUNT_APPROVAL_REQUIRED", True)
 
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
