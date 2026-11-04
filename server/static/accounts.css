@@ -6,3 +6,10 @@
 .contributor-row .field-row>.field:nth-child(3){grid-column:1/-1}
 .account-panel .checkbox-row{display:flex;align-items:center;gap:10px;margin:0;font-size:14px;font-weight:400}.account-panel .checkbox-row input{margin:0;width:16px;height:16px;flex-shrink:0}.account-panel .recovery-codes{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.5px;resize:none}
 .account-panel .setup-steps{padding-left:22px;margin:0 0 22px;font-size:14px}.account-panel .setup-steps li{margin-bottom:6px}.totp-setup{display:grid;grid-template-columns:200px minmax(0,1fr);gap:22px;align-items:start;margin:0 0 26px}.totp-setup>p{margin:0}.totp-qr{display:block;width:200px;height:200px;padding:6px;border:1px solid var(--line);background:white}.account-panel .totp-secret{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:1px}.account-panel input[autocomplete=one-time-code]{font-size:22px!important;letter-spacing:4px;max-width:300px!important}.actions .text-button{font-size:13px}@media(max-width:620px){.totp-setup{grid-template-columns:1fr}.account-panel input[autocomplete=one-time-code]{max-width:100%!important}}
+
+.submission-list h2 a, .text-button { text-decoration: underline; text-underline-offset: 3px; }
+.submission-list h2 a:hover, .submission-list h2 a:focus-visible,
+.text-button:hover, .text-button:focus-visible { text-decoration-thickness: 2px; }
+.account-main button:not(.text-button):not(:disabled):hover,
+.account-main button:not(.text-button):not(:disabled):focus-visible { background: var(--link); border-color: var(--link); color: #fff; }
+.account-main button:not(.text-button):disabled:hover { background: var(--soft); }

@@ -18,9 +18,9 @@
         <h2>Current draft</h2>
         <div class="preserve-lines" data-abstract>{{ submission.abstract|default:"Add an abstract to describe the project." }}</div>
         <dl>
-          <dt>Repository</dt><dd>{% if submission.repository_url %}<a href="{{ submission.repository_url }}" rel="noopener noreferrer">{{ submission.repository_url }}</a>{% else %}Not supplied{% endif %}</dd>
+          <dt>Repository</dt><dd>{% if submission.repository_url %}<a href="{{ submission.repository_url }}" target="_blank" rel="noopener noreferrer" title="Open repository in a new tab">{{ submission.repository_url }}</a>{% else %}Not supplied{% endif %}</dd>
           <dt>DOI</dt><dd>{% if submission.doi %}<a href="{{ submission.doi }}" rel="noopener noreferrer">{{ submission.doi }}</a>{% else %}None (optional){% endif %}</dd>
-          <dt>Project website</dt><dd>{% if submission.reading_url %}<a href="{{ submission.reading_url }}" rel="noopener noreferrer">{{ submission.reading_url }}</a>{% else %}None (optional){% endif %}</dd>
+          <dt>Project website</dt><dd>{% if submission.reading_url %}<a href="{{ submission.reading_url }}" target="_blank" rel="noopener noreferrer" title="Open project website in a new tab">{{ submission.reading_url }}</a>{% else %}None (optional){% endif %}</dd>
           <dt>Main subject</dt><dd>{{ submission.get_category_display|default:submission.category|default:"Not supplied" }}</dd>
           <dt>Further subjects</dt><dd>{{ submission.secondary_category_labels|join:", "|default:"None (optional)" }}</dd>
         </dl>

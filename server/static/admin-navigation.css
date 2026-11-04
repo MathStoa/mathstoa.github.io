@@ -14,3 +14,9 @@
 #header .main-navigation .account-menu-panel form{display:block}
 #header .main-navigation .account-menu-panel button{display:block;padding:8px 0;color:var(--link-fg);line-height:1.5}
 @media(max-width:767px){#header .main-navigation{position:relative}#header .account-menu{position:static}#header .account-menu-panel{left:0;right:0;margin:0 auto}}
+#header .account-menu>summary:hover{text-decoration:underline}
+#header .account-menu>summary::after{display:inline-block}
+#header .account-menu[open]>summary::after{transform:rotate(180deg)}
+#header .account-menu-panel>a,#header .main-navigation .account-menu-panel button{padding:8px;border-radius:2px}
+#header .main-navigation .account-menu-panel button{width:100%;text-align:left}
+#header .account-menu-panel>a:hover,#header .account-menu-panel>a:focus-visible,#header .main-navigation .account-menu-panel button:hover,#header .main-navigation .account-menu-panel button:focus-visible{background:var(--darkened-bg)}

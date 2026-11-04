@@ -78,10 +78,11 @@
 .project-card h3 a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .project-card h3 a:hover { text-decoration-thickness: 2px; }
 .card-credits { color: var(--ink); font-size: 15px; line-height: 1.5; margin: 0; overflow-wrap: anywhere; }
-.contributor-link { font-family: var(--sans); font-weight: 600; text-decoration: none; }
+.contributor-link { font-family: var(--sans); font-weight: 600; text-decoration: underline; text-decoration-thickness: 1px; }
 .contributor-link:hover, .contributor-link:focus-visible { text-decoration: underline; }
-.orcid-link { margin-left: 5px; }
+.orcid-link { margin-left: 1px; padding: 4px; vertical-align: -7px; border-radius: 50%; }
 .orcid-link img { filter: none; }
+.orcid-link:hover { outline: 1px solid var(--muted); outline-offset: 1px; }
 .project-credit .contributor-link { font-size: 15px; text-decoration: underline; text-decoration-thickness: 1px; }
 .project-credit .contributor-link:hover { text-decoration-thickness: 2px; }
 .project-sidebar .button:hover, .project-sidebar .button:focus-visible {
@@ -99,7 +100,9 @@
 .account-menu { position: relative; }
 .account-menu > summary { cursor: pointer; white-space: nowrap; list-style: none; }
 .account-menu > summary::-webkit-details-marker { display: none; }
-.account-menu > summary::after { content: '\2304'; margin-left: 6px; }
+.account-menu > summary::after { content: '\2304'; display: inline-block; margin-left: 6px; }
+.account-menu[open] > summary::after { transform: rotate(180deg); }
+.account-menu > summary:hover { text-decoration: underline; text-underline-offset: 3px; }
 .account-menu > summary:focus-visible { outline: 2px solid var(--link); outline-offset: 4px; }
 .account-menu-panel {
   position: absolute;
@@ -114,9 +117,23 @@
   background: var(--paper);
 }
 .account-menu-panel > a, .account-menu-panel > form { display: block; }
-.account-menu-panel > a, .account-menu-panel button { display: block; padding: 8px 0; line-height: 1.5; }
+.account-menu-panel > a, .account-menu-panel button { display: block; padding: 8px; line-height: 1.5; border-radius: 2px; }
 .main-navigation .account-menu-panel form { display: block; }
-.main-navigation .account-menu-panel button { padding: 8px 0; }
+.main-navigation .account-menu-panel button { width: 100%; padding: 8px; text-align: left; }
+.account-menu-panel > a:hover, .account-menu-panel > a:focus-visible,
+.main-navigation .account-menu-panel button:hover, .main-navigation .account-menu-panel button:focus-visible { background: var(--soft); }
+
+/* Make available actions apparent with the mouse and keyboard. */
+a:hover, a:focus-visible { text-decoration-thickness: 2px; }
+.reset-button { text-decoration: underline; text-underline-offset: 3px; }
+.reset-button:hover, .reset-button:focus-visible { text-decoration-thickness: 2px; }
+.button:not(:disabled):hover, .button:not(:disabled):focus-visible {
+  background: var(--link);
+  border-color: var(--link);
+  color: #fff;
+}
+.archive-search > .button:not(:disabled):hover, .archive-search > .button:not(:disabled):focus-visible { background: #111; border-color: #111; }
+select:not(:disabled), input[type=checkbox]:not(:disabled), input[type=radio]:not(:disabled) { cursor: pointer; }
 
 @media (max-width: 850px) {
   .site-header .main-navigation { flex-basis: auto; }
