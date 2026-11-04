@@ -39,7 +39,10 @@
       <hr class="section-divider">
       <section>
         {% if current_revision.status == "unverified" %}
-          <p class="notice" role="status">Your submission has been received. <a href="{% url 'verification:overview' submission.pk %}">Verify repository access</a> to proceed to moderation. It will proceed automatically once verification succeeds.</p>
+          <div class="notice verification-notice">
+            <p role="status">You have not yet verified ownership of your repository.</p>
+            <a class="button" href="{% url 'verification:overview' submission.pk %}">Verify repository access</a>
+          </div>
         {% elif current_revision.status == "pending" %}
           <p class="verification-status" role="status">The repository details have been submitted and will undergo moderation before being made public.</p>
         {% elif current_revision.status == "approved" %}

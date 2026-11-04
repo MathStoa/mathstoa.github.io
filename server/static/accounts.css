@@ -13,6 +13,10 @@
 .account-main button.button-submit:not(.text-button):not(:disabled):hover,
 .account-main button.button-submit:not(.text-button):not(:disabled):focus-visible { background: #28713f; border-color: #28713f; color: #fff; }
 
+.submission-details .verification-status { padding: 12px 15px; border: 1px solid #527650; }
+.verification-notice { background: #fff6f5; border-color: #8b2424; }
+.account-main .verification-notice .button:hover,
+.account-main .verification-notice .button:focus-visible { background: #000; border-color: #000; color: #fff; }
 .account-main a.button:hover,
 .account-main a.button:focus-visible { background: var(--link); border-color: var(--link); color: #fff; }
 .account-main a.button-delete,
