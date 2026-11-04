@@ -62,4 +62,5 @@
     </form>
   </div>
 {% endblock %}
-{% block extra_body %}<script type="module" src="{% static 'contributors.js' %}"></script>{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/assets/abstract-math.css">{% endblock %}
+{% block extra_body %}<script type="module" src="/assets/abstract-preview.js"></script><script type="module" src="{% static 'contributors.js' %}"></script>{% endblock %}

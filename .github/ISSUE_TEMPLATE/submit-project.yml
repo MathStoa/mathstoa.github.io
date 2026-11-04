@@ -38,7 +38,7 @@ body:
     id: abstract
     attributes:
       label: Short abstract
-      description: 80–1,500 characters. Describe the research question or purpose, existing material, current status, and potential contributions. Plain text is welcome.
+      description: 80–1,500 characters. Describe the research question or purpose, existing material, current status, and potential contributions. Use $x^2$ for inline math, $$x^2$$ for display math, and \$ for a literal dollar sign. HTML is displayed as text.
     validations:
       required: true
   - type: dropdown

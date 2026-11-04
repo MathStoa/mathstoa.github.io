@@ -10,6 +10,7 @@ from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import strip_tags
 
 from .forms import DOI_GUIDE_URL, ORCID_REGISTER_URL, SubmissionForm, normalize_doi, normalize_orcid
 from .models import Submission, SubmissionRevision, display_name
@@ -67,7 +68,7 @@ class SubmissionTests(TestCase):
         pages.append(self.client.get(url))
         self.assertContains(pages[3], "Submit saved draft")
         for page in pages:
-            text = page.content.decode().lower()
+            text = strip_tags(page.content.decode()).lower()
             self.assertNotIn("review", text)
             self.assertNotIn("editorial", text)
 

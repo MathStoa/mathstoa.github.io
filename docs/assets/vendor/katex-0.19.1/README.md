@@ -1,0 +1,9 @@
+KaTeX 0.19.1, MIT licensed. Vendored from https://registry.npmjs.org/katex/-/katex-0.19.1.tgz
+
+Tarball integrity: sha512-jG8uKntjSEcm2EpQOh0XturpPuuC9r3Sq5HLHdsFdWZT27E672SF19QEi+of0/YeOy15lDgRhKvr5614uRrEfA==
+
+Only the ES module and licence are needed: abstracts use native MathML output, no KaTeX CSS or fonts. To update, verify the npm tarball integrity, replace the versioned directory, update abstract-math.js, and run the browser/security tests.
+
+`manifest.json` pins local file hashes as well as the source tarball integrity. Run `python scripts/audit_vendor.py --online` to verify local files and check OSV; CI runs it for pull requests and weekly. Treat checksum changes as code changes requiring review, and verify a new upstream tarball against npm metadata before updating the manifest.
+
+Renderer maintenance: `abstract-math.js` intentionally uses the private `katex.__parse` API from this exact release. The expanded-expression allowlist prevents transformations that disappear before MathML output validation. On upgrade, re-review every allowed parse node and its semantic fields against the upstream MathML builder, especially fraction command normalization and array column metadata. The private `katex.__defineFunction` API blocks the built-in `\genfrac` command before normalization loses its delimiters; do not replace this with post-parse delimiter checks. Register only the command handler, leaving the shared fraction group builders intact so `\frac` and `\binom` continue to work. Verify direct, `\def`/`\let` aliases, nested fractions and matrix cells on upgrades. Do not add a parse node merely because its output passes the MathML element allowlist. Keep matrix cell traversal and macro-alias/nesting regressions; unsupported nodes or metadata must fail to exact source text. Run the full browser fidelity/security suite after any change.

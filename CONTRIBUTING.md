@@ -30,6 +30,14 @@ Choose one main subject and, if the project spans several areas, up to three fur
 
 The DOI identifies the archived release that a listing announces; a mutable repository URL is not an archival snapshot.
 
+## Mathematics in abstracts
+
+Abstracts remain plain text in drafts, submitted revisions, archive JSON, exports and feeds. Use `$x^2$` for inline mathematics and `$$\sum_{n=1}^{\infty} n^{-2} = \pi^2/6$$` for a centered display. Display math may span multiple lines; inline math stays on one line. Use `\$` for a literal dollar sign. Unmatched delimiters and invalid or unsupported LaTeX remain readable as source. The native MathML renderer uses a conservative MathML Core subset: font variants such as `\mathbf`, `\mathcal` and `\mathbb`, enclosures such as `\cancel` and `\boxed`, transformations such as `\reflectbox` and `\mathreflectbox` (including macro aliases), offset commands such as `\raisebox`, generalized fractions (`\genfrac`, including aliases and nested uses), and commands needing inline styles remain raw source rather than silently losing notation. Oversized formulas scroll within their available space. HTML and Markdown are displayed as text.
+
+The account and legacy web forms provide an abstract preview. Public archive cards, project pages, saved drafts and moderation previews use the same self-hosted KaTeX renderer. Native MathML provides browser layout and assistive-technology semantics without third-party requests or inline styles; use a current browser with MathML support. Without JavaScript, saved drafts still show their source text. The JSON and Atom feed deliberately retain the original source.
+
+For renderer changes, run `python -m pip install -r browser_tests/requirements.txt`, `python -m playwright install chromium`, and `python -m unittest discover -s browser_tests -v` in addition to the backend and archive checks. Run `python scripts/audit_vendor.py --online` to verify vendor hashes and check advisories; the dependency workflow also runs this weekly. These browser tests enforce the same local-only script/style CSP and check malicious input, malformed math, preview/source separation, archive filters, mobile width and the no-JavaScript saved-source fallback.
+
 ## Moderation and corrections
 
 mathStoa maintainers check scope, readable content, public links and any DOI, permission to register, attribution, and clarity of the requested collaboration. They may ask for revisions or decline an empty, misleading, duplicate, or out-of-scope submission. This is archive moderation, not mathematical peer review.

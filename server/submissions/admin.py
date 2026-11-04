@@ -9,11 +9,21 @@ from repository_verification.models import RepositoryVerification
 from .models import Submission, SubmissionRevision
 
 
+class AbstractPreviewMedia:
+    class Media:
+        css = {"all": ("/assets/abstract-math.css",)}
+        js = ("abstract-admin.js",)
+
+
 @admin.register(Submission)
-class SubmissionAdmin(admin.ModelAdmin):
+class SubmissionAdmin(AbstractPreviewMedia, admin.ModelAdmin):
     list_display = ("title", "owner", "revision", "updated_at")
     search_fields = ("title",)
-    readonly_fields = [field.name for field in Submission._meta.fields]
+    readonly_fields = [field.name for field in Submission._meta.fields] + ["abstract_preview"]
+
+    @admin.display(description="Abstract preview")
+    def abstract_preview(self, obj):
+        return format_html('<div data-abstract>{}</div>', obj.abstract)
 
     def has_add_permission(self, request):
         return False
@@ -23,13 +33,17 @@ class SubmissionAdmin(admin.ModelAdmin):
 
 
 @admin.register(SubmissionRevision)
-class SubmissionRevisionAdmin(admin.ModelAdmin):
+class SubmissionRevisionAdmin(AbstractPreviewMedia, admin.ModelAdmin):
     list_display = ("submission", "number", "status", "created_at", "reviewed_by")
     list_filter = ("status",)
     search_fields = ("submission__title",)
-    fields = ("submission", "number", "submitted_by", "snapshot_display", "verification_display", "status", "review_note", "created_at", "reviewed_by", "reviewed_at")
-    readonly_fields = ("submission", "number", "submitted_by", "snapshot_display", "verification_display", "status", "created_at", "reviewed_by", "reviewed_at")
+    fields = ("submission", "number", "submitted_by", "snapshot_display", "abstract_preview", "verification_display", "status", "review_note", "created_at", "reviewed_by", "reviewed_at")
+    readonly_fields = ("submission", "number", "submitted_by", "snapshot_display", "abstract_preview", "verification_display", "status", "created_at", "reviewed_by", "reviewed_at")
     actions = ("approve_selected", "request_changes")
+
+    @admin.display(description="Submitted abstract preview")
+    def abstract_preview(self, obj):
+        return format_html('<div data-abstract>{}</div>', obj.snapshot.get("abstract", ""))
 
     @admin.display(description="Exact submitted details")
     def snapshot_display(self, obj):

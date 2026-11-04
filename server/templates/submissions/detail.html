@@ -16,7 +16,7 @@
     <article class="submission-details">
       <section>
         <h2>Current draft</h2>
-        <p class="preserve-lines">{{ submission.abstract|default:"Add an abstract to describe the project." }}</p>
+        <div class="preserve-lines" data-abstract>{{ submission.abstract|default:"Add an abstract to describe the project." }}</div>
         <dl>
           <dt>Repository</dt><dd>{% if submission.repository_url %}<a href="{{ submission.repository_url }}" rel="noopener noreferrer">{{ submission.repository_url }}</a>{% else %}Not supplied{% endif %}</dd>
           <dt>DOI</dt><dd>{% if submission.doi %}<a href="{{ submission.doi }}" rel="noopener noreferrer">{{ submission.doi }}</a>{% else %}None (optional){% endif %}</dd>
@@ -73,3 +73,6 @@
     </article>
   </div>
 {% endblock %}
+
+{% block extra_head %}<link rel="stylesheet" href="/assets/abstract-math.css">{% endblock %}
+{% block extra_body %}<script type="module" src="/assets/abstract-preview.js"></script>{% endblock %}

@@ -151,7 +151,7 @@ class SubmissionForm(forms.ModelForm):
         help_texts = {
             "doi": format_html('If you have one, the DOI of an archived release of the repository, such as 10.5281/zenodo.1234567. <a href="{}" target="_blank" rel="noopener noreferrer">How to get a DOI for a GitHub repository</a>', DOI_GUIDE_URL),
             "reading_url": "A public website that explains the project’s aims and introduces the material in the repository.",
-            "abstract": "80–1,500 characters when submitting.",
+            "abstract": "80–1,500 characters when submitting. Use $x^2$ for inline math and $$x^2$$ for display math. Use \\$ for a literal dollar sign. HTML is displayed as text.",
         }
         widgets = {
             "title": forms.TextInput(attrs={"placeholder": "Induced subgraphs of hypercubes and a proof of the Sensitivity Conjecture"}),

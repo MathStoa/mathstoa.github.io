@@ -1,0 +1,9 @@
+.abstract-text { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; max-width: 100%; }
+.abstract-equation { display: inline-block; white-space: normal; max-width: 100%; max-height: 16rem; overflow: auto; vertical-align: middle; }
+.abstract-equation-display { display: block; overflow-x: auto; max-width: 100%; padding: .6em 0; text-align: center; }
+.abstract-equation math { font-size: 1.1em; }
+.abstract-preview { margin-top: .75rem; padding: 1rem; border: 1px solid #ccc; }
+.abstract-preview h3 { font-size: 1rem; margin: 0 0 .5rem; }
+
+/* A grid item must be allowed to shrink before its equations can scroll. */
+.project-body { min-width: 0; }

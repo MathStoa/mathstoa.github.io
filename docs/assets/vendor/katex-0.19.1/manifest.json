@@ -1,0 +1,10 @@
+{
+  "package": "katex",
+  "version": "0.19.1",
+  "source": "https://registry.npmjs.org/katex/-/katex-0.19.1.tgz",
+  "integrity": "sha512-jG8uKntjSEcm2EpQOh0XturpPuuC9r3Sq5HLHdsFdWZT27E672SF19QEi+of0/YeOy15lDgRhKvr5614uRrEfA==",
+  "files": {
+    "katex.mjs": "5f0c3749f8b28ce1a63b68de34d3950bb4aa1a9e0130865e4b09ecc9a250c8b7",
+    "LICENSE": "766ccc1f306c885aa45542a9846bbd0a505b27a0374f146778171c2254ce18e3"
+  }
+}
