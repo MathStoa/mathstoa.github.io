@@ -22,7 +22,7 @@ Only submit a registration if you maintain the project or have a steward's permi
 
 The account service initially verifies public GitHub repositories through a verification file committed to the repository or a separate GitHub authorisation check. Follow the verification instructions shown for your draft. Logging in with GitHub or listing a repository URL alone does not verify repository control. Other hosts cannot be published through this service until their verification methods are supported, even when they are offered as sign-in providers. Verification is required again during moderation; it does not replace the submitter's permission declaration or establish agreement from every collaborator.
 
-List every contributor, including yourself, by name and surname and ORCID iD. Anyone can [register for an ORCID iD](https://orcid.org/register) free of charge. Confirm that you are authorised to publish the attribution you supply, and keep personal email addresses and private correspondence out of these public fields. Entering someone else's ORCID iD does not authenticate that person or confirm their agreement.
+List every contributor, including yourself, by name and surname. ORCID iDs are currently optional; include them if available. Confirm that you are authorised to publish the attribution you supply, and keep personal email addresses and private correspondence out of these public fields. Entering someone else's ORCID iD does not authenticate that person or confirm their agreement.
 
 Only the account that created a submission can edit it. Being credited as a collaborator does not grant access to the submission.
 
