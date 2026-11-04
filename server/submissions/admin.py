@@ -1,5 +1,6 @@
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.utils import timezone
 from django.utils.html import format_html, format_html_join
 import json
@@ -88,7 +89,89 @@ class SubmissionRevisionAdmin(AbstractPreviewMedia, admin.ModelAdmin):
         return False
 
     def get_readonly_fields(self, request, obj=None):
-        return self.readonly_fields + (("review_note",) if obj and obj.status != "pending" else ())
+        # A stale decision POST must keep the reviewer's submitted comments in
+        # its bound error form, even if someone else has already decided it.
+        review_post = request is not None and request.method == "POST" and (
+            "_approve" in request.POST or "_request_changes" in request.POST
+            or hasattr(request, "_revision_review_error")
+        )
+        return self.readonly_fields + (("review_note",) if obj and obj.status != "pending" and not review_post else ())
+
+    def _review_decision(self, request):
+        if request.method != "POST":
+            return None
+        controls = [key for key in ("_approve", "_request_changes") if key in request.POST]
+        if len(controls) > 1 or controls and any(
+            key in request.POST for key in ("_save", "_continue", "_addanother", "_saveasnew")
+        ):
+            raise ValidationError("Choose one action: save, approve, or request changes.")
+        return controls[0] == "_approve" if controls else None
+
+    def get_form(self, request, obj=None, **kwargs):
+        base_form = super().get_form(request, obj, **kwargs)
+        model_admin = self
+
+        class ReviewForm(base_form):
+            def clean(form):
+                cleaned = super().clean()
+                if hasattr(request, "_revision_review_error"):
+                    raise ValidationError(request._revision_review_error)
+                decision = model_admin._review_decision(request)
+                if decision is not None and form.instance.status != "pending":
+                    if form.instance.status == "unverified":
+                        raise ValidationError("Verify repository authorization before this submission can be moderated.")
+                    raise ValidationError("This revision has already been moderated.")
+                return cleaned
+
+        return ReviewForm
+
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        if request.method != "POST":
+            return super().changeform_view(request, object_id, form_url, extra_context)
+        try:
+            # Django's changeform_view protects CSRF and wraps the entire save,
+            # review, outbox and admin audit entry in one database transaction.
+            return super().changeform_view(request, object_id, form_url, extra_context)
+        except ValidationError as error:
+            # The failed transaction has rolled back. Rebind the original POST
+            # through Django's ordinary error form; its clean() prevents a retry.
+            request._revision_review_error = error.messages
+            return super().changeform_view(request, object_id, form_url, extra_context)
+
+    def render_change_form(self, request, context, add=False, change=False, form_url="", obj=None):
+        context["show_review_actions"] = bool(
+            obj and obj.status == "pending" and self.has_change_permission(request, obj)
+        )
+        return super().render_change_form(request, context, add, change, form_url, obj)
+
+    def save_model(self, request, obj, form, change):
+        decision = self._review_decision(request)
+        if decision is not None:
+            obj.review(request.user, approve=decision, note=form.cleaned_data["review_note"])
+            return
+        # Ordinary Save still saves comments only. Do not write a stale model's
+        # status back over a concurrent decision, or change an already final note.
+        with transaction.atomic():
+            current = SubmissionRevision.objects.select_for_update().get(pk=obj.pk)
+            if "review_note" in form.changed_data:
+                if current.status != "pending":
+                    raise ValidationError("This revision has already been moderated. Your comments were not saved.")
+                current.review_note = form.cleaned_data["review_note"]
+                current.save(update_fields=["review_note"])
+            obj.refresh_from_db()
+
+    def construct_change_message(self, request, form, formsets, add=False):
+        changes = super().construct_change_message(request, form, formsets, add)
+        if self._review_decision(request) is not None:
+            changes.append({"changed": {"fields": ["status"]}})
+        return changes
+
+    def response_change(self, request, obj):
+        decision = self._review_decision(request)
+        if decision is not None:
+            self._review_message(request, obj, approve=decision)
+            return self.response_post_save_change(request, obj)
+        return super().response_change(request, obj)
 
     @admin.action(description="Approve and publish the exact selected revisions", permissions=["change"])
     def approve_selected(self, request, queryset):
@@ -102,11 +185,14 @@ class SubmissionRevisionAdmin(AbstractPreviewMedia, admin.ModelAdmin):
         for revision in queryset.order_by("submission_id", "number"):
             try:
                 revision.review(request.user, approve=approve, note=revision.review_note)
-                self.message_user(request, f"Revision {revision.number}: {'published' if approve else 'changes requested'}.")
-                if not approve:
-                    if not contributor_contacts(revision):
-                        self.message_user(request, "No email notification: this submitted revision has no contributor email addresses. The owner can read the decision on their submission page.", level=messages.WARNING)
-                    elif not can_send():
-                        self.message_user(request, "No email notification: email delivery is not configured. The owner can read the decision on their submission page.", level=messages.WARNING)
+                self._review_message(request, revision, approve=approve)
             except ValidationError as error:
                 self.message_user(request, "; ".join(error.messages), level=messages.ERROR)
+
+    def _review_message(self, request, revision, *, approve):
+        self.message_user(request, f"Revision {revision.number}: {'published' if approve else 'changes requested'}.")
+        if not approve:
+            if not contributor_contacts(revision):
+                self.message_user(request, "No email notification: this submitted revision has no contributor email addresses. The owner can read the decision on their submission page.", level=messages.WARNING)
+            elif not can_send():
+                self.message_user(request, "No email notification: email delivery is not configured. The owner can read the decision on their submission page.", level=messages.WARNING)

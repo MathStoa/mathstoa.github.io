@@ -1,0 +1,8 @@
+{% extends "admin/submit_line.html" %}
+{% block submit-row %}
+  {{ block.super }}
+  {% if show_review_actions %}
+    <input type="submit" name="_approve" value="Approve" title="Save comments and publish this revision">
+    <input type="submit" name="_request_changes" value="Request changes" title="Save comments and request changes to this revision">
+  {% endif %}
+{% endblock %}
