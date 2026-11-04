@@ -8,8 +8,8 @@
       <div class="submission-meta"><span class="status">{{ submission.get_status_display|default:submission.status }}</span><span>Revision {{ submission.revision }}</span></div>
     </div>
     <div class="actions">
-      <a class="button" href="{% url 'submissions:edit' pk=submission.pk %}">{% if current_revision %}Edit submission{% else %}Complete submission{% endif %}</a>
-      <a class="delete-link" href="{% url 'submissions:delete' pk=submission.pk %}">Delete submission</a>
+      <a class="button" href="{% url 'submissions:edit' pk=submission.pk %}">{% if current_revision %}Edit{% else %}Complete{% endif %}</a>
+      <a class="button button-delete" href="{% url 'submissions:delete' pk=submission.pk %}">Delete</a>
     </div>
   </div>
   {% if submission.published_revision %}
@@ -43,9 +43,9 @@
         {% elif current_revision.status == "pending" %}
           <p class="verification-status" role="status">The repository details have been submitted and will undergo moderation before being made public.</p>
         {% elif current_revision.status == "approved" %}
-          <p class="verification-status">This version is public in the archive. Use Edit submission to submit changes.</p>
+          <p class="verification-status">This version is public in the archive. Use the Edit button to submit changes.</p>
         {% elif current_revision.status == "rejected" %}
-          <p class="notice">Changes were requested for this version. Read the feedback below, then use Edit submission to submit your changes.</p>
+          <p class="notice">Changes were requested for this version. Read the feedback below, then use the Edit button to submit your changes.</p>
         {% elif current_revision %}
           <p class="notice">This version has been replaced by a newer submission.</p>
         {% else %}
