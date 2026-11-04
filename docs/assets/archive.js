@@ -81,7 +81,7 @@ function card(project) {
     if (!seen) contributors.set(key, {name:credit.name, orcid});
     else if (!seen.orcid) seen.orcid = orcid;
   }
-  const credits = el('p', {className:'card-credits'}, 'Contributors: ');
+  const credits = el('p', {className:'card-credits'});
   [...contributors.values()].forEach((credit, index) => {
     if (index) credits.append('; ');
     credits.append(contributorLink(credit.name));
