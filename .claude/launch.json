@@ -1,0 +1,41 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "docs-static",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8765",
+        "--directory",
+        "docs"
+      ],
+      "port": 8765
+    },
+    {
+      "name": "docs-preview",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8769",
+        "--directory",
+        "/private/tmp/claude-502/-Users-trosati--claude-spares-spare-P75KAs/d48656dd-f241-423c-86f2-478cccfffdf5/scratchpad/docs-preview"
+      ],
+      "port": 8769
+    },
+    {
+      "name": "docs-rendered",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8771",
+        "--directory",
+        "/private/tmp/claude-502/-Users-trosati--claude-spares-spare-womz0q/395c1e47-6625-48d4-9ef1-f055ac354078/scratchpad/rendered"
+      ],
+      "port": 8771
+    }
+  ]
+}
