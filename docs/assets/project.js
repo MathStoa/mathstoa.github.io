@@ -1,5 +1,6 @@
 import {renderAbstract} from './abstract-math.js';
 import {element as el, loadArchive, tagList, safeURL, dateLabel, suppliedOrcidLink} from './common.js?v=3e4b890dc1e8';
+import {citeSection} from './cite.js?v=2e9bdb27b4bf';
 const container = document.querySelector('#project-content');
 function creditLine(credit) {
   const name = credit.name.trim().replace(/\s+/g, ' ');
@@ -24,7 +25,7 @@ try {
     const intro=el('header',{className:'project-intro'},el('h1',{},project.title),renderAbstract(el('div',{className:'lede'}),project.summary),el('div',{className:'project-credits'},project.credits.map(creditLine)),tagList(project.categories));
     if(project.example) intro.append(el('p',{className:'notice project-example-note'},'This entry illustrates the archive and was not submitted by the project’s maintainers. Consult the original project for current status and participation.'));
     const sidebar=el('aside',{className:'project-sidebar'},el('h2',{},'Project links'),project.readingUrl?el('a',{className:'button',href:safeURL(project.readingUrl),target:'_blank',rel:'noopener noreferrer',title:'Open project website in a new tab'},'Project website'):null,el('a',{className:'button button-light',href:safeURL(project.repositoryUrl),target:'_blank',rel:'noopener noreferrer',title:'Open repository in a new tab'},'Repository'),el('dl',{},project.doi?[el('dt',{},'DOI'),el('dd',{},el('a',{href:safeURL(project.doi)},project.doi.replace('https://doi.org/','')))]:null,el('dt',{},'Subjects'),el('dd',{},project.categories.map(c=>c.label).join(', ')),el('dt',{},'Added to this archive'),el('dd',{},dateLabel(project.added))));
-    container.replaceChildren(el('div',{className:'project-layout'},el('div',{className:'project-body'},intro),sidebar));
+    container.replaceChildren(el('div',{className:'project-layout'},el('div',{className:'project-body'},intro),sidebar,citeSection(project)));
   }
 } catch {
   container.replaceChildren(el('h1',{},'The project could not be loaded.'),el('p',{className:'lede'},'Please try again, or browse the public archive data.'),el('a',{href:'data/projects.json'},'Open archive data'));
